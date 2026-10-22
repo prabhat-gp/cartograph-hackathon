@@ -9,7 +9,9 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "smoke": "tsx --env-file-if-exists=.env scripts/smoke.ts",
+    "usage": "tsx scripts/usage.ts"
   },
   "dependencies": {
     "zod": "^4.4.3"
