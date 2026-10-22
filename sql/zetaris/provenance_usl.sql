@@ -23,6 +23,13 @@ CREATE TABLE code_change (
   pr_id varchar(220),
   url varchar(500)
 );
+CREATE TABLE file_change (
+  id varchar(850) NOT NULL PRIMARY KEY,
+  commit_sha varchar(40) FOREIGN KEY REFERENCES code_change(sha),
+  file_id varchar(800),
+  additions int,
+  deletions int
+);
 CREATE TABLE line_origin (
   id varchar(820) NOT NULL PRIMARY KEY,
   file_id varchar(800) FOREIGN KEY REFERENCES source_file(id),

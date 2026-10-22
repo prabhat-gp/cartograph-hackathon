@@ -1,9 +1,9 @@
 // Ingests one repository into the evidence store: git history and blame
 // from a local clone, pull requests, issues and discussion from GitHub.
 import type pg from "pg";
-import { upsert } from "../store/pg";
+import { refreshDerived, upsert } from "../store/pg";
 import { blameRanges, headInfo, listSourceFiles, readCommits, readCommitsBySha, syncClone } from "./git";
-import { fetchPullRequests, mentionedIssues, type GhIssue } from "./github";
+import { fetchPullRequests, fetchPullRequestsByNumber, mentionedIssues, subjectPullRequest, type GhIssue } from "./github";
 
 export interface IngestOptions {
   commits: number;
@@ -87,8 +87,17 @@ export async function ingestRepository(client: pg.Pool, repo: string, opts: Inge
     })));
   }
 
-  log(`storing ${gh.pullRequests.length} pull requests`);
-  const prs = gh.pullRequests;
+  // Blamed lines matter most: fetch the pull requests their commits name in
+  // "(#123)" even when they are older than the recent window.
+  const { rows: blamed } = await client.query<{ subject: string }>(
+    "SELECT DISTINCT c.subject FROM line_origin lo JOIN source_file f ON f.id = lo.file_id JOIN git_commit c ON c.sha = lo.commit_sha WHERE f.repo_id = $1",
+    [repo],
+  );
+  const have = new Set(gh.pullRequests.map((p) => p.number));
+  const wanted = [...new Set(blamed.map((r) => subjectPullRequest(r.subject)).filter((n): n is number => n !== null && !have.has(n)))];
+  if (wanted.length) log(`fetching ${wanted.length} older pull requests named by blamed commits`);
+  const prs = [...gh.pullRequests, ...(wanted.length ? await fetchPullRequestsByNumber(repo, wanted, opts.githubToken) : [])];
+  log(`storing ${prs.length} pull requests`);
   await upsert(client, "pull_request", ["id"], prs.map((p) => ({
     id: id(p.number), repo_id: repo, number: p.number, title: p.title, body: p.body || null, state: p.state,
     author: p.author?.login ?? null, created_at: p.createdAt, merged_at: p.mergedAt, merge_commit_sha: p.mergeCommit?.oid ?? null, url: p.url,
@@ -132,6 +141,7 @@ export async function ingestRepository(client: pg.Pool, repo: string, opts: Inge
     body: d.body, path: d.path ?? null, line: d.line ?? null, url: d.url,
   })));
 
+  await refreshDerived(client, repo);
   log(`done; GitHub API points left this hour: ${gh.rateRemaining}`);
   return {
     repo, headSha: head.sha, files: files.length, commits: commits.length + older.length, lineRanges,

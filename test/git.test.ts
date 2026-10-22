@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { collapseBlame, parseLog, renamedTarget } from "../src/ingest/git";
-import { mentionedIssues } from "../src/ingest/github";
+import { mentionedIssues, subjectPullRequest } from "../src/ingest/github";
 
 const A = "a".repeat(40);
 const B = "b".repeat(40);
@@ -34,5 +34,13 @@ describe("mentionedIssues", () => {
   it("finds short, qualified and URL references to the same repository only", () => {
     const text = "Refs #12 and sindresorhus/ky#40, see https://github.com/sindresorhus/ky/issues/7 but not other/repo#99 or abc#5";
     expect(mentionedIssues("sindresorhus/ky", text).sort((a, b) => a - b)).toEqual([7, 12, 40]);
+  });
+});
+
+describe("subjectPullRequest", () => {
+  it("reads the squash-merge pull request number at the end of a subject", () => {
+    expect(subjectPullRequest("Fix progress callbacks (#881)")).toBe(881);
+    expect(subjectPullRequest('Revert "bump x (#7494)" (#7518)')).toBe(7518);
+    expect(subjectPullRequest("Mention #12 in passing")).toBeNull();
   });
 });

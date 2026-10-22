@@ -4,15 +4,7 @@
 
 const ENDPOINT = "https://api.github.com/graphql";
 
-const QUERY = `
-query($owner: String!, $name: String!, $cursor: String, $page: Int!) {
-  repository(owner: $owner, name: $name) {
-    description
-    url
-    defaultBranchRef { name }
-    pullRequests(first: $page, after: $cursor, states: MERGED, orderBy: {field: UPDATED_AT, direction: DESC}) {
-      pageInfo { hasNextPage endCursor }
-      nodes {
+const PR_FIELDS = `
         number title body state url createdAt mergedAt
         author { login }
         mergeCommit { oid }
@@ -31,8 +23,17 @@ query($owner: String!, $name: String!, $cursor: String, $page: Int!) {
             id url createdAt body state author { login }
             comments(first: 20) { nodes { id url createdAt body path line author { login } } }
           }
-        }
-      }
+        }`;
+
+const QUERY = `
+query($owner: String!, $name: String!, $cursor: String, $page: Int!) {
+  repository(owner: $owner, name: $name) {
+    description
+    url
+    defaultBranchRef { name }
+    pullRequests(first: $page, after: $cursor, states: MERGED, orderBy: {field: UPDATED_AT, direction: DESC}) {
+      pageInfo { hasNextPage endCursor }
+      nodes { ${PR_FIELDS} }
     }
   }
   rateLimit { remaining resetAt cost }
@@ -90,6 +91,42 @@ export async function fetchPullRequests(repo: string, limit: number, token: stri
     cursor = r.pullRequests.pageInfo.endCursor;
   }
   return { ...meta!, pullRequests };
+}
+
+async function graphql<T>(token: string, query: string, variables: Record<string, unknown>, doFetch: typeof fetch): Promise<T> {
+  const res = await doFetch(ENDPOINT, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "User-Agent": "cartograph-hackathon" },
+    body: JSON.stringify({ query, variables }),
+    signal: AbortSignal.timeout(60_000),
+  });
+  if (!res.ok) throw new Error(`GitHub GraphQL ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  const body = (await res.json()) as { data?: T; errors?: { message: string; type?: string }[] };
+  // A number that is an issue rather than a pull request comes back as NOT_FOUND for that alias only.
+  const fatal = body.errors?.filter((e) => e.type !== "NOT_FOUND") ?? [];
+  if (!body.data || fatal.length) throw new Error(`GitHub GraphQL: ${fatal.map((e) => e.message).join("; ") || "no data"}`);
+  return body.data;
+}
+
+/** Specific pull requests by number, 20 per request; numbers that aren't merged PRs are skipped. */
+export async function fetchPullRequestsByNumber(repo: string, numbers: number[], token: string, doFetch: typeof fetch = fetch): Promise<GhPullRequest[]> {
+  const [owner, name] = repo.split("/");
+  const found: GhPullRequest[] = [];
+  for (let i = 0; i < numbers.length; i += 20) {
+    const batch = numbers.slice(i, i + 20);
+    const fields = batch.map((n) => `pr${n}: pullRequest(number: ${n}) { ${PR_FIELDS} }`).join("\n");
+    const data = await graphql<{ repository: Record<string, GhPullRequest | null> }>(
+      token, `query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { ${fields} } }`, { owner, name }, doFetch,
+    );
+    found.push(...Object.values(data.repository).filter((p): p is GhPullRequest => p !== null && p.state === "MERGED"));
+  }
+  return found;
+}
+
+/** "(#123)" at the end of a squash-merge subject: the pull request the commit came from. */
+export function subjectPullRequest(subject: string): number | null {
+  const m = subject.match(/\(#(\d+)\)\s*$/);
+  return m ? Number(m[1]) : null;
 }
 
 /** "#123", "owner/name#123" and issue URLs in a PR body that aren't closing references. */

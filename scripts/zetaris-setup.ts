@@ -34,6 +34,8 @@ if (!registered) {
   await step(`datasource ${DATASOURCE}`, datasourceStatement(pgUrl, process.env.CARTOGRAPH_PG_ZETARIS_HOST ?? "cartograph-pg:5432"), { quiet: true });
 } else log(`skip datasource ${DATASOURCE} (already there)`);
 await step("register evidence tables", `REGISTER DATASOURCE TABLES FROM ${DATASOURCE}`, { tolerateExisting: true });
+// New columns in the store only show up after a schema refresh.
+await step("refresh evidence tables", `REFRESH DATASOURCE TABLES FROM ${DATASOURCE}`, { tolerateExisting: true }).catch((e) => log(`skip refresh (${String(e).slice(0, 120)})`));
 
 // Postgres tables live in the public schema; find the name Zetaris gave them.
 const candidates = [DATASOURCE, `${DATASOURCE}.public`];
@@ -56,6 +58,10 @@ log(`evidence tables are ${source}.*`);
 
 await step("namespace lightning.metastore", "CREATE NAMESPACE IF NOT EXISTS lightning.metastore", { tolerateExisting: true });
 await step(`namespace ${NAMESPACE}`, `CREATE NAMESPACE IF NOT EXISTS ${NAMESPACE}`, { tolerateExisting: true });
+// --rebuild drops the model first, for when the DDL changed (COMPILE IF NOT EXISTS keeps the old one).
+if (process.argv.includes("--rebuild")) {
+  await step(`remove USL ${USL}`, `REMOVE USL ${USL} NAMESPACE ${NAMESPACE}`).catch((e) => log(`skip remove (${String(e).slice(0, 120)})`));
+}
 await step(`compile USL ${USL}`, compileStatement(), { tolerateExisting: true });
 
 for (const { table, sql } of activateStatements(source)) await step(`activate ${table}`, sql);
@@ -68,7 +74,7 @@ for (const table of TABLES) {
 for (const rule of dqRules()) {
   await step(`dq rule ${rule.name}`, `REGISTER DQ ${rule.name} TABLE ${NAMESPACE}.${USL}.${rule.table} AS ${rule.expression}`, { tolerateExisting: true });
   const result = await step(`run ${rule.name}`, `RUN DQ ${rule.name} TABLE ${NAMESPACE}.${USL}.${rule.table}`);
-  if (result) console.table(result.rows.map((r) => Object.fromEntries(result.columns.map((c, i) => [c, r[i]]))));
+  if (result) log(`  ${rule.name}: ${JSON.stringify(result.rows).slice(0, 300)}`);
 }
 
 for (const table of TABLES) {

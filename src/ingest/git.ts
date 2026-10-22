@@ -12,8 +12,17 @@ async function git(cwd: string, args: string[]): Promise<string> {
   return stdout;
 }
 
-/** Clones (or fetches) owner/name under .cartograph/repos and returns the path. */
-export async function syncClone(repo: string, root = path.join(process.cwd(), ".cartograph", "repos")): Promise<string> {
+/** Where local clones live: .cartograph/repos unless CARTOGRAPH_REPOS_DIR says otherwise. */
+export function reposDir(): string {
+  return process.env.CARTOGRAPH_REPOS_DIR ?? path.join(process.cwd(), ".cartograph", "repos");
+}
+
+export function cloneDir(repo: string): string {
+  return path.join(reposDir(), repo.replace("/", "__"));
+}
+
+/** Clones (or fetches) owner/name under reposDir() and returns the path. */
+export async function syncClone(repo: string, root = reposDir()): Promise<string> {
   if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error(`Not an owner/name repository: ${repo}`);
   const dir = path.join(root, repo.replace("/", "__"));
   if (existsSync(path.join(dir, ".git"))) {

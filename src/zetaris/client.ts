@@ -39,6 +39,7 @@ export interface SqlResult {
 
 interface RunResponse {
   data?: unknown[][];
+  headers?: string[];
   columns?: (string | { name?: string })[];
   schema?: { name?: string }[];
 }
@@ -130,6 +131,11 @@ export async function runSql(sql: string, opts: { config?: ZetarisConfig; limit?
   }
   if (!res.ok) throw await failure(res);
   const body = (await res.json()) as RunResponse;
-  const columns = (body.columns ?? body.schema ?? []).map((c) => (typeof c === "string" ? c : c.name ?? ""));
+  const columns = (body.headers ?? body.columns ?? body.schema ?? []).map((c) => (typeof c === "string" ? c : c.name ?? ""));
   return { columns, rows: body.data ?? [] };
+}
+
+/** Rows as objects keyed by column name. */
+export function asObjects(result: SqlResult): Record<string, unknown>[] {
+  return result.rows.map((row) => Object.fromEntries(result.columns.map((c, i) => [c, row[i]])));
 }

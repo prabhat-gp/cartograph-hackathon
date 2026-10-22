@@ -48,3 +48,25 @@ export async function upsert(
     );
   }
 }
+
+/** Recomputes the denormalised link columns for one repository. */
+export async function refreshDerived(client: pg.Pool, repo: string): Promise<void> {
+  await client.query(
+    `UPDATE git_commit c SET pr_id = (SELECT MIN(pc.pr_id) FROM pr_commit pc WHERE pc.commit_sha = c.sha) WHERE c.repo_id = $1`,
+    [repo],
+  );
+  // Squash merges name their pull request in the subject: "Fix x (#123)".
+  await client.query(
+    `UPDATE git_commit c SET pr_id = p.id FROM pull_request p
+     WHERE c.repo_id = $1 AND c.pr_id IS NULL AND p.repo_id = c.repo_id
+       AND p.number = CAST(substring(c.subject from '\\(#([0-9]+)\\)\\s*$') AS integer)`,
+    [repo],
+  );
+  await client.query(
+    `UPDATE pull_request p SET
+       issue_count = (SELECT COUNT(*) FROM pr_issue pi WHERE pi.pr_id = p.id),
+       discussion_count = (SELECT COUNT(*) FROM discussion d WHERE d.parent_id = p.id)
+     WHERE p.repo_id = $1`,
+    [repo],
+  );
+}

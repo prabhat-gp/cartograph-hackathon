@@ -8,7 +8,7 @@ import path from "node:path";
 export const NAMESPACE = "lightning.metastore.cartograph";
 export const USL = "provenance";
 export const DATASOURCE = "cartograph_pg";
-export const TABLES = ["repository", "source_file", "code_change", "line_origin", "pull_request", "issue", "pr_issue", "discussion"] as const;
+export const TABLES = ["repository", "source_file", "code_change", "file_change", "line_origin", "pull_request", "issue", "pr_issue", "discussion"] as const;
 
 const SQL_DIR = path.join(process.cwd(), "sql", "zetaris");
 
@@ -16,6 +16,7 @@ export const TABLE_DESCRIPTIONS: Record<(typeof TABLES)[number], string> = {
   repository: "One row per ingested GitHub repository, with the commit its code map was built from",
   source_file: "Source files at head, one row per path",
   code_change: "Git commits with the pull request that merged them, if any",
+  file_change: "Which files each commit touched, with lines added and removed",
   line_origin: "git blame at head: which commit last changed each range of lines in a file",
   pull_request: "Merged pull requests with how many issues they link and how much discussion they had",
   issue: "Issues that pull requests close or mention: the stated reasons for changes",
