@@ -561,12 +561,241 @@ export function DriftPanel(props: {
 
 // ---------------------------------------------------------------- live mapping progress
 
-const STAGES = [
-  { id: "scout", label: "Scout", desc: "Plans the work", Icon: Compass },
-  { id: "reader", label: "Readers", desc: "Read the code", Icon: BookOpen },
-  { id: "cartographer", label: "Cartographer", desc: "Draws the map", Icon: MapIcon },
-  { id: "verifier", label: "Verifier", desc: "Checks every citation", Icon: ShieldCheck },
-] as const;
+type AgentState = "todo" | "run" | "done" | "err";
+
+interface ReaderCard {
+  index: number;
+  total: number;
+  name: string;
+  files: string;
+  state: AgentState;
+  result: string | null;
+  seconds: number | null;
+}
+
+/** Readers announce themselves as "Reader 2/5 · api-core · 9 files" and finish with a count. */
+function readerCards(log: JobView["log"], now: number): ReaderCard[] {
+  const cards = new Map<string, ReaderCard & { startedAt: number }>();
+  for (const l of log) {
+    if (l.agent !== "reader") continue;
+    const m = l.message.match(/^Reader (\d+)\/(\d+) · (.+?) · (.+)$/);
+    if (!m) continue;
+    const [, i, n, name, tail] = m;
+    const at = Date.parse(l.at);
+    const card = cards.get(name) ?? { index: Number(i), total: Number(n), name, files: "", state: "run" as AgentState, result: null, seconds: null, startedAt: at };
+    if (l.phase === "start") card.files = tail;
+    if (l.phase === "done") {
+      card.state = "done";
+      card.result = tail;
+      card.seconds = Math.round((at - card.startedAt) / 1000);
+    }
+    if (l.phase === "error") {
+      card.state = "err";
+      card.result = tail;
+    }
+    cards.set(name, card);
+  }
+  return [...cards.values()]
+    .sort((a, b) => a.index - b.index)
+    .map(({ startedAt, ...c }) => (c.state === "run" ? { ...c, seconds: Math.round((now - startedAt) / 1000) } : c));
+}
+
+function AgentBadge({ state }: { state: AgentState }) {
+  if (state === "done") return <span className="flex items-center gap-1 font-mono text-[10.5px] tracking-wide text-ok uppercase"><CircleCheck size={13} /> done</span>;
+  if (state === "run") return <span className="flex items-center gap-1.5 font-mono text-[10.5px] tracking-wide text-accent uppercase"><Spinner size={12} /> working</span>;
+  if (state === "err") return <span className="font-mono text-[10.5px] tracking-wide text-danger uppercase">failed</span>;
+  return <span className="font-mono text-[10.5px] tracking-wide text-faint uppercase">waiting</span>;
+}
+
+function AgentCard(props: { Icon: typeof Compass; name: string; role: string; state: AgentState; detail?: ReactNode; className?: string }) {
+  const { Icon, state } = props;
+  return (
+    <div
+      className={cn(
+        "relative rounded-[4px] border bg-surface px-4 py-3.5 transition-all duration-300",
+        state === "run" ? "border-accent shadow-[3px_3px_0_0_var(--accent)]" : state === "done" ? "border-line-strong shadow-card" : state === "err" ? "border-danger/60" : "border-line opacity-70",
+        props.className,
+      )}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex items-center gap-2.5">
+          <span className={cn("grid size-8 place-items-center rounded-[3px]", state === "run" ? "bg-accent text-white" : state === "done" ? "bg-ok/12 text-ok" : "bg-surface-2 text-faint")}>
+            <Icon size={16} />
+          </span>
+          <span>
+            <span className="block font-mono text-[12px] font-medium tracking-[0.1em] text-text uppercase">{props.name}</span>
+            <span className="block text-[11.5px] text-muted">{props.role}</span>
+          </span>
+        </span>
+        <AgentBadge state={state} />
+      </div>
+      {props.detail ? <div className="mt-2.5 text-[12.5px] leading-snug text-text">{props.detail}</div> : null}
+    </div>
+  );
+}
+
+type SurveyStage = "scout" | "readers" | "cartographer" | "verifier" | "done";
+
+const STAGE_COPY: Record<SurveyStage, { step: number; title: string; now: string; next: string }> = {
+  scout: {
+    step: 1,
+    title: "Scout plans the survey",
+    now: "Reading the file tree, package manifests and config to name the components and split the code into reading groups.",
+    next: "Readers start on each group at the same time.",
+  },
+  readers: {
+    step: 2,
+    title: "Readers read the code",
+    now: "Each Reader takes one group of files, finds the calls between components (HTTP, SQL, queues, SDKs) and cites the exact line for each.",
+    next: "The Cartographer joins their findings into one map.",
+  },
+  cartographer: {
+    step: 3,
+    title: "Cartographer draws the map",
+    now: "Merging duplicate findings, naming the components and tracing the routes a request takes through the system.",
+    next: "The Verifier checks every citation.",
+  },
+  verifier: {
+    step: 4,
+    title: "Verifier checks every road",
+    now: "Opening each cited line in the code. A road whose citation doesn't match is taken off the map: no citation, no road.",
+    next: "The map opens.",
+  },
+  done: { step: 4, title: "Survey complete", now: "The map is ready.", next: "" },
+};
+
+/** An animated sketch of the survey, in step with the real agents. */
+function SurveyAnimation({ stage, lanes, finished }: { stage: SurveyStage; lanes: number; finished: number }) {
+  const n = Math.max(3, Math.min(lanes || 4, 6));
+  const laneX = (i: number) => 40 + (i * 280) / (n - 1);
+  const on = (s: SurveyStage) => stage === s;
+  const past = (s: SurveyStage) => STAGE_COPY[stage].step > STAGE_COPY[s].step || stage === "done";
+  const nodes = [
+    { x: 70, y: 318 }, { x: 180, y: 300 }, { x: 290, y: 318 },
+    { x: 110, y: 388 }, { x: 250, y: 388 }, { x: 180, y: 360 },
+  ];
+  const roads: [number, number, boolean][] = [[0, 1, true], [1, 2, true], [0, 3, true], [1, 5, true], [2, 4, false], [5, 4, true], [3, 5, true]];
+  const drawn = past("cartographer") || on("cartographer") || on("verifier");
+  const copy = STAGE_COPY[stage];
+  return (
+    <div className="rounded-[4px] border border-line-strong bg-surface">
+      <div className="flex items-center justify-between border-b border-line px-4 py-2 font-mono text-[10.5px] tracking-[0.2em] text-muted uppercase">
+        <span>How the survey works</span>
+        <span>Step {copy.step} of 4</span>
+      </div>
+      <svg viewBox="0 0 360 420" className="block w-full" role="img" aria-label={copy.title}>
+        <defs>
+          <pattern id="sg" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M20 0H0V20" fill="none" stroke="var(--grid)" strokeWidth="1" />
+          </pattern>
+        </defs>
+        <rect width="360" height="420" fill="url(#sg)" />
+
+        {/* The repository */}
+        <g opacity={on("scout") ? 1 : 0.75}>
+          <rect x="130" y="16" width="100" height="58" rx="3" fill="var(--surface)" stroke="var(--text)" strokeWidth="1.4" />
+          {[0, 1, 2, 3].map((i) => (
+            <rect key={i} x="142" y={28 + i * 10} width={[60, 44, 70, 36][i]} height="4" rx="1" fill="var(--line-strong)" />
+          ))}
+          <text x="180" y="90" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="9.5" fill="var(--muted)" letterSpacing="1.5">REPOSITORY</text>
+        </g>
+
+        {/* Scout: a compass sweeping the repository */}
+        <g transform="translate(262 45)" opacity={on("scout") ? 1 : 0.35}>
+          <circle r="16" fill="var(--surface)" stroke={on("scout") ? "var(--accent)" : "var(--line-strong)"} strokeWidth="1.6" />
+          <g className={on("scout") ? "cg-spin" : undefined}>
+            <path d="M0 -11 L3.5 0 L0 11 L-3.5 0 Z" fill="var(--accent)" />
+          </g>
+          {on("scout") && <circle r="16" fill="none" stroke="var(--accent)" strokeOpacity="0.4" className="cg-ping" />}
+        </g>
+
+        {/* Reader lanes */}
+        {Array.from({ length: n }, (_, i) => {
+          const x = laneX(i);
+          const done = past("readers") || i < finished;
+          const active = on("readers") && !done;
+          const d = `M180 98 C 180 140, ${x} 130, ${x} 178`;
+          return (
+            <g key={i} opacity={STAGE_COPY[stage].step >= 2 ? 1 : 0.25}>
+              <path d={d} fill="none" stroke={active ? "var(--accent)" : "var(--edge)"} strokeWidth="1.4" strokeDasharray={active ? "5 4" : undefined} className={active ? "cg-flow" : undefined} />
+              {active && [0, 1, 2].map((k) => (
+                <circle key={k} r="2.6" fill="var(--accent)">
+                  <animateMotion dur="1.8s" begin={`${k * 0.6 + i * 0.15}s`} repeatCount="indefinite" path={d} />
+                </circle>
+              ))}
+              <rect x={x - 17} y="180" width="34" height="34" rx="3" fill={done ? "var(--ok)" : "var(--surface)"} fillOpacity={done ? 0.14 : 1} stroke={done ? "var(--ok)" : active ? "var(--accent)" : "var(--line-strong)"} strokeWidth="1.4" />
+              {done ? (
+                <path d={`M${x - 7} 197 l5 5 l9 -10`} fill="none" stroke="var(--ok)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              ) : (
+                <g transform={`translate(${x - 7} 189)`} stroke={active ? "var(--accent)" : "var(--faint)"} strokeWidth="1.5" fill="none">
+                  <path d="M0 2h6v13H0zM8 2h6v13H8z" />
+                </g>
+              )}
+            </g>
+          );
+        })}
+        <text x="180" y="236" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="9.5" fill="var(--muted)" letterSpacing="1.5">READERS · IN PARALLEL</text>
+
+        {/* Funnel into the map */}
+        <path d="M60 246 C 120 262, 240 262, 300 246" fill="none" stroke="var(--edge)" strokeOpacity={drawn ? 0.9 : 0.3} strokeWidth="1.2" strokeDasharray="3 4" />
+
+        {/* Cartographer: places appear, roads draw */}
+        {roads.map(([a, b, ok], i) => {
+          const p = nodes[a];
+          const q = nodes[b];
+          const verifying = on("verifier");
+          const rejected = (verifying || stage === "done") && !ok;
+          return (
+            <g key={i}>
+              <motion.path
+                d={`M${p.x} ${p.y} L${q.x} ${q.y}`}
+                fill="none"
+                stroke={rejected ? "var(--faint)" : verifying || stage === "done" ? "var(--ok)" : "var(--text)"}
+                strokeOpacity={rejected ? 0.4 : 0.75}
+                strokeWidth="1.6"
+                strokeDasharray={rejected ? "3 4" : undefined}
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: drawn ? 1 : 0 }}
+                transition={{ duration: 0.7, delay: drawn ? 0.25 * i : 0, repeat: on("cartographer") ? Infinity : 0, repeatDelay: 2.4 }}
+              />
+              {(verifying || stage === "done") && (
+                <motion.g initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.35 * i, type: "spring", stiffness: 300 }}
+                  style={{ transformOrigin: `${(p.x + q.x) / 2}px ${(p.y + q.y) / 2}px` }}>
+                  <circle cx={(p.x + q.x) / 2} cy={(p.y + q.y) / 2} r="7" fill="var(--surface)" stroke={ok ? "var(--ok)" : "var(--danger)"} strokeWidth="1.4" />
+                  {ok ? (
+                    <path d={`M${(p.x + q.x) / 2 - 3} ${(p.y + q.y) / 2} l2 2.5 l4 -5`} fill="none" stroke="var(--ok)" strokeWidth="1.6" strokeLinecap="round" />
+                  ) : (
+                    <path d={`M${(p.x + q.x) / 2 - 3} ${(p.y + q.y) / 2 - 3} l6 6 M${(p.x + q.x) / 2 + 3} ${(p.y + q.y) / 2 - 3} l-6 6`} stroke="var(--danger)" strokeWidth="1.5" strokeLinecap="round" />
+                  )}
+                </motion.g>
+              )}
+            </g>
+          );
+        })}
+        {nodes.map((p, i) => (
+          <motion.rect
+            key={i}
+            x={p.x - 9} y={p.y - 9} width="18" height="18" rx="2"
+            fill="var(--surface)" stroke="var(--text)" strokeWidth="1.5"
+            initial={{ opacity: 0, scale: 0.4 }}
+            animate={{ opacity: drawn ? 1 : 0.15, scale: drawn ? 1 : 0.6 }}
+            transition={{ delay: drawn ? 0.12 * i : 0, type: "spring", stiffness: 260 }}
+            style={{ transformOrigin: `${p.x}px ${p.y}px` }}
+          />
+        ))}
+        <text x="180" y="414" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="9.5" fill="var(--muted)" letterSpacing="1.5">THE MAP</text>
+      </svg>
+      <div className="border-t border-line px-4 py-3.5">
+        <p className="font-serif text-[22px] leading-tight text-text">{copy.title}</p>
+        <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">{copy.now}</p>
+        {copy.next && <p className="mt-2 font-mono text-[10.5px] tracking-wide text-faint uppercase">Next · {copy.next}</p>}
+      </div>
+    </div>
+  );
+}
+
+/** Typical full map on Nemotron (measured 22 Oct): the target the clock is shown against. */
+const TARGET_SECONDS = 180;
 
 export function Progress({ job }: { job: JobView | null }) {
   const [now, setNow] = useState(Date.now());
@@ -575,78 +804,120 @@ export function Progress({ job }: { job: JobView | null }) {
     return () => clearInterval(t);
   }, []);
   const log = job?.log ?? [];
-  const state = (id: string): "todo" | "run" | "done" | "err" => {
-    const msgs = log.filter((l) => (id === "verifier" ? l.message.startsWith("Verifier") : l.agent === id));
-    if (msgs.some((m) => m.phase === "error") && !msgs.some((m) => m.phase === "done")) return "err";
-    if (id === "reader") {
-      const started = msgs.filter((m) => m.phase === "start").length;
-      const done = msgs.filter((m) => m.phase === "done" || m.phase === "error").length;
-      if (!started) return "todo";
-      return done >= started && log.some((l) => l.agent === "cartographer") ? "done" : "run";
-    }
+  const last = (pred: (l: JobView["log"][number]) => boolean) => [...log].reverse().find(pred);
+  const stateOf = (pred: (l: JobView["log"][number]) => boolean): AgentState => {
+    const msgs = log.filter(pred);
     if (msgs.some((m) => m.phase === "done")) return "done";
+    if (msgs.some((m) => m.phase === "error")) return "err";
     return msgs.length ? "run" : "todo";
   };
-  const readers = log.filter((l) => l.agent === "reader" && l.phase === "start").length;
-  const readersDone = log.filter((l) => l.agent === "reader" && (l.phase === "done" || l.phase === "error")).length;
+  const isVerifier = (l: JobView["log"][number]) => l.message.startsWith("Verifier");
+  const scout = stateOf((l) => l.agent === "scout");
+  const readers = readerCards(log, now);
+  const readersState: AgentState = !readers.length ? "todo" : readers.every((r) => r.state !== "run") ? "done" : "run";
+  const cartographer = stateOf((l) => l.agent === "cartographer");
+  const verifier = stateOf(isVerifier);
+  const scoutDone = last((l) => l.agent === "scout" && l.phase === "done");
+  const cartDone = last((l) => l.agent === "cartographer" && l.phase === "done");
+  const verDone = last((l) => isVerifier(l) && l.phase === "done");
   const elapsed = job ? Math.max(0, Math.round((now - Date.parse(job.startedAt)) / 1000)) : 0;
-  const mm = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")}`;
+  const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  const failed = job?.status === "error";
+  const stage: SurveyStage =
+    verifier === "done" || job?.status === "done" ? "done"
+      : verifier === "run" ? "verifier"
+        : cartographer !== "todo" ? "cartographer"
+          : readers.length ? "readers"
+            : "scout";
+
   return (
-    <div className="mx-auto min-h-0 w-full max-w-[760px] overflow-y-auto px-6 py-8">
-      <motion.div {...fadeIn} className="mb-6 flex items-center gap-3.5">
-        <CartographLogo size={40} />
-        <div className="min-w-0 flex-1">
-          <div className="font-serif text-[26px] leading-tight font-normal text-text">Surveying {job?.repoName ?? "repository"}</div>
-          <div className="text-[12.5px] text-muted">{job?.status === "error" ? "Mapping failed" : "A team of agents is reading the code"}</div>
+    <div className="mx-auto min-h-0 w-full max-w-[1180px] overflow-y-auto px-6 py-8">
+      <motion.div {...fadeIn} className="flex flex-wrap items-end justify-between gap-4 border-b border-text pb-4">
+        <div className="min-w-0">
+          <p className="font-mono text-[10.5px] tracking-[0.2em] text-accent uppercase">Live survey</p>
+          <div className="mt-1 font-serif text-[34px] leading-tight text-text">Surveying {job?.repoName ?? "repository"}</div>
+          <div className="text-[13px] text-muted">{failed ? "The survey stopped. The log below says why." : "A team of agents is reading the code. The map opens when they finish."}</div>
         </div>
-        <div className="rounded-lg border border-line bg-surface px-2.5 py-1 font-mono text-[13px] text-text tabular-nums shadow-card">{mm}</div>
+        <div className="text-right">
+          <div className="font-serif text-[40px] leading-none text-text tabular-nums">{clock(elapsed)}</div>
+          <div className="mt-1 font-mono text-[10.5px] tracking-wide text-muted uppercase">usually about {clock(TARGET_SECONDS)}</div>
+          <div className="mt-2 h-1.5 w-40 border border-text">
+            <span className={cn("block h-full transition-all", elapsed > TARGET_SECONDS ? "bg-warn" : "bg-accent")} style={{ width: `${Math.min(100, (elapsed / TARGET_SECONDS) * 100)}%` }} />
+          </div>
+        </div>
       </motion.div>
 
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        {STAGES.map((s, i) => {
-          const st = state(s.id);
-          return (
-            <motion.div key={s.id} {...fadeIn} transition={{ ...fadeIn.transition, delay: i * 0.05 }}>
-              <Card className={cn("relative h-full px-3.5 py-3 transition-all", st === "run" && "border-accent/50 ring-4 ring-accent/10", st === "err" && "border-danger/40")}>
-                <div className="flex items-center justify-between">
-                  <span className={cn("grid size-8 place-items-center rounded-lg", st === "done" ? "bg-ok/12 text-ok" : st === "run" ? "bg-accent-soft text-accent" : "bg-surface-2 text-faint")}>
-                    <s.Icon size={16} />
-                  </span>
-                  {st === "done" ? <CircleCheck size={16} className="text-ok" /> : st === "run" ? <Spinner className="text-accent" /> : null}
-                </div>
-                <div className="mt-2.5 text-[13px] font-semibold text-text">{s.label}</div>
-                <div className="text-[11.5px] text-muted">{s.id === "reader" && readers ? `${readersDone} of ${readers} done` : s.desc}</div>
-                {s.id === "reader" && readers > 0 && (
-                  <div className="mt-2 flex gap-1">
-                    {Array.from({ length: readers }, (_, r) => (
-                      <span key={r} className={cn("h-1 flex-1 rounded-full transition-colors", r < readersDone ? "bg-ok" : "bg-accent/25")} />
-                    ))}
+      <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="min-w-0">
+      <div className="relative space-y-3">
+        <AgentCard
+          Icon={Compass} name="Scout" role="Reads the tree and manifests, names the components, divides the work" state={scout}
+          detail={(scoutDone ?? last((l) => l.agent === "scout"))?.message.replace(/^Scout · /, "")}
+        />
+
+        <div className={cn("rounded-[4px] border border-dashed px-3 py-3", readersState === "run" ? "border-accent/50" : "border-line")}>
+          <div className="mb-2.5 flex items-center justify-between px-1">
+            <span className="flex items-center gap-2 font-mono text-[11px] tracking-[0.12em] text-text uppercase">
+              <BookOpen size={14} className="text-muted" /> Readers · in parallel
+            </span>
+            <span className="font-mono text-[11px] text-muted">
+              {readers.filter((r) => r.state !== "run").length} / {readers.length || "…"} finished
+            </span>
+          </div>
+          {readers.length === 0 ? (
+            <div className="px-1 pb-1 text-[12.5px] text-faint">Waiting for the Scout to divide the code.</div>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {readers.map((r) => (
+                <motion.div key={r.name} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                  className={cn("rounded-[3px] border bg-surface px-3 py-2.5", r.state === "run" ? "border-accent/60" : r.state === "err" ? "border-danger/50" : "border-line")}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-mono text-[11.5px] font-medium text-text">{r.name}</span>
+                    {r.state === "run" ? <Spinner size={12} className="text-accent" /> : r.state === "done" ? <CircleCheck size={13} className="text-ok" /> : <span className="text-[11px] text-danger">failed</span>}
                   </div>
-                )}
-              </Card>
-            </motion.div>
-          );
-        })}
+                  <div className="mt-1 text-[11.5px] text-muted">
+                    {r.state === "run" ? `reading ${r.files}` : r.result}
+                    {r.seconds !== null ? <span className="font-mono"> · {r.seconds}s</span> : null}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <AgentCard
+            Icon={MapIcon} name="Cartographer" role="Joins everything into one map and its request flows" state={cartographer}
+            detail={cartDone?.message.replace(/^Cartographer · /, "") ?? (cartographer === "run" ? last((l) => l.agent === "cartographer")?.message.replace(/^Cartographer · /, "") : undefined)}
+          />
+          <AgentCard
+            Icon={ShieldCheck} name="Verifier" role="Checks every citation against the code" state={verifier}
+            detail={verDone?.message.replace(/^Verifier · /, "").replace(/dropped \(evidence not found in code\)/, "rejected: their citation didn't match the code") ?? (verifier === "run" ? "checking citations…" : undefined)}
+          />
+        </div>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-xl border border-line bg-[#0f0f12] shadow-card">
-        <div className="flex items-center gap-1.5 border-b border-white/5 px-3.5 py-2">
-          <span className="size-2.5 rounded-full bg-[#ff5f57]" />
-          <span className="size-2.5 rounded-full bg-[#febc2e]" />
-          <span className="size-2.5 rounded-full bg-[#28c840]" />
-          <span className="ml-2 font-mono text-[11px] text-white/40">agents · live</span>
+      <div className="mt-6 rounded-[4px] border border-line-strong bg-surface">
+        <div className="flex items-center justify-between border-b border-line px-4 py-2">
+          <span className="font-mono text-[10.5px] tracking-[0.2em] text-muted uppercase">Field log</span>
+          {job?.status === "running" && <span className="flex items-center gap-1.5 font-mono text-[10.5px] text-accent uppercase"><span className="cg-live-dot size-1.5 rounded-full bg-accent" /> live</span>}
         </div>
-        <div className="min-h-[200px] px-3.5 py-3 font-mono text-[11.5px] leading-[1.75]">
-          {log.slice(-14).map((l, i) => (
-            <motion.div key={`${l.at}-${i}`} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} className={cn("flex gap-3", l.phase === "error" ? "text-[#ff8a8a]" : l.phase === "done" ? "text-white/90" : "text-white/55")}>
-              <span className="w-[86px] shrink-0 text-[#a99bff]">{l.agent === "pipeline" ? "cartograph" : l.agent}</span>
+        <div className="max-h-[220px] overflow-y-auto px-4 py-2.5 font-mono text-[11.5px] leading-[1.8]">
+          {log.slice(-40).map((l, i) => (
+            <div key={`${l.at}-${i}`} className={cn("flex gap-3", l.phase === "error" ? "text-danger" : l.phase === "done" ? "text-text" : "text-muted")}>
+              <span className="w-12 shrink-0 text-faint tabular-nums">{job ? clock(Math.max(0, Math.round((Date.parse(l.at) - Date.parse(job.startedAt)) / 1000))) : ""}</span>
+              <span className="w-[92px] shrink-0 text-accent">{l.agent === "pipeline" ? (isVerifier(l) ? "verifier" : "cartograph") : l.agent}</span>
               <span className="min-w-0 break-words">{l.message}</span>
-            </motion.div>
+            </div>
           ))}
-          {job?.status === "running" && <span className="cg-caret text-[#a99bff]">▍</span>}
         </div>
       </div>
-      {job?.error && <div className="mt-3 rounded-lg bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{job.error}</div>}
+      {job?.error && <div className="mt-3 rounded-[4px] border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{job.error}</div>}
+      </div>
+      <div className="lg:sticky lg:top-4">
+        <SurveyAnimation stage={stage} lanes={readers.length} finished={readers.filter((r) => r.state !== "run").length} />
+      </div>
+      </div>
     </div>
   );
 }

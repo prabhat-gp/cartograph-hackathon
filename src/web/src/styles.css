@@ -245,3 +245,43 @@ button:disabled {
 .cg-caret {
   animation: cg-caret 1s steps(1) infinite;
 }
+
+/* Live survey animation */
+@keyframes cg-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.cg-spin {
+  animation: cg-spin 2.4s linear infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes cg-ping {
+  from {
+    r: 16;
+    opacity: 0.6;
+  }
+  to {
+    r: 30;
+    opacity: 0;
+  }
+}
+.cg-ping {
+  animation: cg-ping 1.6s ease-out infinite;
+}
+@keyframes cg-flow {
+  to {
+    stroke-dashoffset: -18;
+  }
+}
+.cg-flow {
+  animation: cg-flow 0.9s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cg-spin,
+  .cg-ping,
+  .cg-flow {
+    animation: none;
+  }
+}

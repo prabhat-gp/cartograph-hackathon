@@ -16,7 +16,7 @@ export function Button({ variant = "secondary", size = "md", className, children
       className={cn(
         "inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-all duration-150 select-none active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100",
         size === "sm" ? "h-7 px-2.5 text-[12px]" : "h-9 px-3.5 text-[13px]",
-        variant === "primary" && "bg-gradient-to-b from-[#6a5cff] to-[#4e3fe6] text-white shadow-[0_1px_2px_rgb(0_0_0/0.15),inset_0_1px_0_rgb(255_255_255/0.18)] hover:brightness-110",
+        variant === "primary" && "rounded-[3px] bg-accent text-white shadow-[2px_2px_0_0_var(--text)] hover:bg-accent-2 disabled:opacity-50",
         variant === "secondary" && "border border-line bg-surface text-text shadow-card hover:bg-surface-2",
         variant === "ghost" && "text-muted hover:bg-surface-2 hover:text-text",
         variant === "danger" && "border border-danger/30 bg-danger/[0.06] text-danger hover:bg-danger/[0.1]",

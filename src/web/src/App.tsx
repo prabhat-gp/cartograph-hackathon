@@ -100,8 +100,9 @@ export function App({ bridge }: { bridge: Bridge }) {
     const r = await bridge.callTool<{ repos: RepoSummary[] }>("cartograph_repos", {});
     const list = r.structuredContent.repos ?? [];
     setRepos(list);
-    // Opened from the sidebar while a map is running? Show its live progress.
-    const running = list.find((x) => x.mapping);
+    // Opened from an MCP host's sidebar while a map is running? Show its live progress.
+    // A browser always starts at home; a running map shows there with a "mapping" badge.
+    const running = bridge.mode === "host" ? list.find((x) => x.mapping) : undefined;
     if (running) {
       setRepoKey((k) => k ?? running.key);
       setJobId((j) => j ?? running.mapping);
@@ -161,11 +162,17 @@ export function App({ bridge }: { bridge: Bridge }) {
       bridge.onToolResult(handleResult);
       if (bridge.mode === "standalone") {
         const q = new URLSearchParams(location.search);
-        const r = await bridge.callTool("cartograph", q.get("repo") ? { repo: q.get("repo") } : {});
-        handleResult(r);
-        if (q.get("drift")) {
-          setMode({ kind: "drift", reportId: q.get("drift") });
-          setTab("drift");
+        if (q.get("repo")) {
+          const r = await bridge.callTool("cartograph", { repo: q.get("repo") });
+          handleResult(r);
+          if (q.get("drift")) {
+            setMode({ kind: "drift", reportId: q.get("drift") });
+            setTab("drift");
+          }
+        } else {
+          // A browser visit starts at home: map a repository or pick one already mapped.
+          setReady(true);
+          await loadRepos();
         }
       } else {
         // Opened from the sidebar with no tool result yet: show what we have.
@@ -194,6 +201,30 @@ export function App({ bridge }: { bridge: Bridge }) {
       .then((h) => setDemo(!!h.demo))
       .catch(() => undefined);
   }, [bridge.mode]);
+
+  // In a browser the address follows the view: /app is home, /app?repo=… a map,
+  // so a refresh keeps your place and Back returns home.
+  useEffect(() => {
+    if (bridge.mode !== "standalone" || !ready) return;
+    const want = !home && repoKey ? `?repo=${encodeURIComponent(repoKey)}` : "";
+    if (location.search !== want) history.pushState(null, "", `${location.pathname}${want}`);
+  }, [bridge.mode, ready, home, repoKey]);
+
+  useEffect(() => {
+    if (bridge.mode !== "standalone") return;
+    const onPop = () => {
+      const key = new URLSearchParams(location.search).get("repo");
+      if (key) {
+        setHome(false);
+        setRepoKey(key);
+      } else {
+        setHome(true);
+        void loadRepos();
+      }
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [bridge.mode, loadRepos]);
 
   // Repo changed → load its graph and drift history.
   useEffect(() => {
@@ -466,6 +497,9 @@ export function App({ bridge }: { bridge: Bridge }) {
     setJob(null);
     setReports([]);
     setRepoKey(key);
+    // A first map still in progress: follow it live.
+    const running = repos.find((r) => r.key === key)?.mapping;
+    if (running) setJobId(running);
   };
   const mapRepo = async (repo: string) => {
     setError(null);
