@@ -3,7 +3,7 @@
 //   npm run smoke -- [model ...]
 import { readFileSync } from "node:fs";
 import { z } from "zod";
-import { callJson, DEFAULT_MODEL } from "../src/llm/client";
+import { callJson } from "../src/llm/client";
 
 const WhySchema = z.object({
   answer: z.string(),
@@ -21,15 +21,16 @@ path, the 1-based line number and the snippet copied verbatim from that ONE line
 number and '| ' prefix. Cite only lines you were shown.`;
 const input = `Question: Why does this client ask for a plain JSON object instead of using strict json_schema mode?\n\n# ${file}\n${numbered}`;
 
-const models = process.argv.slice(2).length ? process.argv.slice(2) : [DEFAULT_MODEL];
+const args = process.argv.slice(2);
+const models: (string | undefined)[] = args.length ? args : [undefined];
 for (const model of models) {
   const started = performance.now();
   try {
-    const out = await callJson({ agent: "smoke", instructions, input, schema: WhySchema, model });
+    const out = await callJson({ agent: "smoke", instructions, input, schema: WhySchema, tier: "deep", model });
     const grounded = out.evidence.filter((e) => e.path === file && lines[e.line - 1]?.trim() === e.snippet.trim()).length;
-    console.log(`\n${model}  ${((performance.now() - started) / 1000).toFixed(1)}s  confidence=${out.confidence}  evidence ${grounded}/${out.evidence.length} verbatim`);
+    console.log(`\n${model ?? "deep tier"}  ${((performance.now() - started) / 1000).toFixed(1)}s  confidence=${out.confidence}  evidence ${grounded}/${out.evidence.length} verbatim`);
     console.log(`  ${out.answer}`);
   } catch (error) {
-    console.log(`\n${model}  FAILED: ${error instanceof Error ? error.message : error}`);
+    console.log(`\n${model ?? "deep tier"}  FAILED: ${error instanceof Error ? error.message : error}`);
   }
 }
