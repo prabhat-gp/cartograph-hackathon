@@ -11,3 +11,4 @@ bin/
 .tunnel.log
 .DS_Store
 logs/*.jsonl
+.cartograph-test/
