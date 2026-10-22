@@ -17,6 +17,8 @@ export interface RunInput {
   question: string;
   path?: string;
   line?: number;
+  /** The checkout to quote code from; defaults to the ingest clone. */
+  dir?: string;
 }
 
 export interface RunResult {
@@ -55,8 +57,8 @@ const clip = (s: string | null | undefined, n: number) => {
   return t.length > n ? `${t.slice(0, n)}…` : t;
 };
 
-function codeSnippet(repo: string, file: string, from: number, to: number): string | null {
-  const full = path.join(cloneDir(repo), file);
+function codeSnippet(dir: string, file: string, from: number, to: number): string | null {
+  const full = path.join(dir, file);
   if (!existsSync(full)) return null;
   const lines = readFileSync(full, "utf8").split("\n");
   return lines.slice(from - 1, to).map((l, i) => `${from + i}| ${l}`).join("\n");
@@ -100,7 +102,7 @@ class Investigator {
     const to = (p.line_end ?? p.line_start ?? 1) + widen;
 
     if (this.fileId && p.line_start && (retry === 0 || widen > 0)) {
-      const snippet = codeSnippet(this.input.repo, p.path!, from, to);
+      const snippet = codeSnippet(this.input.dir ?? cloneDir(this.input.repo), p.path!, from, to);
       if (snippet) this.add({ kind: "code", ref: `${p.path}:${from}-${to}`, title: `${p.path} lines ${from}-${to}`, text: snippet, url: null });
       const origins = await lineOrigins(this.q, this.fileId, from, to);
       queries.push("line_origin ⋈ code_change");

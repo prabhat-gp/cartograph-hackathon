@@ -1,15 +1,27 @@
 // Ingests one repository into the evidence store: git history and blame
-// from a local clone, pull requests, issues and discussion from GitHub.
+// from a local checkout, and (for GitHub repositories) pull requests, issues
+// and discussion.
 import type pg from "pg";
 import { refreshDerived, upsert } from "../store/pg";
-import { blameRanges, headInfo, listSourceFiles, readCommits, readCommitsBySha, syncClone } from "./git";
-import { fetchIssuesByNumber, fetchPullRequests, fetchPullRequestsByNumber, mentionedIssues, subjectPullRequest, type GhIssue } from "./github";
+import { blameRanges, headInfo, listSourceFiles, readCommits, readCommitsBySha } from "./git";
+import { fetchIssuesByNumber, fetchPullRequests, fetchPullRequestsByNumber, mentionedIssues, subjectPullRequest, type GhIssue, type GhRepository } from "./github";
+
+export interface IngestTarget {
+  /** Evidence store id: owner/name for GitHub, local/<folder> otherwise. */
+  id: string;
+  /** A checkout with full history. */
+  dir: string;
+  /** owner/name when the repository is on GitHub; null for a local folder. */
+  github: string | null;
+}
 
 export interface IngestOptions {
   commits: number;
   pullRequests: number;
   /** Files to blame, most recently changed first. */
   blameFiles: number;
+  /** Blame exactly these paths instead (the files a map cites). */
+  blamePaths?: string[];
   githubToken: string;
   log?: (message: string) => void;
 }
@@ -25,27 +37,29 @@ export interface IngestSummary {
   discussion: number;
 }
 
-export async function ingestRepository(client: pg.Pool, repo: string, opts: IngestOptions): Promise<IngestSummary> {
+export async function ingestRepository(client: pg.Pool, target: IngestTarget, opts: IngestOptions): Promise<IngestSummary> {
   const log = opts.log ?? (() => undefined);
+  const { id: repo, dir, github } = target;
   const id = (n: number) => `${repo}#${n}`;
   const fileId = (p: string) => `${repo}:${p}`;
-
-  log(`cloning ${repo}`);
-  const dir = await syncClone(repo);
   const head = await headInfo(dir);
 
-  log("reading pull requests from GitHub");
-  const gh = await fetchPullRequests(repo, opts.pullRequests, opts.githubToken);
+  let gh: GhRepository = { description: null, url: "", defaultBranch: head.branch, pullRequests: [], rateRemaining: 0 };
+  if (github && opts.pullRequests > 0) {
+    log("reading pull requests from GitHub");
+    gh = await fetchPullRequests(github, opts.pullRequests, opts.githubToken);
+  }
+  const commitUrl = (sha: string) => (gh.url ? `${gh.url}/commit/${sha}` : "");
 
   await upsert(client, "repository", ["id"], [{
-    id: repo, default_branch: head.branch, description: gh.description, url: gh.url, head_sha: head.sha, ingested_at: new Date().toISOString(),
+    id: repo, default_branch: head.branch, description: gh.description, url: gh.url || dir, head_sha: head.sha, ingested_at: new Date().toISOString(),
   }]);
 
   log(`reading ${opts.commits} commits`);
   const commits = await readCommits(dir, opts.commits);
   await upsert(client, "git_commit", ["sha"], commits.map((c) => ({
     sha: c.sha, repo_id: repo, author_name: c.authorName, author_email: c.authorEmail, authored_at: c.authoredAt,
-    subject: c.subject, body: c.body || null, url: `${gh.url}/commit/${c.sha}`,
+    subject: c.subject, body: c.body || null, url: commitUrl(c.sha),
   })));
   await upsert(client, "commit_file", ["commit_sha", "file_id"], commits.flatMap((c) => c.files.map((f) => ({
     commit_sha: c.sha, file_id: fileId(f.path), additions: f.additions, deletions: f.deletions,
@@ -58,7 +72,10 @@ export async function ingestRepository(client: pg.Pool, repo: string, opts: Inge
   // Blame the files that changed most recently: that's where "why" questions land.
   const recency = new Map<string, number>();
   commits.forEach((c, i) => c.files.forEach((f) => { if (!recency.has(f.path)) recency.set(f.path, i); }));
-  const toBlame = [...files].sort((a, b) => (recency.get(a.path) ?? Infinity) - (recency.get(b.path) ?? Infinity)).slice(0, opts.blameFiles);
+  const wanted = opts.blamePaths ? new Set(opts.blamePaths) : null;
+  const toBlame = wanted
+    ? files.filter((f) => wanted.has(f.path))
+    : [...files].sort((a, b) => (recency.get(a.path) ?? Infinity) - (recency.get(b.path) ?? Infinity)).slice(0, opts.blameFiles);
   log(`blaming ${toBlame.length} files`);
   let lineRanges = 0;
   for (const f of toBlame) {
@@ -83,7 +100,7 @@ export async function ingestRepository(client: pg.Pool, repo: string, opts: Inge
     const extra = await readCommitsBySha(dir, older);
     await upsert(client, "git_commit", ["sha"], extra.map((c) => ({
       sha: c.sha, repo_id: repo, author_name: c.authorName, author_email: c.authorEmail, authored_at: c.authoredAt,
-      subject: c.subject, body: c.body || null, url: `${gh.url}/commit/${c.sha}`,
+      subject: c.subject, body: c.body || null, url: commitUrl(c.sha),
     })));
   }
 
@@ -94,9 +111,9 @@ export async function ingestRepository(client: pg.Pool, repo: string, opts: Inge
     [repo],
   );
   const have = new Set(gh.pullRequests.map((p) => p.number));
-  const wanted = [...new Set(blamed.map((r) => subjectPullRequest(r.subject)).filter((n): n is number => n !== null && !have.has(n)))];
-  if (wanted.length) log(`fetching ${wanted.length} older pull requests named by blamed commits`);
-  const prs = [...gh.pullRequests, ...(wanted.length ? await fetchPullRequestsByNumber(repo, wanted, opts.githubToken) : [])];
+  const named = github ? [...new Set(blamed.map((r) => subjectPullRequest(r.subject)).filter((n): n is number => n !== null && !have.has(n)))] : [];
+  if (named.length) log(`fetching ${named.length} older pull requests named by blamed commits`);
+  const prs = [...gh.pullRequests, ...(named.length ? await fetchPullRequestsByNumber(github!, named, opts.githubToken) : [])];
   log(`storing ${prs.length} pull requests`);
   await upsert(client, "pull_request", ["id"], prs.map((p) => ({
     id: id(p.number), repo_id: repo, number: p.number, title: p.title, body: p.body || null, state: p.state,
@@ -117,7 +134,7 @@ export async function ingestRepository(client: pg.Pool, repo: string, opts: Inge
       closing.add(i.number);
       links.push({ pr_id: id(p.number), issue_id: id(i.number), relation: "closes" });
     }
-    for (const n of mentionedIssues(repo, `${p.title}\n${p.body ?? ""}`)) {
+    for (const n of mentionedIssues(github ?? repo, `${p.title}\n${p.body ?? ""}`)) {
       if (!closing.has(n) && n !== p.number) links.push({ pr_id: id(p.number), issue_id: id(n), relation: "mentions" });
     }
   }
@@ -125,9 +142,9 @@ export async function ingestRepository(client: pg.Pool, repo: string, opts: Inge
   // issues pull requests mention, so the reason they cite is evidence too.
   const prNumbers = new Set(prs.map((p) => p.number));
   const mentioned = [...new Set(links.map((l) => Number(l.issue_id.split("#")[1])))].filter((n) => !issues.has(n) && !prNumbers.has(n));
-  if (mentioned.length) {
+  if (github && mentioned.length) {
     log(`fetching ${mentioned.length} issues mentioned by pull requests`);
-    for (const i of await fetchIssuesByNumber(repo, mentioned, opts.githubToken)) issues.set(i.number, i);
+    for (const i of await fetchIssuesByNumber(github, mentioned, opts.githubToken)) issues.set(i.number, i);
   }
   await upsert(client, "issue", ["id"], [...issues.values()].map((i) => ({
     id: id(i.number), repo_id: repo, number: i.number, title: i.title, body: i.body || null, state: i.state,
@@ -150,7 +167,7 @@ export async function ingestRepository(client: pg.Pool, repo: string, opts: Inge
   })));
 
   await refreshDerived(client, repo);
-  log(`done; GitHub API points left this hour: ${gh.rateRemaining}`);
+  log(github ? `done; GitHub API points left this hour: ${gh.rateRemaining}` : "done");
   return {
     repo, headSha: head.sha, files: files.length, commits: commits.length + older.length, lineRanges,
     pullRequests: prs.length, issues: issues.size, discussion: discussion.length,

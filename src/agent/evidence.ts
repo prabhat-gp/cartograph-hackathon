@@ -205,3 +205,26 @@ export async function lineStatus(q: Query, fileId: string): Promise<LineStatus[]
 export async function repositories(q: Query): Promise<{ id: string; description: string | null; head_sha: string; url: string }[]> {
   return (await q(`SELECT id, description, head_sha, url FROM ${T("repository")} ORDER BY id`)) as never;
 }
+
+export interface RangeStatus {
+  file_id: string;
+  line_start: number;
+  line_end: number;
+  commit_sha: string;
+  subject: string;
+  pr_number: number | null;
+  explained: boolean;
+}
+
+/** Blame ranges of several files at once, each with its review status. */
+export async function rangesForFiles(q: Query, fileIds: string[]): Promise<RangeStatus[]> {
+  if (fileIds.length === 0) return [];
+  const rows = await q(
+    `SELECT lo.file_id, lo.line_start, lo.line_end, lo.commit_sha, c.subject, p.number AS pr_number,
+            CASE WHEN p.id IS NOT NULL AND (p.issue_count > 0 OR length(COALESCE(p.body, '')) >= 120) THEN 1 ELSE 0 END AS explained
+     FROM ${T("line_origin")} lo JOIN ${T("code_change")} c ON c.sha = lo.commit_sha
+     LEFT JOIN ${T("pull_request")} p ON p.id = c.pr_id
+     WHERE lo.file_id IN (${fileIds.map(lit).join(", ")})`,
+  );
+  return numbers<RangeStatus>(rows, ["line_start", "line_end", "pr_number"]).map((r) => ({ ...r, explained: Number(r.explained) === 1 }));
+}

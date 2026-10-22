@@ -192,6 +192,9 @@ export function createCartographServer(): McpServer {
   appTool("cartograph_job", "Mapping job progress for the Cartograph UI", z.object({ jobId: z.string() }));
   appTool("cartograph_changes", "Drift reports newer than a given one, for live updates", z.object({ repo: z.string().optional(), after: z.string().optional() }));
   appTool("cartograph_repos", "Mapped repositories", z.object({}));
+  appTool("explain_dependency", "Why a dependency exists: line, commit, pull request and issue", z.object({ repo: z.string().optional(), edgeId: z.string() }));
+  appTool("why_coverage", "Which dependencies trace to a stated reason", z.object({ repo: z.string().optional() }));
+  appTool("memory_feedback", "Feedback on remembered findings (H-MEM trust ledger)", z.object({ repo: z.string().optional(), ids: z.array(z.string()), kind: z.enum(["helpful", "not_helpful", "wrong"]) }));
 
   // ---------------------------------------------------------------- MCP Events
   // The protocol is a draft and hosts differ in field names, so parameters are

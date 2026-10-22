@@ -1,7 +1,13 @@
 // Tool implementations, shared by the MCP server and the REST API
 // that powers the standalone UI and tests.
+import { readFileSync } from "node:fs";
 import { type CartographFlow, type CartographGraph, type DriftReport, shortSha } from "../shared/graph";
+import { rangesForFiles, zetarisQuery } from "../agent/evidence";
+import { runWhy } from "../agent/run";
+import { memoryFor } from "../memory/findings";
+import { FEEDBACK_DELTAS, type FeedbackKind } from "../memory/hmem";
 import { getBrain } from "./brain-select";
+import { ensureHistory, historyTarget } from "./history";
 import {
   blastRadius,
   findNode,
@@ -311,7 +317,81 @@ export const toolImpls = {
   check_drift: checkDrift,
 } as const;
 
+// ------------------------------------------------------------ why
+
+function mappedGraph(repo: string | undefined): CartographGraph {
+  const record = findRepo(repo);
+  const graph = record ? loadGraph(record.repo.key) : undefined;
+  if (!graph) throw new ToolError("Map this repository first.");
+  return graph;
+}
+
+/**
+ * Why does this dependency exist? The explain agents (Planner, Investigator,
+ * Writer, Critic, with H-MEM memory) start from the line the map cites and
+ * walk to the commit, pull request and issue behind it.
+ */
+export async function explainDependency(args: { repo?: string; edgeId: string }) {
+  const graph = mappedGraph(args.repo);
+  const edge = graph.edges.find((e) => e.id === args.edgeId);
+  if (!edge) throw new ToolError(`No dependency ${args.edgeId} on this map.`);
+  const label = (id: string) => graph.nodes.find((n) => n.id === id)?.label ?? id;
+  const cite = edge.evidence[0];
+  const target = await ensureHistory(graph);
+  const result = await runWhy({
+    repo: target.id,
+    dir: target.dir,
+    question: `Why does ${label(edge.from)} depend on ${label(edge.to)} (${edge.label})?`,
+    path: cite.path,
+    line: cite.line,
+  }, { quiet: true });
+  if (result.status === "error") throw new ToolError(result.error?.message ?? "The explain agents could not answer.");
+  const trace = readFileSync(result.log_file, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l) as Record<string, unknown>);
+  return { edgeId: edge.id, history: target.id, ...result, trace };
+}
+
+type Coverage = "explained" | "reviewed" | "unreviewed" | "unknown";
+const RANK: Record<Coverage, number> = { explained: 3, reviewed: 2, unreviewed: 1, unknown: 0 };
+
+/**
+ * For every dependency on the map: does the line it cites trace to a pull
+ * request that states a reason (explained), one that doesn't (reviewed), a
+ * commit with no pull request (unreviewed), or nothing we can see (unknown)?
+ */
+export async function whyCoverage(args: { repo?: string }) {
+  const graph = mappedGraph(args.repo);
+  const target = await ensureHistory(graph);
+  const fileId = (p: string) => `${target.id}:${p}`;
+  const ranges = await rangesForFiles(zetarisQuery, [...new Set(graph.edges.flatMap((e) => e.evidence.map((ev) => fileId(ev.path))))]);
+  const edges: Record<string, { status: Coverage; pr: number | null; subject: string | null }> = {};
+  for (const e of graph.edges) {
+    let best: { status: Coverage; pr: number | null; subject: string | null } = { status: "unknown", pr: null, subject: null };
+    for (const ev of e.evidence) {
+      const r = ranges.find((x) => x.file_id === fileId(ev.path) && x.line_start <= ev.line && ev.line <= x.line_end);
+      if (!r) continue;
+      const status: Coverage = r.explained ? "explained" : r.pr_number ? "reviewed" : "unreviewed";
+      if (RANK[status] > RANK[best.status]) best = { status, pr: r.pr_number, subject: r.subject };
+    }
+    edges[e.id] = best;
+  }
+  const counts = { explained: 0, reviewed: 0, unreviewed: 0, unknown: 0 };
+  for (const v of Object.values(edges)) counts[v.status]++;
+  return { history: target.id, github: target.github, edges, counts };
+}
+
+/** Helpful / not helpful / wrong on remembered findings: recorded in the H-MEM trust ledger. */
+export async function memoryFeedback(args: { repo?: string; ids: string[]; kind: FeedbackKind }) {
+  if (!(args.kind in FEEDBACK_DELTAS)) throw new ToolError("kind must be helpful, not_helpful or wrong");
+  const graph = mappedGraph(args.repo);
+  const hmem = memoryFor(historyTarget(graph.repo).id);
+  const updated = args.ids.filter((id) => hmem.store.get(id)).map((id) => hmem.feedback(id, args.kind));
+  return { updated: updated.map((m) => ({ id: m.id, confidence: m.confidence })) };
+}
+
 export const appToolImpls = {
+  explain_dependency: explainDependency,
+  why_coverage: whyCoverage,
+  memory_feedback: memoryFeedback,
   cartograph_graph: appGraph,
   cartograph_job: appJob,
   cartograph_changes: appChanges,

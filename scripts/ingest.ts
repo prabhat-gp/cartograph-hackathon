@@ -2,6 +2,7 @@
 //   npm run ingest -- owner/name [--commits 400] [--prs 150] [--blame 150]
 import { execFileSync } from "node:child_process";
 import { ingestRepository } from "../src/ingest";
+import { syncClone } from "../src/ingest/git";
 import { closeDb, db, migrate } from "../src/store/pg";
 
 const args = process.argv.slice(2);
@@ -30,7 +31,7 @@ if (!token) {
 
 const started = Date.now();
 await migrate();
-const summary = await ingestRepository(db(), repo, {
+const summary = await ingestRepository(db(), { id: repo, dir: await syncClone(repo), github: repo }, {
   commits: flag("commits", 400),
   pullRequests: flag("prs", 150),
   blameFiles: flag("blame", 150),
