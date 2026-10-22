@@ -156,6 +156,23 @@ button:disabled {
 .cg-edge.dim {
   stroke: var(--edge-dim);
 }
+/* Why-coverage */
+.cg-edge.cov-explained {
+  stroke: var(--ok);
+  stroke-width: 2.4;
+}
+.cg-edge.cov-reviewed {
+  stroke: var(--warn);
+  stroke-width: 2.4;
+}
+.cg-edge.cov-unreviewed {
+  stroke: var(--danger);
+  stroke-width: 2.4;
+}
+.cg-edge.cov-unknown {
+  stroke: var(--faint);
+  stroke-dasharray: 4 4;
+}
 .cg-edge.selected,
 .cg-edge.visited {
   stroke: var(--accent);

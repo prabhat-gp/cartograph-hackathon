@@ -46,7 +46,7 @@ import {
 
 const fadeIn = { initial: { opacity: 0, y: 6 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.22, ease: "easeOut" as const } };
 
-function Panel({ children }: { children: ReactNode }) {
+export function Panel({ children }: { children: ReactNode }) {
   return (
     <motion.div {...fadeIn} className="px-5 pt-5 pb-7">
       {children}
@@ -54,7 +54,7 @@ function Panel({ children }: { children: ReactNode }) {
   );
 }
 
-function PanelHead({ title, sub, icon, onClose }: { title: ReactNode; sub?: ReactNode; icon?: ReactNode; onClose?: () => void }) {
+export function PanelHead({ title, sub, icon, onClose }: { title: ReactNode; sub?: ReactNode; icon?: ReactNode; onClose?: () => void }) {
   return (
     <div className="mb-3 flex items-start gap-3">
       {icon}
@@ -284,7 +284,7 @@ export function TracePanel(props: { flow: FlowView; step: number; playing: boole
 
 // ---------------------------------------------------------------- component
 
-export function NodePanel({ graph, nodeId, onClose, onSelect, onBlast, onAsk }: { graph: CartographGraph; nodeId: string; onClose: () => void; onSelect: (id: string) => void; onBlast: (id: string) => void; onAsk: (t: string) => void }) {
+export function NodePanel({ graph, nodeId, onClose, onSelect, onWhy, onBlast, onAsk }: { graph: CartographGraph; nodeId: string; onClose: () => void; onSelect: (id: string) => void; onWhy: (edgeId: string) => void; onBlast: (id: string) => void; onAsk: (t: string) => void }) {
   const node = graph.nodes.find((n) => n.id === nodeId);
   const nodes = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph]);
   if (!node) return null;
@@ -301,6 +301,9 @@ export function NodePanel({ graph, nodeId, onClose, onSelect, onBlast, onAsk }: 
           <span className="truncate text-[11.5px] text-muted">{e.label}</span>
         </button>
         <CodeCite ev={e.evidence[0]} />
+        <button onClick={() => onWhy(e.id)} className="mt-1 font-mono text-[11px] text-accent underline decoration-accent/30 underline-offset-4 hover:decoration-accent">
+          Why is this here? →
+        </button>
       </div>
     );
   };

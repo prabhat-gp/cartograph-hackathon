@@ -25,7 +25,10 @@ import { cn } from "./ui";
 import { NODE_H, layoutGraph } from "./layout";
 
 export type NodeVisual = "base" | "dim" | "selected" | "path" | "active" | "dead" | "impacted" | "new" | "removed" | "flagged";
-export type EdgeVisual = "base" | "dim" | "selected" | "visited" | "active" | "blast" | "added" | "flagged" | "removed";
+export type EdgeVisual =
+  | "base" | "dim" | "selected" | "visited" | "active" | "blast" | "added" | "flagged" | "removed"
+  // Why-coverage: does the cited line trace to a stated reason?
+  | "cov-explained" | "cov-reviewed" | "cov-unreviewed" | "cov-unknown";
 
 export interface GraphProps {
   graph: CartographGraph;
@@ -168,6 +171,10 @@ const markerColor: Record<EdgeVisual, string> = {
   added: "var(--ok)",
   flagged: "var(--danger)",
   removed: "var(--faint)",
+  "cov-explained": "var(--ok)",
+  "cov-reviewed": "var(--warn)",
+  "cov-unreviewed": "var(--danger)",
+  "cov-unknown": "var(--faint)",
 };
 
 function FitOnChange({ fitKey, focusIds }: { fitKey?: string; focusIds?: string[] }) {

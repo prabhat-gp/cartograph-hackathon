@@ -10,6 +10,7 @@ import { type EdgeVisual, Graph, type NodeVisual } from "./Graph";
 import { ChevronsUpDown, GitCommitHorizontal, Maximize2, Moon, PanelBottomClose, PanelBottomOpen, Route, ShieldCheck, Sun, X, Zap } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { CartographLogo } from "./icons";
+import { CoverageLegend, DependencyPanel, type WhyCoverage } from "./why";
 import { Button, IconButton, SeverityBadge, Spinner, cn } from "./ui";
 import { BlastPanel, DriftPanel, FlowsPanel, Home, NodePanel, OverviewPanel, Progress, TracePanel } from "./panels";
 
@@ -55,6 +56,10 @@ export function App({ bridge }: { bridge: Bridge }) {
   const [mode, setMode] = useState<Mode>({ kind: "explore" });
   const [tab, setTab] = useState<Tab>("overview");
   const [selected, setSelected] = useState<string | null>(null);
+  /** A clicked dependency (arrow): opens "Why is this here?". */
+  const [selectedEdge, setSelectedEdge] = useState<string | null>(null);
+  const [coverageOn, setCoverageOn] = useState(false);
+  const [coverage, setCoverage] = useState<{ repo: string; data: WhyCoverage | null; error: string | null } | null>(null);
   const [toast, setToast] = useState<DriftReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -424,6 +429,17 @@ export function App({ bridge }: { bridge: Bridge }) {
         badges[n.id] = "REMOVED";
       }
       for (const e of ghostEdges) edgeVisual[e.id] = "removed";
+    } else if (selectedEdge) {
+      defaultNode = "dim";
+      defaultEdge = "dim";
+      const e = graph.edges.find((x) => x.id === selectedEdge);
+      if (e) {
+        edgeVisual[e.id] = "selected";
+        nodeVisual[e.from] = "selected";
+        nodeVisual[e.to] = "selected";
+      }
+    } else if (coverageOn && coverage?.data && coverage.repo === graph.repo.key) {
+      for (const e of graph.edges) edgeVisual[e.id] = `cov-${coverage.data.edges[e.id]?.status ?? "unknown"}` as EdgeVisual;
     } else if (selected) {
       defaultNode = "dim";
       defaultEdge = "dim";
@@ -436,7 +452,7 @@ export function App({ bridge }: { bridge: Bridge }) {
       }
     }
     return { nodeVisual, edgeVisual, badges, ghostNodes, ghostEdges, defaultNode, defaultEdge, pulseKey };
-  }, [graph, mode, selected, activeReport]);
+  }, [graph, mode, selected, selectedEdge, coverageOn, coverage, activeReport]);
 
   // What to zoom to: the traced path, the outage, or the change. Refits once per
   // mode/flow/report (not per trace step), so the camera doesn't jump around.
@@ -479,6 +495,8 @@ export function App({ bridge }: { bridge: Bridge }) {
   // Leaving the current map: whichever repo opens next starts from a clean view.
   const resetView = () => {
     setSelected(null);
+    setSelectedEdge(null);
+    setCoverageOn(false);
     setMode({ kind: "explore" });
     setTab("overview");
     setToast(null);
@@ -519,6 +537,18 @@ export function App({ bridge }: { bridge: Bridge }) {
     const r = await fetch(`api/demo/${action}`, { method: "POST" }).then((x) => x.json()).catch(() => ({ ok: false, output: "Server unreachable" }));
     setDemoMsg(r.ok ? `${r.output.split("\n")[0]} · Cartograph is reviewing it…` : r.output);
     setTimeout(() => setDemoMsg(null), 8000);
+  };
+  const toggleCoverage = async () => {
+    if (!graph) return;
+    const next = !coverageOn;
+    setCoverageOn(next);
+    setSelectedEdge(null);
+    setSelected(null);
+    if (!next || (coverage?.repo === graph.repo.key && coverage.data)) return;
+    const key = graph.repo.key;
+    setCoverage({ repo: key, data: null, error: null });
+    const r = await bridge.callTool<WhyCoverage>("why_coverage", { repo: key });
+    setCoverage({ repo: key, data: r.isError ? null : r.structuredContent, error: r.isError ? (r.text ?? "Could not read the history") : null });
   };
   const toggleTheme = () => {
     const current = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
@@ -618,6 +648,20 @@ export function App({ bridge }: { bridge: Bridge }) {
         demo={demo ? { run: runDemo, message: demoMsg } : undefined}
       />
     );
+  } else if (selectedEdge && graph.edges.some((e) => e.id === selectedEdge)) {
+    panel = (
+      <DependencyPanel
+        graph={graph}
+        edgeId={selectedEdge}
+        coverage={coverage?.repo === graph.repo.key ? coverage.data?.edges[selectedEdge] : undefined}
+        callTool={(name, args) => bridge.callTool(name, args)}
+        onClose={() => setSelectedEdge(null)}
+        onSelectNode={(id) => {
+          setSelectedEdge(null);
+          setSelected(id);
+        }}
+      />
+    );
   } else if (selected) {
     panel = (
       <NodePanel
@@ -625,6 +669,10 @@ export function App({ bridge }: { bridge: Bridge }) {
         nodeId={selected}
         onClose={() => setSelected(null)}
         onSelect={setSelected}
+        onWhy={(edgeId) => {
+          setSelected(null);
+          setSelectedEdge(edgeId);
+        }}
         onBlast={(id) => {
           setSelected(null);
           setMode({ kind: "blast", nodeId: id });
@@ -724,13 +772,32 @@ export function App({ bridge }: { bridge: Bridge }) {
               onNodeClick={(id) => {
                 if (mode.kind !== "explore") setMode({ kind: "explore" });
                 if (tab === "drift") setTab("overview");
+                setSelectedEdge(null);
                 setSelected((s) => (s === id ? null : id));
               }}
+              onEdgeClick={(id) => {
+                if (mode.kind !== "explore") setMode({ kind: "explore" });
+                if (tab === "drift") setTab("overview");
+                setSelected(null);
+                setSelectedEdge((s) => (s === id ? null : id));
+              }}
               onPaneClick={() => {
-                if (mode.kind === "explore") setSelected(null);
+                if (mode.kind === "explore") {
+                  setSelected(null);
+                  setSelectedEdge(null);
+                }
               }}
             />
           </ReactFlowProvider>
+          {mode.kind === "explore" && tab !== "drift" && (
+            <CoverageLegend
+              on={coverageOn}
+              loading={coverageOn && coverage?.repo === graph.repo.key && !coverage.data && !coverage.error}
+              error={coverageOn && coverage?.repo === graph.repo.key ? coverage.error : null}
+              data={coverage?.repo === graph.repo.key ? coverage.data : null}
+              onToggle={() => void toggleCoverage()}
+            />
+          )}
 
           <AnimatePresence>
             {toast && (
