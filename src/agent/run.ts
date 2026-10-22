@@ -51,7 +51,7 @@ export const AGENTS = [
   { name: "Memory", role: "Meterless H-MEM: recalls verified findings, sets aside stale ones, remembers approved claims with provenance" },
 ];
 
-const MAX_REVISIONS = 2;
+const MAX_REVISIONS = 1;
 const clip = (s: string | null | undefined, n: number) => {
   const t = (s ?? "").replace(/\r/g, "").trim();
   return t.length > n ? `${t.slice(0, n)}…` : t;
@@ -173,7 +173,10 @@ export async function runWhy(input: RunInput, opts: { query?: Query; quiet?: boo
         status: "success", details: { scores: early.result.trace.scores },
       });
     }
-    const p = await plan({ question: input.question, repo: input.repo, paths: files.map((f) => f.path).slice(0, 600), path: input.path, line: input.line, memory: early?.result.context ?? "" });
+    // A question about a known line (an arrow on the map) needs no planning call.
+    const p: Plan = input.path && input.line
+      ? { intent: "line", path: input.path, line_start: input.line, line_end: input.line, keywords: [], sub_questions: [] }
+      : await plan({ question: input.question, repo: input.repo, paths: files.map((f) => f.path).slice(0, 600), path: input.path, line: input.line, memory: early?.result.context ?? "" });
     if (input.path) p.path = input.path;
     if (input.line) {
       p.line_start = input.line;

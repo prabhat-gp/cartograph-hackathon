@@ -733,9 +733,9 @@ export function App({ bridge }: { bridge: Bridge }) {
         <div className="flex items-center gap-1.5">
           <span
             className="inline-flex items-center gap-1 rounded-full bg-ok/10 px-2.5 py-1 text-[11.5px] font-medium text-ok ring-1 ring-ok/20 ring-inset max-lg:hidden"
-            title="Every arrow on this map cites the file and line that proves it. Dependencies the agents proposed but Cartograph couldn't find in the code were dropped."
+            title={`Every arrow on this map cites the file and line that proves it. ${graph.stats.edgesDropped} more were proposed but left off because their citation didn't match the code.`}
           >
-            <ShieldCheck size={13} /> {graph.stats.edgesVerified} cited · {graph.stats.edgesDropped} dropped
+            <ShieldCheck size={13} /> {graph.stats.edgesVerified} arrows, each proven in code
           </span>
           <span className={cn("ml-1 inline-flex items-center gap-1.5 text-[11.5px] font-medium", busy ? "text-warn" : "text-muted")} title="Cartograph reviews every push to this repo">
             {busy ? <Spinner size={12} /> : <span className="cg-live-dot size-2 rounded-full bg-ok" />}

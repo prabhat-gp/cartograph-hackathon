@@ -1,7 +1,7 @@
 // "Why is this here?" for a dependency on the map, and the why-coverage
 // overlay. Both read the repository's history (commits, pull requests and
 // issues) through the explain agents and the provenance layer in Zetaris.
-import { ArrowUpRight, Brain, Check, ChevronDown, CircleHelp, Eye, EyeOff, ShieldCheck, ThumbsDown, ThumbsUp, TriangleAlert } from "lucide-react";
+import { ArrowUpRight, Brain, ChevronDown, CircleHelp, Eye, EyeOff, Minus, ShieldCheck, ThumbsDown, ThumbsUp, TriangleAlert } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import type { CartographGraph } from "../../shared/graph";
@@ -260,7 +260,7 @@ function WhyCard({ repo, edgeId, callTool }: { repo: string; edgeId: string; cal
                       <span className="font-mono text-[11.5px] text-text">{step.ref}</span>
                     )}
                   </div>
-                  <div className="truncate text-[12.5px] text-text">{step.title}</div>
+                  {step.kind !== "code" && <div className="truncate text-[12.5px] text-text">{step.title}</div>}
                 </div>
               </li>
             ))}
@@ -307,7 +307,7 @@ function WhyCard({ repo, edgeId, callTool }: { repo: string; edgeId: string; cal
           </p>
           <div className="mt-2.5 flex flex-wrap gap-1.5">
             <Button size="sm" onClick={() => void sendFeedback("helpful")}><ThumbsUp size={13} /> Helpful</Button>
-            <Button size="sm" onClick={() => void sendFeedback("not_helpful")}><Check size={13} /> Not helpful</Button>
+            <Button size="sm" onClick={() => void sendFeedback("not_helpful")}><Minus size={13} /> Not helpful</Button>
             <Button size="sm" variant="danger" onClick={() => void sendFeedback("wrong")}><ThumbsDown size={13} /> Wrong</Button>
           </div>
           {feedback && <p className="mt-2 font-mono text-[11px] text-muted">{feedback}</p>}
