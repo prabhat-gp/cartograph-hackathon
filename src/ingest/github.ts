@@ -123,6 +123,30 @@ export async function fetchPullRequestsByNumber(repo: string, numbers: number[],
   return found;
 }
 
+const ISSUE_FIELDS = `
+  __typename
+  ... on Issue {
+    number title body state url createdAt closedAt
+    author { login }
+    labels(first: 10) { nodes { name } }
+    comments(first: 15) { nodes { id url createdAt body author { login } } }
+  }`;
+
+/** Issues by number, 25 per request; numbers that turn out to be pull requests are skipped. */
+export async function fetchIssuesByNumber(repo: string, numbers: number[], token: string, doFetch: typeof fetch = fetch): Promise<GhIssue[]> {
+  const [owner, name] = repo.split("/");
+  const found: GhIssue[] = [];
+  for (let i = 0; i < numbers.length; i += 25) {
+    const batch = numbers.slice(i, i + 25);
+    const fields = batch.map((n) => `i${n}: issueOrPullRequest(number: ${n}) { ${ISSUE_FIELDS} }`).join("\n");
+    const data = await graphql<{ repository: Record<string, (GhIssue & { __typename: string }) | null> }>(
+      token, `query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) { ${fields} } }`, { owner, name }, doFetch,
+    );
+    found.push(...Object.values(data.repository).filter((x): x is GhIssue & { __typename: string } => x !== null && x.__typename === "Issue"));
+  }
+  return found;
+}
+
 /** "(#123)" at the end of a squash-merge subject: the pull request the commit came from. */
 export function subjectPullRequest(subject: string): number | null {
   const m = subject.match(/\(#(\d+)\)\s*$/);

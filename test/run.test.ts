@@ -26,13 +26,14 @@ const query = async (sql: string) => {
   return [];
 };
 
-const good: Draft = { answer: "Retries were capped after the API got rate limited.", claims: [{ text: "Capped in #5", evidence: ["E3"] }, { text: "Because of 429s in #4", evidence: ["E4"] }], chain: ["E1", "E2", "E3", "E4"], confidence: "high", unknowns: [] };
+const good: Draft = { answer: "Retries were capped after the API got rate limited.", claims: [{ text: "Retries in src/a.ts were capped in #5", evidence: ["E3"] }, { text: "The cap fixed API rate limiting reported in #4", evidence: ["E4"] }], chain: ["E1", "E2", "E3", "E4"], confidence: "high", unknowns: [] };
 const approve: Review = { verdict: "approve", problems: [], need_more: { file_history: false, widen_lines: 0, keywords: [] } };
 
 describe("runWhy", () => {
   beforeEach(() => {
     process.env.CARTOGRAPH_LOG_DIR = mkdtempSync(path.join(tmpdir(), "logs-"));
     process.env.CARTOGRAPH_REPOS_DIR = mkdtempSync(path.join(tmpdir(), "repos-"));
+    process.env.CARTOGRAPH_MEMORY_DIR = mkdtempSync(path.join(tmpdir(), "memory-"));
     mkdirSync(path.join(process.env.CARTOGRAPH_REPOS_DIR, "o__r", "src"), { recursive: true });
     writeFileSync(path.join(process.env.CARTOGRAPH_REPOS_DIR, "o__r", "src", "a.ts"), "let tries = 0;\nconst MAX_RETRIES = 3;\nexport {};\n");
     sqlSeen.length = 0;
@@ -47,7 +48,7 @@ describe("runWhy", () => {
     expect(r.output!.chain.map((e) => e.kind)).toEqual(["code", "commit", "pull_request", "issue"]);
     expect(r.output!.approved).toBe(true);
     const trace = readFileSync(path.resolve(r.log_file), "utf8").trim().split("\n").map((l) => JSON.parse(l));
-    expect(trace.map((t) => `${t.agent_name}:${t.action}`)).toEqual(["Planner:plan", "Investigator:investigate", "Writer:draft", "Critic:approve", "Writer:final"]);
+    expect(trace.map((t) => `${t.agent_name}:${t.action}`)).toEqual(["Memory:recall", "Planner:plan", "Investigator:investigate", "Writer:draft", "Critic:approve", "Memory:store", "Writer:final"]);
   });
 
   it("sends the Investigator back when the Critic asks for file history, then revises", async () => {
@@ -72,6 +73,19 @@ describe("runWhy", () => {
     expect(r.output!.approved).toBe(false);
     expect(r.output!.confidence).toBe("low");
     expect(r.output!.claims.map((c) => c.text)).toEqual(["real"]);
+  });
+
+  it("remembers approved findings and brings them back as evidence next time", async () => {
+    drafts.push(good, good);
+    reviews.push(approve, approve);
+    const first = await runWhy({ repo: "o/r", question: "Why are retries capped?", path: "src/a.ts", line: 2 }, { query, quiet: true });
+    expect(first.output!.memory_ids).toHaveLength(2);
+    const second = await runWhy({ repo: "o/r", question: "Why is MAX_RETRIES 3 in src/a.ts?", path: "src/a.ts", line: 2 }, { query, quiet: true });
+    expect(second.output!.evidence.some((e) => e.kind === "memory")).toBe(true);
+    const { memoryFor } = await import("../src/memory/findings");
+    const ledger = memoryFor("o/r").ledger.stats();
+    expect(ledger.create).toBeGreaterThanOrEqual(2);
+    expect(ledger.read).toBeGreaterThanOrEqual(1);
   });
 
   it("returns a structured error for a repository that was never ingested", async () => {

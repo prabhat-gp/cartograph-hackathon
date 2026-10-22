@@ -3,7 +3,7 @@
 import type pg from "pg";
 import { refreshDerived, upsert } from "../store/pg";
 import { blameRanges, headInfo, listSourceFiles, readCommits, readCommitsBySha, syncClone } from "./git";
-import { fetchPullRequests, fetchPullRequestsByNumber, mentionedIssues, subjectPullRequest, type GhIssue } from "./github";
+import { fetchIssuesByNumber, fetchPullRequests, fetchPullRequestsByNumber, mentionedIssues, subjectPullRequest, type GhIssue } from "./github";
 
 export interface IngestOptions {
   commits: number;
@@ -120,6 +120,14 @@ export async function ingestRepository(client: pg.Pool, repo: string, opts: Inge
     for (const n of mentionedIssues(repo, `${p.title}\n${p.body ?? ""}`)) {
       if (!closing.has(n) && n !== p.number) links.push({ pr_id: id(p.number), issue_id: id(n), relation: "mentions" });
     }
+  }
+  // "Fixes #123" in prose isn't always a formal closing reference: fetch the
+  // issues pull requests mention, so the reason they cite is evidence too.
+  const prNumbers = new Set(prs.map((p) => p.number));
+  const mentioned = [...new Set(links.map((l) => Number(l.issue_id.split("#")[1])))].filter((n) => !issues.has(n) && !prNumbers.has(n));
+  if (mentioned.length) {
+    log(`fetching ${mentioned.length} issues mentioned by pull requests`);
+    for (const i of await fetchIssuesByNumber(repo, mentioned, opts.githubToken)) issues.set(i.number, i);
   }
   await upsert(client, "issue", ["id"], [...issues.values()].map((i) => ({
     id: id(i.number), repo_id: repo, number: i.number, title: i.title, body: i.body || null, state: i.state,

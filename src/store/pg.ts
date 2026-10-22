@@ -49,17 +49,32 @@ export async function upsert(
   }
 }
 
-/** Recomputes the denormalised link columns for one repository. */
+/**
+ * Recomputes the denormalised link columns for one repository. A commit's
+ * own pull request is the one its squash subject names, "Fix x (#123)";
+ * failing that, the smallest pull request that contains it, so a release
+ * branch merge with hundreds of commits doesn't claim them all.
+ */
 export async function refreshDerived(client: pg.Pool, repo: string): Promise<void> {
   await client.query(
-    `UPDATE git_commit c SET pr_id = (SELECT MIN(pc.pr_id) FROM pr_commit pc WHERE pc.commit_sha = c.sha) WHERE c.repo_id = $1`,
-    [repo],
-  );
-  // Squash merges name their pull request in the subject: "Fix x (#123)".
-  await client.query(
-    `UPDATE git_commit c SET pr_id = p.id FROM pull_request p
-     WHERE c.repo_id = $1 AND c.pr_id IS NULL AND p.repo_id = c.repo_id
-       AND p.number = CAST(substring(c.subject from '\\(#([0-9]+)\\)\\s*$') AS integer)`,
+    `WITH sizes AS (SELECT pr_id, COUNT(*) AS n FROM pr_commit GROUP BY pr_id),
+     by_subject AS (
+       SELECT c.sha, p.id AS pr_id FROM git_commit c
+       JOIN pull_request p ON p.repo_id = c.repo_id
+        AND p.number = CAST(substring(c.subject from '\\(#([0-9]+)\\)\\s*$') AS integer)
+       WHERE c.repo_id = $1
+     ),
+     by_membership AS (
+       SELECT DISTINCT ON (pc.commit_sha) pc.commit_sha AS sha, pc.pr_id
+       FROM pr_commit pc JOIN sizes s ON s.pr_id = pc.pr_id
+       JOIN git_commit c ON c.sha = pc.commit_sha AND c.repo_id = $1
+       ORDER BY pc.commit_sha, s.n, pc.pr_id
+     )
+     UPDATE git_commit c SET pr_id = COALESCE(bs.pr_id, bm.pr_id)
+     FROM git_commit c2
+     LEFT JOIN by_subject bs ON bs.sha = c2.sha
+     LEFT JOIN by_membership bm ON bm.sha = c2.sha
+     WHERE c.sha = c2.sha AND c.repo_id = $1`,
     [repo],
   );
   await client.query(

@@ -9,6 +9,7 @@ import {
   discussion, fileHistory, linkedIssues, lineOrigins, listFiles, pullRequests, searchChanges, zetarisQuery, type Change, type Query,
 } from "./evidence";
 import { cloneDir } from "../ingest/git";
+import { asEvidenceText, recall, remember } from "../memory/findings";
 import { Trace } from "./trace";
 
 export interface RunInput {
@@ -31,6 +32,7 @@ export interface RunResult {
     rounds: number;
     approved: boolean;
     plan: Plan;
+    memory_ids: string[];
   };
   error?: { type: string; message: string; recoverable: boolean };
   agents: { name: string; role: string }[];
@@ -44,6 +46,7 @@ export const AGENTS = [
   { name: "Investigator", role: "Queries the provenance USL in Zetaris and gathers evidence" },
   { name: "Writer", role: "Drafts the answer and the evidence chain, citing every claim" },
   { name: "Critic", role: "Checks each claim against the evidence and sends the work back when it falls short" },
+  { name: "Memory", role: "Meterless H-MEM: recalls verified findings, sets aside stale ones, remembers approved claims with provenance" },
 ];
 
 const MAX_REVISIONS = 2;
@@ -67,8 +70,15 @@ class Investigator {
 
   constructor(private q: Query, private trace: Trace, private input: RunInput, private fileId: string | null) {}
 
+  /** Commits that own the asked-about lines today (filled by the first round). */
+  readonly currentShas: string[] = [];
+
+  addMemory(items: Omit<EvidenceItem, "id">[]): void {
+    for (const item of items) this.add(item);
+  }
+
   private add(item: Omit<EvidenceItem, "id">): void {
-    const key = `${item.kind}:${item.ref}`;
+    const key = `${item.kind}:${item.url ?? item.ref}`;
     if (this.seen.has(key)) return;
     this.seen.add(key);
     this.evidence.push({ id: `E${this.evidence.length + 1}`, ...item });
@@ -92,6 +102,7 @@ class Investigator {
       if (snippet) this.add({ kind: "code", ref: `${p.path}:${from}-${to}`, title: `${p.path} lines ${from}-${to}`, text: snippet, url: null });
       const origins = await lineOrigins(this.q, this.fileId, from, to);
       queries.push("line_origin ⋈ code_change");
+      for (const o of origins) if (!this.currentShas.includes(o.commit_sha)) this.currentShas.push(o.commit_sha);
       this.addChanges(origins.map((o) => ({ sha: o.commit_sha, subject: o.subject, body: o.body, author_name: o.author_name, authored_at: o.authored_at, url: o.commit_url, pr_id: o.pr_id })));
     }
     if (this.fileId && (p.intent === "file" || ask?.file_history || (retry === 0 && !p.line_start))) {
@@ -129,7 +140,8 @@ class Investigator {
   }
 }
 
-export async function runWhy(input: RunInput, opts: { query?: Query; quiet?: boolean; memory?: string } = {}): Promise<RunResult> {
+export async function runWhy(input: RunInput, opts: { query?: Query; quiet?: boolean; useMemory?: boolean } = {}): Promise<RunResult> {
+  const useMemory = opts.useMemory ?? true;
   const runId = randomUUID().slice(0, 8);
   const trace = new Trace(runId, undefined, opts.quiet);
   const started = performance.now();
@@ -143,7 +155,16 @@ export async function runWhy(input: RunInput, opts: { query?: Query; quiet?: boo
     const files = await listFiles(q, input.repo);
     if (files.length === 0) throw Object.assign(new Error(`${input.repo} has not been ingested`), { type: "UnknownRepository" });
 
-    const p = await plan({ question: input.question, repo: input.repo, paths: files.map((f) => f.path).slice(0, 600), path: input.path, line: input.line, memory: opts.memory ?? "" });
+    // What Cartograph already remembers about this repository (H-MEM).
+    const early = useMemory ? recall(input.repo, input.question, input.path ?? null, []) : null;
+    if (early) {
+      trace.emit({
+        agent_name: "Memory", action: "recall", target_agent: "Planner", input_summary: input.question.slice(0, 160),
+        output_summary: `${early.result.memories.length} remembered findings (${early.result.trace.strategy}): ${early.result.trace.retrievalReason}`,
+        status: "success", details: { scores: early.result.trace.scores },
+      });
+    }
+    const p = await plan({ question: input.question, repo: input.repo, paths: files.map((f) => f.path).slice(0, 600), path: input.path, line: input.line, memory: early?.result.context ?? "" });
     if (input.path) p.path = input.path;
     if (input.line) {
       p.line_start = input.line;
@@ -163,11 +184,28 @@ export async function runWhy(input: RunInput, opts: { query?: Query; quiet?: boo
     const investigator = new Investigator(q, trace, input, file?.id ?? null);
     await investigator.round(p, null, 0);
 
+    // Remembered findings join the evidence, unless the lines they explain have changed since.
+    let stale: ReturnType<typeof recall>["stale"] = [];
+    if (useMemory) {
+      const r = recall(input.repo, input.question, p.path, investigator.currentShas);
+      stale = r.stale;
+      const fresh = r.result.memories.map((m) => m.memory).filter((m) => !m.supersededBy && !stale.includes(m));
+      investigator.addMemory(fresh.map((m) => ({ kind: "memory", ref: m.id.slice(0, 12), title: `remembered finding (confidence ${m.confidence})`, text: asEvidenceText(m), url: null })));
+      if (fresh.length || stale.length) {
+        trace.emit({
+          agent_name: "Memory", action: "contribute", target_agent: "Writer", input_summary: `${r.result.memories.length} recalled`,
+          output_summary: `${fresh.length} findings added as evidence${stale.length ? `, ${stale.length} set aside as stale: the lines changed since` : ""}`,
+          status: "success",
+        });
+      }
+    }
+
     let draft = await write({ question: input.question, evidence: investigator.evidence });
     trace.emit({ agent_name: "Writer", action: "draft", target_agent: "Critic", input_summary: `${investigator.evidence.length} evidence items`, output_summary: `${draft.claims.length} claims, confidence ${draft.confidence}`, status: "success" });
 
     let approved = false;
     let rounds = 0;
+    let memoryIds: string[] = [];
     for (; rounds <= MAX_REVISIONS; rounds++) {
       const mechanical = checkCitations(draft, investigator.evidence);
       const review = await critique({ question: input.question, draft, evidence: investigator.evidence });
@@ -189,6 +227,16 @@ export async function runWhy(input: RunInput, opts: { query?: Query; quiet?: boo
       trace.emit({ agent_name: "Writer", action: "revise", target_agent: "Critic", retry_count: rounds + 1, input_summary: `${problems.length} problems, ${investigator.evidence.length} evidence items`, output_summary: `${draft.claims.length} claims, confidence ${draft.confidence}`, status: "success" });
     }
 
+    if (approved && useMemory) {
+      const saved = remember({ repo: input.repo, question: input.question, file: p.path, draft, evidence: investigator.evidence, runId, supersede: stale });
+      trace.emit({
+        agent_name: "Memory", action: "store", input_summary: `${draft.claims.length} approved claims`,
+        output_summary: `${saved.length} findings remembered with provenance${saved.some((m) => m.supersedes) ? "; stale findings superseded" : ""}`,
+        status: "success", details: { memory_ids: saved.map((m) => m.id) },
+      });
+      memoryIds = saved.map((m) => m.id);
+    }
+
     // Unsupported citations never reach the user.
     const ids = new Map(investigator.evidence.map((e) => [e.id, e]));
     const claims = draft.claims.map((c) => ({ ...c, evidence: c.evidence.filter((id) => ids.has(id)) })).filter((c) => c.evidence.length);
@@ -197,7 +245,7 @@ export async function runWhy(input: RunInput, opts: { query?: Query; quiet?: boo
       output: {
         answer: draft.answer, claims, chain: draft.chain.flatMap((id) => ids.get(id) ?? []), confidence: approved ? draft.confidence : "low",
         unknowns: approved ? draft.unknowns : [...draft.unknowns, "The Critic did not approve every claim within the revision limit."],
-        evidence: investigator.evidence, rounds, approved, plan: p,
+        evidence: investigator.evidence, rounds, approved, plan: p, memory_ids: memoryIds,
       },
     });
     trace.emit({ agent_name: "Writer", action: "final", input_summary: `approved=${approved}`, output_summary: `answer with ${claims.length} cited claims in ${result.execution_time_seconds}s`, status: "success" });

@@ -11,7 +11,16 @@ export function lit(value: string): string {
 }
 
 export type Query = (sql: string) => Promise<Record<string, unknown>[]>;
-export const zetarisQuery: Query = async (sql) => asObjects(await runSql(sql, { limit: 500 }));
+export const zetarisQuery: Query = async (sql) => asObjects(await runSql(sql, { limit: 2000 }));
+
+/** Zetaris returns every value as a string; turn the named columns back into numbers. */
+function numbers<T>(rows: Record<string, unknown>[], keys: string[]): T[] {
+  return rows.map((r) => {
+    const out = { ...r };
+    for (const k of keys) if (out[k] !== null && out[k] !== undefined && out[k] !== "") out[k] = Number(out[k]);
+    return out as T;
+  });
+}
 
 export interface FileRow {
   id: string;
@@ -21,7 +30,7 @@ export interface FileRow {
 }
 
 export async function listFiles(q: Query, repo: string): Promise<FileRow[]> {
-  return (await q(`SELECT id, path, lines, language FROM ${T("source_file")} WHERE repo_id = ${lit(repo)} ORDER BY path`)) as unknown as FileRow[];
+  return numbers<FileRow>(await q(`SELECT id, path, lines, language FROM ${T("source_file")} WHERE repo_id = ${lit(repo)} ORDER BY path`), ["lines"]);
 }
 
 export interface Origin {
@@ -39,13 +48,13 @@ export interface Origin {
 
 /** Which commits last changed lines [from, to] of a file, newest first. */
 export async function lineOrigins(q: Query, fileId: string, from: number, to: number): Promise<Origin[]> {
-  return (await q(
+  return numbers<Origin>(await q(
     `SELECT lo.file_id, lo.line_start, lo.line_end, lo.commit_sha, c.subject, c.body, c.author_name,
             CAST(c.authored_at AS string) AS authored_at, c.url AS commit_url, c.pr_id
      FROM ${T("line_origin")} lo JOIN ${T("code_change")} c ON c.sha = lo.commit_sha
      WHERE lo.file_id = ${lit(fileId)} AND lo.line_end >= ${from} AND lo.line_start <= ${to}
      ORDER BY c.authored_at DESC`,
-  )) as unknown as Origin[];
+  ), ["line_start", "line_end"]);
 }
 
 export interface Change {
@@ -83,10 +92,10 @@ export interface PullRequest {
 
 export async function pullRequests(q: Query, ids: string[]): Promise<PullRequest[]> {
   if (ids.length === 0) return [];
-  return (await q(
+  return numbers<PullRequest>(await q(
     `SELECT id, number, title, body, author, CAST(merged_at AS string) AS merged_at, url, issue_count, discussion_count
      FROM ${T("pull_request")} WHERE id IN (${ids.map(lit).join(", ")})`,
-  )) as unknown as PullRequest[];
+  ), ["number", "issue_count", "discussion_count"]);
 }
 
 export interface Issue {
@@ -103,11 +112,11 @@ export interface Issue {
 
 export async function linkedIssues(q: Query, prIds: string[]): Promise<Issue[]> {
   if (prIds.length === 0) return [];
-  return (await q(
+  return numbers<Issue>(await q(
     `SELECT i.id, i.number, i.title, i.body, i.labels, i.state, i.url, l.pr_id, l.relation
      FROM ${T("pr_issue")} l JOIN ${T("issue")} i ON i.id = l.issue_id
      WHERE l.pr_id IN (${prIds.map(lit).join(", ")})`,
-  )) as unknown as Issue[];
+  ), ["number"]);
 }
 
 export interface Comment {
@@ -125,11 +134,11 @@ export interface Comment {
 export async function discussion(q: Query, parentIds: string[], path?: string, limit = 30): Promise<Comment[]> {
   if (parentIds.length === 0) return [];
   const onFile = path ? `CASE WHEN path = ${lit(path)} THEN 0 ELSE 1 END` : "0";
-  return (await q(
+  return numbers<Comment>(await q(
     `SELECT id, parent_id, kind, author, body, path, line, url FROM ${T("discussion")}
      WHERE parent_id IN (${parentIds.map(lit).join(", ")}) AND length(body) > 20
      ORDER BY ${onFile}, created_at LIMIT ${limit}`,
-  )) as unknown as Comment[];
+  ), ["line"]);
 }
 
 /** Commits and pull requests whose text mentions every keyword: for questions with no line. */
@@ -159,7 +168,7 @@ export interface FileCoverage {
  * (linked issue or a real description).
  */
 export async function coverage(q: Query, repo: string): Promise<FileCoverage[]> {
-  return (await q(
+  return numbers<FileCoverage>(await q(
     `SELECT f.path, f.lines, CAST(SUM(lo.line_end - lo.line_start + 1) AS int) AS blamed_lines,
             CAST(SUM(CASE WHEN p.id IS NOT NULL AND (p.issue_count > 0 OR length(COALESCE(p.body, '')) >= 120) THEN lo.line_end - lo.line_start + 1 ELSE 0 END) AS int) AS explained_lines,
             CAST(SUM(CASE WHEN c.pr_id IS NOT NULL THEN lo.line_end - lo.line_start + 1 ELSE 0 END) AS int) AS reviewed_lines
@@ -169,7 +178,7 @@ export async function coverage(q: Query, repo: string): Promise<FileCoverage[]> 
      LEFT JOIN ${T("pull_request")} p ON p.id = c.pr_id
      WHERE f.repo_id = ${lit(repo)}
      GROUP BY f.path, f.lines ORDER BY f.path`,
-  )) as unknown as FileCoverage[];
+  ), ["lines", "blamed_lines", "explained_lines", "reviewed_lines"]);
 }
 
 export interface LineStatus {
@@ -190,7 +199,7 @@ export async function lineStatus(q: Query, fileId: string): Promise<LineStatus[]
      LEFT JOIN ${T("pull_request")} p ON p.id = c.pr_id
      WHERE lo.file_id = ${lit(fileId)} ORDER BY lo.line_start`,
   );
-  return rows.map((r) => ({ ...r, explained: Number(r.explained) === 1 })) as unknown as LineStatus[];
+  return numbers<LineStatus>(rows, ["line_start", "line_end", "pr_number"]).map((r) => ({ ...r, explained: Number(r.explained) === 1 }));
 }
 
 export async function repositories(q: Query): Promise<{ id: string; description: string | null; head_sha: string; url: string }[]> {
