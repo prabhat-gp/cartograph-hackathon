@@ -20,7 +20,7 @@ describe("runSql", () => {
     let seen: { url: string; init: RequestInit } | undefined;
     const f = (async (url: string, init: RequestInit) => {
       seen = { url, init };
-      return new Response(JSON.stringify({ data: [[1]], columns: ["one"] }), { status: 200 });
+      return new Response(JSON.stringify({ data: [[1]], headers: ["one"] }), { status: 200 });
     }) as unknown as typeof fetch;
     await expect(runSql("SELECT 1 AS one", { config, fetch: f })).resolves.toEqual({ columns: ["one"], rows: [[1]] });
     const h = seen!.init.headers as Record<string, string>;
@@ -40,7 +40,7 @@ describe("runSql", () => {
 });
 
 describe("runSql sign-in fallback", () => {
-  const ok = () => new Response(JSON.stringify({ data: [[1]], columns: ["one"] }), { status: 200 });
+  const ok = () => new Response(JSON.stringify({ data: [[1]], headers: ["one"] }), { status: 200 });
 
   function server(handler: (url: string, auth: string | undefined) => Response) {
     const calls: { url: string; auth?: string }[] = [];
