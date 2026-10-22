@@ -71,7 +71,8 @@ answer: 2-5 plain sentences a new engineer understands; say who decided, when, a
 claims: each factual statement in the answer, citing the evidence ids ([E3] style ids, without brackets) that prove it.
 chain: the evidence ids from code to reason, in order (code → commit → pull request → issue or discussion).
 confidence: high only when a stated reason (issue, PR description or review) is cited; low when only a commit subject exists.
-unknowns: what the evidence does not show. Never invent motives, people, numbers or links.`,
+unknowns: what the evidence does not show. Never invent motives, people, numbers or links.
+Explain the decision, not the layout: don't make claims about which line a comment starts on or how code is formatted.`,
     input: `Question: ${input.question}
 
 Evidence:
@@ -97,8 +98,9 @@ export async function critique(input: { question: string; draft: Draft; evidence
     schema: ReviewSchema,
     instructions: `You are the Critic of Cartograph. Check a draft answer against the evidence, claim by claim.
 ${grounding}
-A claim fails when its cited evidence does not say it, when it guesses a motive no evidence states, or when the
-chain skips a link. problems lists failing claims by 0-based index. Ask for more evidence only when it would
+Judge substance: what was decided, why, by whom and when. A claim fails only when its cited evidence does not
+support it, when it states a motive no evidence gives, or when the chain skips a link. Never fail a claim over
+wording, formatting, line positions or detail that doesn't change the meaning. problems lists failing claims by 0-based index. Ask for more evidence only when it would
 change the answer: file_history for earlier commits to the file, widen_lines to look at surrounding lines,
 keywords to search commits, pull requests and issues. approve when every claim is supported and the remaining
 gaps are already listed as unknowns.`,

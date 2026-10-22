@@ -66,6 +66,7 @@ function codeSnippet(repo: string, file: string, from: number, to: number): stri
 class Investigator {
   readonly evidence: EvidenceItem[] = [];
   private seen = new Set<string>();
+  private discussed = new Set<string>();
   private prIds = new Set<string>();
 
   constructor(private q: Query, private trace: Trace, private input: RunInput, private fileId: string | null) {}
@@ -94,10 +95,11 @@ class Investigator {
   async round(p: Plan, ask: Review["need_more"] | null, retry: number): Promise<void> {
     const before = this.evidence.length;
     const queries: string[] = [];
-    const from = Math.max(1, (p.line_start ?? 1) - (ask?.widen_lines ?? 0));
-    const to = (p.line_end ?? p.line_start ?? 1) + (ask?.widen_lines ?? 0);
+    const widen = Math.min(ask?.widen_lines ?? 0, 10);
+    const from = Math.max(1, (p.line_start ?? 1) - widen);
+    const to = (p.line_end ?? p.line_start ?? 1) + widen;
 
-    if (this.fileId && p.line_start && (retry === 0 || (ask?.widen_lines ?? 0) > 0)) {
+    if (this.fileId && p.line_start && (retry === 0 || widen > 0)) {
       const snippet = codeSnippet(this.input.repo, p.path!, from, to);
       if (snippet) this.add({ kind: "code", ref: `${p.path}:${from}-${to}`, title: `${p.path} lines ${from}-${to}`, text: snippet, url: null });
       const origins = await lineOrigins(this.q, this.fileId, from, to);
@@ -106,7 +108,7 @@ class Investigator {
       this.addChanges(origins.map((o) => ({ sha: o.commit_sha, subject: o.subject, body: o.body, author_name: o.author_name, authored_at: o.authored_at, url: o.commit_url, pr_id: o.pr_id })));
     }
     if (this.fileId && (p.intent === "file" || ask?.file_history || (retry === 0 && !p.line_start))) {
-      this.addChanges(await fileHistory(this.q, this.fileId, 10));
+      this.addChanges(await fileHistory(this.q, this.fileId, retry ? 5 : 8));
       queries.push("file_change ⋈ code_change");
     }
     const keywords = retry === 0 ? (p.intent === "line" ? [] : p.keywords) : ask?.keywords ?? [];
@@ -115,7 +117,9 @@ class Investigator {
       queries.push(`search ${keywords.join(", ")}`);
     }
 
-    const prs = await pullRequests(this.q, [...this.prIds]);
+    // Pull requests in the order they were found: the ones behind the asked-about lines first.
+    const order = [...this.prIds];
+    const prs = (await pullRequests(this.q, order)).sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)).slice(0, 8);
     if (prs.length) queries.push("pull_request");
     for (const pr of prs) {
       this.add({ kind: "pull_request", ref: `#${pr.number}`, title: pr.title, text: clip(`by ${pr.author ?? "unknown"}, merged ${pr.merged_at?.slice(0, 10) ?? "?"}\n${pr.body ?? "(no description)"}`, 1200), url: pr.url });
@@ -125,7 +129,10 @@ class Investigator {
     for (const i of issues) {
       this.add({ kind: "issue", ref: `#${i.number}`, title: i.title, text: clip(`${i.relation === "closes" ? "closed by" : "mentioned by"} ${i.pr_id.split("#")[1] ? `#${i.pr_id.split("#")[1]}` : i.pr_id}${i.labels ? `, labels: ${i.labels}` : ""}\n${i.body ?? ""}`, 1200), url: i.url });
     }
-    const comments = await discussion(this.q, [...prs.map((p) => p.id), ...issues.map((i) => i.id)], this.input.path ?? p.path ?? undefined, 12);
+    // Discussion on the pull requests this round found, not every one seen so far.
+    const newPrs = prs.filter((pr) => !this.discussed.has(pr.id));
+    newPrs.forEach((pr) => this.discussed.add(pr.id));
+    const comments = await discussion(this.q, [...newPrs.map((p) => p.id), ...issues.filter((i) => newPrs.some((pr) => pr.id === i.pr_id)).map((i) => i.id)], this.input.path ?? p.path ?? undefined, 10);
     if (comments.length) queries.push("discussion");
     for (const c of comments) {
       this.add({ kind: "comment", ref: `${c.parent_id.split("#")[1] ? `#${c.parent_id.split("#")[1]}` : c.parent_id} ${c.kind}`, title: `${c.author ?? "someone"} on ${c.kind === "review_comment" && c.path ? `${c.path}:${c.line ?? "?"}` : c.parent_id.split("/").pop()}`, text: clip(c.body, 600), url: c.url });
