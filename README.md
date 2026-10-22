@@ -30,7 +30,7 @@ npm run sponsors       # live status of NVIDIA, Meterless and Zetaris
 
 **NVIDIA Nemotron runs every agent.** Through Nightshift, or directly through `build.nvidia.com` when the runtime can't be reached (only then: a runtime that answers with an error keeps its answer). NVIDIA's strict JSON-schema mode runs away into whitespace, so the client asks for a JSON object, validates it against the schema, and gives the model one repair turn with the exact error.
 
-**Zetaris holds the evidence.** GitHub history and the code map are tables Cartograph queries with Lightning SQL over Zetaris's REST API.
+**Zetaris holds the evidence.** `npm run ingest -- owner/name` reads a repository's git history, `git blame` at head, and its merged pull requests with their linked issues and review discussion into a Postgres evidence store. Zetaris reads that store as a JDBC datasource, and `npm run zetaris:setup` models it as the `provenance` Unified Semantic Layer (`lightning.metastore.cartograph.provenance`): repositories, files, line origins, code changes, pull requests, issues and discussion, with keys and relationships so one query can walk from a line of code to the commit, pull request and issue behind it. Two data-quality rules measure how explainable a codebase is: `has_review_trail` (a change was merged through a pull request) and `states_a_reason` (a pull request links an issue or explains itself).
 
 **Meterless H-MEM remembers with provenance.** Planned: evidence and past answers stored with their source, with a trust ledger.
 
