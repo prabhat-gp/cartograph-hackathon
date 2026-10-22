@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { viteSingleFile } from "vite-plugin-singlefile";
 
-// The UI ships as ONE self-contained HTML file: ChatGPT renders it from an MCP
+// The UI ships as ONE self-contained HTML file: an MCP Apps host renders it from an MCP
 // resource inside a sandboxed iframe, so there is nowhere to load chunks from.
 export default defineConfig({
   root: "src/web",

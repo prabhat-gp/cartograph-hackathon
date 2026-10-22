@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Dark mode follows the host (ChatGPT) or the toggle via data-theme on <html>. */
+/* Dark mode follows the MCP host or the toggle via data-theme on <html>. */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /* ------------------------------------------------------------------ tokens */

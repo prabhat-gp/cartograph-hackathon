@@ -192,7 +192,7 @@ export function OverviewPanel({ graph, onTrace, onSelect, onAsk }: { graph: Cart
         ))}
       </div>
 
-      <AskButton onClick={() => onAsk(`Give me a 60-second tour of the ${graph.repo.name} architecture as a new engineer on the team.`)}>Ask ChatGPT for a 60-second tour</AskButton>
+      <AskButton onClick={() => onAsk(`Give me a 60-second tour of the ${graph.repo.name} architecture as a new engineer on the team.`)}>Ask for a 60-second tour</AskButton>
     </Panel>
   );
 }
@@ -349,7 +349,7 @@ export function NodePanel({ graph, nodeId, onClose, onSelect, onBlast, onAsk }: 
       {inc.map((e) => (
         <Dep key={e.id} e={e} dir="in" />
       ))}
-      <AskButton onClick={() => onAsk(`Explain the ${node.label} component in ${graph.repo.name}: what it does and how it fits in.`)}>Ask ChatGPT about {node.label}</AskButton>
+      <AskButton onClick={() => onAsk(`Explain the ${node.label} component in ${graph.repo.name}: what it does and how it fits in.`)}>Ask about {node.label}</AskButton>
     </Panel>
   );
 }

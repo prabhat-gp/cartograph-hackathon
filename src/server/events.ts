@@ -1,8 +1,6 @@
-// MCP Events (draft spec, protocol 2026-07-28): ChatGPT subscribes to
+// MCP Events (draft spec, protocol 2026-07-28): an MCP client subscribes to
 // "cartograph.architecture_drift" with a callback URL and signing secret; when a
 // push changes a repo's architecture we POST a Standard Webhooks–signed event.
-//
-// https://developers.openai.com/plugins/build/mcp-events
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { Webhook } from "standardwebhooks";
 import { type DriftReport, type Severity, severityRank, shortSha } from "../shared/graph";

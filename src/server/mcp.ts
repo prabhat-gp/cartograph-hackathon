@@ -1,6 +1,6 @@
-// The Cartograph MCP server: tools, the UI resource (an MCP App rendered by ChatGPT),
-// OpenAI plugin-extension entrypoints (sidebar app + conversation panel) and
-// MCP Events. A fresh instance is built per request (stateless HTTP).
+// The Cartograph MCP server: tools, the UI resource (an MCP App any MCP Apps host
+// can render: Claude, Cursor and others) and MCP Events. A fresh instance is built
+// per request (stateless HTTP).
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -11,7 +11,6 @@ import { EventsError, listEvents, subscribe, unsubscribe } from "./events";
 import { ToolError, type ToolOutput, appToolImpls, toolImpls } from "./tools";
 
 export const APP_URI = "ui://cartograph/app.html";
-const LEGACY_APP_URI = "ui://atlas/app.html";
 export const APP_MIME = "text/html;profile=mcp-app";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -55,23 +54,9 @@ function toErrorResult(err: unknown) {
 
 const repoArg = z.string().optional().describe('Repository, e.g. "owner/name" or a GitHub URL. Defaults to the most recently mapped repo.');
 
-/** _meta for tools that render the Cartograph view. */
-function uiMeta(opts: { invoking: string; invoked: string; fullscreen?: boolean; entrypoints?: boolean }) {
-  return {
-    ui: { resourceUri: APP_URI, visibility: ["model", "app"] },
-    "openai/outputTemplate": APP_URI,
-    "openai/widgetAccessible": true,
-    "openai/toolInvocation/invoking": opts.invoking,
-    "openai/toolInvocation/invoked": opts.invoked,
-    ...(opts.entrypoints || opts.fullscreen
-      ? {
-          "openai/ui": {
-            ...(opts.entrypoints ? { entrypoints: [{ type: "global" }, { type: "thread" }] } : {}),
-            ...(opts.fullscreen ? { preferredModelDisplayMode: "fullscreen" } : {}),
-          },
-        }
-      : {}),
-  };
+/** _meta for tools that render the Cartograph view (MCP Apps). */
+function uiMeta(_opts: { invoking: string; invoked: string; fullscreen?: boolean; entrypoints?: boolean }) {
+  return { ui: { resourceUri: APP_URI, visibility: ["model", "app"] } };
 }
 
 const appOnly = { ui: { visibility: ["app"] } };
@@ -83,7 +68,7 @@ export function createCartographServer(): McpServer {
       name: "cartograph",
       title: "Cartograph",
       version: "0.1.0",
-      description: "Google Maps for your codebase: a live, verified architecture map inside ChatGPT.",
+      description: "Google Maps for your codebase: a live, verified architecture map of any repository.",
       icons: [{ src: ICON, mimeType: "image/svg+xml", sizes: ["20x20"] }],
     },
     {
@@ -96,23 +81,12 @@ export function createCartographServer(): McpServer {
   // ---------------------------------------------------------------- UI resource
   const resourceMeta = {
     ui: { prefersBorder: true, csp: { connectDomains: [], resourceDomains: [] } },
-    "openai/ui": { availableDisplayModes: ["inline", "fullscreen", "pip"] },
-    "openai/widgetDescription": "Interactive architecture map: components, cited dependencies, animated request flows, blast radius and drift.",
-    "openai/widgetPrefersBorder": true,
   };
   server.registerResource(
     "cartograph-app",
     APP_URI,
     { title: "Cartograph", description: "The Cartograph architecture map", mimeType: APP_MIME, _meta: resourceMeta },
     async () => ({ contents: [{ uri: APP_URI, mimeType: APP_MIME, text: await appHtml(), _meta: resourceMeta }] }),
-  );
-  // Legacy URI from before the Atlas → Cartograph rename. ChatGPT caches tool
-  // metadata (including this template pointer) until the plugin is refreshed.
-  server.registerResource(
-    "cartograph-app-legacy",
-    LEGACY_APP_URI,
-    { title: "Cartograph", description: "The Cartograph architecture map (legacy URI)", mimeType: APP_MIME, _meta: resourceMeta },
-    async () => ({ contents: [{ uri: LEGACY_APP_URI, mimeType: APP_MIME, text: await appHtml(), _meta: resourceMeta }] }),
   );
 
   // ---------------------------------------------------------------- model-facing tools

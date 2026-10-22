@@ -1,4 +1,4 @@
-// The Cartograph logo (same artwork as the ChatGPT plugin icon).
+// The Cartograph logo (same artwork as the MCP server icon).
 import { useId } from "react";
 
 export function CartographLogo({ size = 22 }: { size?: number }) {

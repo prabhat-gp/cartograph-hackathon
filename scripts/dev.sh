@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Start Cartograph behind a public HTTPS tunnel and print the URLs for ChatGPT and GitHub.
-#   scripts/dev.sh            real agents (needs OPENAI_API_KEY in .env)
-#   scripts/dev.sh fixture    offline fixture brain + separate dev data (UI work, no API calls)
-# A live tunnel is reused across restarts, so the ChatGPT URL stays the same.
+# Start Cartograph behind a public HTTPS tunnel and print the URLs for MCP clients and GitHub.
+#   scripts/dev.sh            real agents on Nemotron (NVIDIA_API_KEY or METERLESS_API_KEY in .env)
+#   scripts/dev.sh test       real agents on the small chai-commerce test repo, separate data
+#   scripts/dev.sh fixture    offline fixture brain + separate dev data (UI work, no model calls)
+# A live tunnel is reused across restarts, so the MCP URL stays the same.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 PORT="${PORT:-8787}"
@@ -16,8 +17,9 @@ if ! grep -qE '^CARTOGRAPH_ACCESS_TOKEN=.{20,}' .env; then
 fi
 TOKEN=$(grep -E '^CARTOGRAPH_ACCESS_TOKEN=' .env | tail -1 | cut -d= -f2-)
 
-if [ "${1:-}" = "fixture" ]; then
-  export CARTOGRAPH_BRAIN=fixture CARTOGRAPH_DATA_DIR="$PWD/.cartograph-dev"
+if [ "${1:-}" = "fixture" ] || [ "${1:-}" = "test" ]; then
+  [ "$1" = "fixture" ] && export CARTOGRAPH_BRAIN=fixture CARTOGRAPH_DATA_DIR="$PWD/.cartograph-dev"
+  [ "$1" = "test" ] && export CARTOGRAPH_DATA_DIR="$PWD/.cartograph-test"
   [ -d .playground/chai-commerce ] || git clone -q ../chai-commerce .playground/chai-commerce
   export CARTOGRAPH_DEMO_REPO=.playground/chai-commerce CARTOGRAPH_LOCAL_REPOS="$PWD/.playground/chai-commerce"
 fi
@@ -42,11 +44,11 @@ if [ -z "$URL" ]; then
     [ -n "$URL" ] && break; sleep 0.5
   done
   [ -n "$URL" ] || { echo "Tunnel failed; see .tunnel.log"; exit 1; }
-  echo "New tunnel: update the URL in ChatGPT (Plugins → Cartograph) and the GitHub webhook."
+  echo "New tunnel: update the URL in your MCP client and the GitHub webhook."
 fi
 
 echo
-echo "  ChatGPT connector URL : $URL/$TOKEN/mcp"
+echo "  MCP server URL        : $URL/$TOKEN/mcp"
 echo "  GitHub webhook URL    : $URL/webhooks/github"
 echo "  Cartograph UI (anywhere)   : $URL/$TOKEN/app"
 echo "  Cartograph UI (this Mac)   : http://localhost:$PORT/app"

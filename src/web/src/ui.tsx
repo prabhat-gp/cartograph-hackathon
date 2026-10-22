@@ -124,7 +124,7 @@ export function Spinner({ size = 14, className }: { size?: number; className?: s
   return <LoaderCircle size={size} className={cn("animate-spin", className)} />;
 }
 
-/** "Ask ChatGPT" call-to-action used at the bottom of panels. */
+/** "Ask" call-to-action used at the bottom of panels. */
 export function AskButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
   return (
     <button

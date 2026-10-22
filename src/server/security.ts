@@ -1,12 +1,12 @@
 // Security model for a laptop-hosted MCP server exposed through a public tunnel.
 //
 //  - Remote callers (anything arriving through the tunnel) must use the secret
-//    path prefix /<CARTOGRAPH_ACCESS_TOKEN>/…; without it every route 404s. ChatGPT's
-//    connector is configured with that URL, so the URL is the credential.
+//    path prefix /<CARTOGRAPH_ACCESS_TOKEN>/…; without it every route 404s. A remote
+//    MCP client is configured with that URL, so the URL is the credential.
 //  - Local callers (this machine) may use the bare routes.
 //  - Host and Origin checks stop DNS-rebinding and drive-by requests from
 //    websites open in the user's browser.
-//  - Requests that come from ChatGPT may only map GitHub repos, never local
+//  - Requests from remote MCP clients may only map GitHub repos, never local
 //    folders (a prompt-injected model must not be able to read local code).
 //  - MCP Events callbacks may not point into private networks (SSRF).
 //  - Full maps are capped per day so a leaked URL can't drain API credits.

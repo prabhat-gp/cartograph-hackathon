@@ -1,4 +1,4 @@
-// Cartograph UI shell: routes ChatGPT tool results to views, polls for live changes,
+// Cartograph UI shell: routes MCP tool results to views, polls for live changes,
 // runs the trace player and derives the map's visual state.
 import { ReactFlowProvider } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -59,7 +59,7 @@ export function App({ bridge }: { bridge: Bridge }) {
   const [error, setError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
-  // Standalone only: manual theme override (inside ChatGPT the host decides).
+  // Standalone only: manual theme override (inside an MCP host the host decides).
   const [themePref, setThemePref] = useState<"light" | "dark" | null>(() => {
     try {
       const v = localStorage.getItem("cartograph.theme");
@@ -273,7 +273,7 @@ export function App({ bridge }: { bridge: Bridge }) {
 
   useEffect(() => {
     if (!repoKey || !graph) return;
-    // Every poll is a tool call through ChatGPT: keep it modest, and pause when hidden.
+    // Inside an MCP host every poll is a tool call: keep it modest, and pause when hidden.
     const t = setInterval(() => {
       if (document.visibilityState === "visible") void pollChanges();
     }, 5000);
@@ -525,7 +525,7 @@ export function App({ bridge }: { bridge: Bridge }) {
           <CartographLogo size={40} />
           <h1 className="mt-4 mb-2 text-[22px] font-semibold tracking-[-0.02em] text-text">Couldn't load the map</h1>
           <p className="m-0 text-[13.5px] leading-relaxed text-muted">
-            ChatGPT refused Cartograph's request ({loadError}). If the plugin was just updated, open ChatGPT → Plugins → Cartograph → Manage → <b className="text-text">Refresh tools</b>, then ask again.
+            The host refused Cartograph's request ({loadError}). If Cartograph was just updated, <b className="text-text">refresh its tools</b> in your MCP client, then ask again.
           </p>
         </div>
       </div>

@@ -1,5 +1,5 @@
 // Security tests for the tunnel-exposed server: secret prefix, local-only
-// routes, DNS-rebinding/Origin guards, local-folder lockout for ChatGPT,
+// routes, DNS-rebinding/Origin guards, local-folder lockout for remote MCP clients,
 // MCP Events SSRF guard, signed GitHub webhooks.
 import { createHmac } from "node:crypto";
 import { execFileSync } from "node:child_process";
@@ -101,7 +101,7 @@ describe("security", () => {
     expect((await request("POST", `/${TOKEN}/api/tools/cartograph_repos`, { remote: true, origin: "http://localhost:6274", body: {} })).status).toBe(403);
   });
 
-  it("never lets ChatGPT map a local folder", async () => {
+  it("never lets a remote MCP client map a local folder", async () => {
     const remote = await request("POST", `/${TOKEN}/api/tools/map_repo`, { remote: true, body: { repo: localRepo } });
     expect(remote.status).toBe(400);
     expect(remote.json().error).toContain("GitHub");

@@ -1,5 +1,5 @@
 // One interface over two hosts:
-//  - ChatGPT (or any MCP Apps host): JSON-RPC over postMessage via the App client
+//  - an MCP Apps host (Claude, Cursor and others): JSON-RPC over postMessage via the App client
 //  - standalone (/app in a browser tab): plain REST calls to the Cartograph server
 import { App } from "@modelcontextprotocol/ext-apps";
 
@@ -158,8 +158,8 @@ class StandaloneBridge implements Bridge {
   }
 
   async sendMessage(text: string) {
-    // No chat outside ChatGPT: show what would have been asked.
-    console.info("[cartograph] would ask ChatGPT:", text);
+    // No chat outside an MCP host: show what would have been asked.
+    console.info("[cartograph] would ask the assistant:", text);
   }
   async updateContext() {}
   async requestDisplayMode() {}
