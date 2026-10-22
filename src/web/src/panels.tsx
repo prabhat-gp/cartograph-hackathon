@@ -861,7 +861,7 @@ export function Progress({ job }: { job: JobView | null }) {
               <BookOpen size={14} className="text-muted" /> Readers · in parallel
             </span>
             <span className="font-mono text-[11px] text-muted">
-              {readers.filter((r) => r.state !== "run").length} / {readers.length || "…"} finished
+              {readers.filter((r) => r.state !== "run").length} / {readers[0]?.total ?? "…"} finished{readers.length && readers[0].total > readers.length ? ` · ${readers[0].total - readers.length} queued` : ""}
             </span>
           </div>
           {readers.length === 0 ? (
@@ -915,7 +915,7 @@ export function Progress({ job }: { job: JobView | null }) {
       {job?.error && <div className="mt-3 rounded-[4px] border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{job.error}</div>}
       </div>
       <div className="lg:sticky lg:top-4">
-        <SurveyAnimation stage={stage} lanes={readers.length} finished={readers.filter((r) => r.state !== "run").length} />
+        <SurveyAnimation stage={stage} lanes={readers[0]?.total ?? readers.length} finished={readers.filter((r) => r.state !== "run").length} />
       </div>
       </div>
     </div>
