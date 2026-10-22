@@ -1,0 +1,43 @@
+{
+  "project": "Cartograph",
+  "track": "02 · The Agent That Can Explain Why",
+  "repository": "https://github.com/prabhat-gp/cartograph-hackathon",
+  "buildWindow": { "start": "2026-10-22T00:00:00Z", "end": "2026-10-27T23:45:00Z" },
+  "sponsors": {
+    "meterless": {
+      "build": {
+        "engine": "H-MEM",
+        "role": "Memory with provenance: every piece of evidence and every answer is stored with its source, and a trust ledger records each read and write",
+        "status": "planned",
+        "code": [],
+        "evidence": "H-MEM conformance suite run against our implementation"
+      },
+      "power": {
+        "role": "Primary AI provider: every agent call goes to Meterless Runtime (Nightshift) over its OpenAI-compatible API, with NVIDIA direct as a fallback only when the runtime is unreachable",
+        "status": "in-progress",
+        "code": ["src/meterless/runtime.ts", "src/config.ts", "src/llm/client.ts"],
+        "evidence": "npm run sponsors (runtime health), test/meterless.test.ts, test/client.test.ts"
+      }
+    },
+    "nvidia": {
+      "role": "Nemotron models behind every agent: nemotron-3.5-lightning-30b for bulk reading, nemotron-3-ultra-550b for reasoning and answers",
+      "status": "working",
+      "code": ["src/config.ts", "src/llm/client.ts", "scripts/smoke.ts"],
+      "evidence": "npm run smoke checks cited evidence verbatim against the code; npm run usage shows calls and tokens per model"
+    },
+    "zetaris": {
+      "role": "Data layer: GitHub history (commits, pull requests, issues) and the code map, queried with Lightning SQL to build each evidence chain",
+      "status": "in-progress",
+      "code": ["src/zetaris/client.ts"],
+      "evidence": "npm run sponsors runs SELECT 1 and SHOW LIGHTNING DATABASES over the REST API"
+    },
+    "cursor": {
+      "role": "Development environment",
+      "status": "working",
+      "code": [],
+      "evidence": "Cursor sessions during the build window"
+    }
+  },
+  "preExisting": [],
+  "runWithoutKeys": "npm install && npm test (every integration is tested against mocks)"
+}
