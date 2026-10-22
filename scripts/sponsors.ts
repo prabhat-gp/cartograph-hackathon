@@ -34,7 +34,7 @@ await check("Meterless Nightshift", async () => {
 });
 
 await check("Zetaris", async () => {
-  if (!process.env.ZETARIS_API_KEY) return { status: "todo", detail: "set ZETARIS_API_KEY (Zetaris web interface → API keys)" };
+  if (!process.env.ZETARIS_API_KEY && !process.env.ZETARIS_PASSWORD) return { status: "todo", detail: "set ZETARIS_API_KEY or ZETARIS_USERNAME/PASSWORD" };
   const config = zetarisConfig();
   const one = await runSql("SELECT 1 AS one", { config });
   const dbs = await runSql("SHOW LIGHTNING DATABASES", { config });
