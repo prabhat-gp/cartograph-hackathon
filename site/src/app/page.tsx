@@ -1,19 +1,19 @@
-import { Footer } from "@/components/Footer";
+import { Colophon } from "@/components/Colophon";
 import { Header } from "@/components/Header";
-import { HowItWorks } from "@/components/HowItWorks";
-import { Sponsors } from "@/components/Sponsors";
-import { Why } from "@/components/Why";
+import { PlateInstruments } from "@/components/PlateInstruments";
+import { PlateSurvey } from "@/components/PlateSurvey";
+import { PlateWhy } from "@/components/PlateWhy";
 
 export default function Home() {
   return (
     <>
       <Header />
       <main>
-        <Why />
-        <HowItWorks />
-        <Sponsors />
+        <PlateWhy />
+        <PlateSurvey />
+        <PlateInstruments />
       </main>
-      <Footer />
+      <Colophon />
     </>
   );
 }

@@ -1,34 +1,27 @@
 @import "tailwindcss";
 
+/* inline: next/font defines these variables on <body>, not :root. */
+@theme inline {
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
+  --font-mono: var(--font-plex-mono);
+}
+
 @theme {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* An atlas: paper, ink and one survey red. */
+  --color-paper: #f2ede1;
+  --color-paper-deep: #e8e1d0;
+  --color-paper-light: #f8f5ee;
+  --color-ink: #1c1a16;
+  --color-ink-soft: #5b564b;
+  --color-ink-faint: #8e8778;
+  --color-rule: #cfc6b2;
 
-  /* Cartograph brand: the logo's blue → violet. */
-  --color-brand-50: #eef1ff;
-  --color-brand-100: #dfe4ff;
-  --color-brand-300: #a5b2ff;
-  --color-brand-400: #7f8cff;
-  --color-brand-500: #5b6cff;
-  --color-brand-600: #4b4ff0;
-  --color-brand-700: #3d37cf;
-  --color-violet-brand: #5b3cf0;
-  --color-blue-brand: #2f6bff;
-
-  /* Night: the dark sections. */
-  --color-night-950: #070a1a;
-  --color-night-900: #0b1026;
-  --color-night-800: #121a3a;
-  --color-night-700: #1c2650;
-  --color-night-600: #2a3566;
-
-  /* Paper: the light sections. */
-  --color-paper: #f7f7fb;
-  --color-ink: #12152b;
-  --color-ink-soft: #4a4f6a;
-
-  --color-cited: #34d399;
-  --color-warn: #fbbf24;
+  --color-vermilion: #d9442b;
+  --color-vermilion-deep: #b5321d;
+  --color-forest: #2f5d46;
+  --color-sea: #2c5878;
+  --color-ochre: #c08a2d;
 }
 
 html {
@@ -40,43 +33,80 @@ body {
   color: var(--color-ink);
 }
 
-/* Faint map contour lines behind the dark sections. */
-.contours {
-  background-image:
-    radial-gradient(60rem 30rem at 85% -10%, rgb(91 60 240 / 0.35), transparent 60%),
-    radial-gradient(40rem 25rem at -10% 20%, rgb(47 107 255 / 0.22), transparent 60%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='800' viewBox='0 0 800 800'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.045' stroke-width='1.2'%3E%3Cpath d='M-50 420c120-60 220-40 330 10s230 70 360 0 230-60 260-40'/%3E%3Cpath d='M-50 470c120-60 220-40 330 10s230 70 360 0 230-60 260-40'/%3E%3Cpath d='M-50 520c120-60 220-40 330 10s230 70 360 0 230-60 260-40'/%3E%3Cpath d='M-50 370c120-60 220-40 330 10s230 70 360 0 230-60 260-40'/%3E%3Cpath d='M-50 320c120-60 220-40 330 10s230 70 360 0 230-60 260-40'/%3E%3Cpath d='M-50 270c140-70 240-30 340 20s220 60 350-10 240-50 270-30'/%3E%3Cpath d='M-50 220c140-70 240-30 340 20s220 60 350-10 240-50 270-30'/%3E%3Cpath d='M-50 170c140-70 240-30 340 20s220 60 350-10 240-50 270-30'/%3E%3Cpath d='M-50 570c120-50 220-50 340 0s230 60 350 0 240-50 270-30'/%3E%3Cpath d='M-50 620c120-50 220-50 340 0s230 60 350 0 240-50 270-30'/%3E%3Cpath d='M-50 670c120-50 220-50 340 0s230 60 350 0 240-50 270-30'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: auto, auto, 800px 800px;
+::selection {
+  background: var(--color-vermilion);
+  color: var(--color-paper-light);
 }
 
-/* A dependency being traced: the dash runs along the arrow. */
-@keyframes trace {
+/* Survey grid: fine lines every 24px, a heavier one every 120px. */
+.survey-grid {
+  background-image:
+    linear-gradient(to right, rgb(28 26 22 / 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(28 26 22 / 0.06) 1px, transparent 1px),
+    linear-gradient(to right, rgb(28 26 22 / 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(28 26 22 / 0.03) 1px, transparent 1px);
+  background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+}
+
+/* Paper grain, so flat colour reads as print. */
+.grain {
+  position: relative;
+  isolation: isolate;
+}
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.35;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.11 0 0 0 0 0.1 0 0 0 0 0.08 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* A route being surveyed: the dashes walk along the path. */
+@keyframes walk {
   to {
-    stroke-dashoffset: -24;
+    stroke-dashoffset: -28;
   }
 }
-.trace {
-  stroke-dasharray: 6 6;
-  animation: trace 1.2s linear infinite;
+.route {
+  stroke-dasharray: 8 6;
+  animation: walk 1.4s linear infinite;
 }
 
-@keyframes rise {
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 2.2s ease-out 0.3s forwards;
+}
+
+@keyframes settle {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
     transform: none;
   }
 }
-.rise {
-  animation: rise 0.6s ease-out both;
+.settle {
+  animation: settle 0.7s ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .trace,
-  .rise {
+  .route,
+  .draw,
+  .settle {
     animation: none;
+    stroke-dashoffset: 0;
   }
 }
