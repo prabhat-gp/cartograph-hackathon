@@ -83,6 +83,9 @@
   .spin { width: 14px; height: 14px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: s 0.8s linear infinite; display: inline-block; }
   @keyframes s { to { transform: rotate(360deg); } }
   .err { color: var(--bad); }
+  .mem { font-size: 12.5px; padding: 6px 0; border-top: 1px dashed var(--line); }
+  button.fb { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 8px; padding: 5px 10px; cursor: pointer; }
+  button.fb:hover { background: var(--soft); }
   @media (max-width: 1100px) { main { grid-template-columns: 240px minmax(0, 1fr); } aside.ask { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); } body { overflow: auto; height: auto; } main { height: auto; } section.code { max-height: 70vh; } }
   @media (max-width: 700px) { main { grid-template-columns: 1fr; } aside.files { max-height: 40vh; } }
 </style>
@@ -100,6 +103,7 @@
 <main>
   <aside class="files">
     <div class="summary" id="summary"><h3>Explainability</h3><div class="empty">Loading…</div></div>
+    <div class="summary" id="memory"><h3>Memory · H-MEM</h3><div class="tag">Nothing remembered yet.</div></div>
     <input class="filter" id="filter" placeholder="Filter files" aria-label="Filter files">
     <div id="files"></div>
   </aside>
@@ -160,6 +164,7 @@ async function loadRepo(repo) {
     <div class="tag" style="margin-top:6px">${withCov.length} of ${state.files.length} files analysed</div>`;
   renderFiles();
   updateTarget();
+  loadMemory();
 }
 
 function renderFiles() {
@@ -225,9 +230,12 @@ async function ask() {
         <div class="chips"><span class="chip ${esc(o.confidence)}">confidence: ${esc(o.confidence)}</span><span class="chip">${o.approved ? "Critic approved" : "not fully approved"}</span><span class="chip">${o.rounds} revision${o.rounds === 1 ? "" : "s"}</span><span class="chip">${r.execution_time_seconds}s</span></div></div>
       <div class="card"><h4>Evidence chain</h4><ul class="chain">${o.chain.map((e) => `<li><div class="k">${esc(e.kind.replace("_", " "))}</div>${e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener">${esc(e.ref)}</a>` : esc(e.ref)} — ${esc(e.title)}</li>`).join("") || '<li>No chain: see unknowns.</li>'}</ul></div>
       <div class="card"><h4>Claims</h4>${o.claims.map((c) => `<p class="claim">${esc(c.text)} ${c.evidence.map((id) => `<a class="cite" href="#ev-${esc(id)}">[${esc(id)}]</a>`).join(" ")}</p>`).join("")}</div>
+      ${o.memory_ids?.length ? `<div class="card"><h4>Remembered (Meterless H-MEM)</h4><div class="tag">${o.memory_ids.length} approved findings stored with their commits, pull requests and issues as provenance. Was this right?</div><div class="row"><button class="fb" data-kind="helpful">Helpful</button><button class="fb" data-kind="not_helpful">Not helpful</button><button class="fb" data-kind="wrong">Wrong</button><span class="tag" id="fbmsg"></span></div></div>` : ""}
       ${o.unknowns.length ? `<div class="card"><h4>What the evidence doesn't show</h4>${o.unknowns.map((u) => `<p class="claim">${esc(u)}</p>`).join("")}</div>` : ""}
       <div class="card"><h4>Agent trace · ${esc(r.trace_id)}</h4><ul class="trace">${trace.map((t) => `<li class="${esc(t.status)}"><span class="who">${esc(t.agent_name)}</span>${t.target_agent ? ` → ${esc(t.target_agent)}` : ""} · ${esc(t.action)} <div>${esc(t.output_summary)}</div><div class="st">${esc(t.status)}${t.details?.zetaris_queries ? ` · Zetaris: ${esc(t.details.zetaris_queries.join(", "))}` : ""}</div></li>`).join("")}</ul></div>
       <div class="card"><h4>All evidence (${o.evidence.length})</h4>${o.evidence.map(evidenceHtml).join("")}</div>`;
+    state.lastMemory = o.memory_ids ?? [];
+    loadMemory();
   } catch (e) {
     $("result").innerHTML = `<div class="card err">${esc(e.message)}</div>`;
   } finally {
@@ -235,6 +243,23 @@ async function ask() {
   }
 }
 
+async function loadMemory() {
+  if (!state.repo) return;
+  const m = await api(`/api/memory?repo=${encodeURIComponent(state.repo)}`).catch(() => null);
+  if (!m) return;
+  const live = m.memories.filter((x) => !x.supersededBy);
+  $("memory").innerHTML = `<h3>Memory · H-MEM</h3><div class="tag">${live.length} findings remembered${m.memories.length > live.length ? `, ${m.memories.length - live.length} superseded` : ""} · ledger: ${Object.entries(m.ledger).map(([k, v]) => `${esc(k)} ${v}`).join(", ") || "empty"}</div>
+    ${live.slice(0, 6).map((x) => `<div class="mem" title="${esc((x.provenance.refs ?? []).join("\n"))}">${esc(x.content)}<div class="tag">${esc(x.layer)} · confidence ${x.confidence} · read ${x.accessCount}×${x.tags.includes("review") ? " · flagged for review" : ""}</div></div>`).join("")}`;
+}
+
+async function sendFeedback(kind) {
+  if (!state.lastMemory?.length) return;
+  const r = await api("/api/memory/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ repo: state.repo, ids: state.lastMemory, kind }) });
+  $("fbmsg").textContent = `recorded in the trust ledger: confidence now ${r.updated.map((u) => u.confidence).join(", ")}`;
+  loadMemory();
+}
+
+$("result").addEventListener("click", (e) => { const b = e.target.closest(".fb"); if (b) sendFeedback(b.dataset.kind); });
 $("repo").addEventListener("change", (e) => loadRepo(e.target.value));
 $("filter").addEventListener("input", renderFiles);
 $("files").addEventListener("click", (e) => { const b = e.target.closest(".file"); if (b) openFile(b.dataset.path); });

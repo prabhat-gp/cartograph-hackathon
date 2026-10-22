@@ -16,7 +16,8 @@
     "ingest": "tsx --env-file-if-exists=.env scripts/ingest.ts",
     "zetaris:setup": "tsx --env-file-if-exists=.env scripts/zetaris-setup.ts",
     "start": "tsx --env-file-if-exists=.env src/server/index.ts",
-    "why": "tsx --env-file-if-exists=.env scripts/why.ts"
+    "why": "tsx --env-file-if-exists=.env scripts/why.ts",
+    "hmem:conformance": "HMEM_IMPL=$PWD/src/memory/hmem.ts tsx third_party/meterless-hmem-conformance/runner.ts"
   },
   "dependencies": {
     "pg": "^8.23.1",

@@ -9,6 +9,8 @@ import { providerConfig } from "../config";
 import { coverage, lineStatus, listFiles, repositories, zetarisQuery } from "../agent/evidence";
 import { runWhy } from "../agent/run";
 import { cloneDir } from "../ingest/git";
+import { memoryFor } from "../memory/findings";
+import { FEEDBACK_DELTAS, type FeedbackKind } from "../memory/hmem";
 
 const PORT = Number(process.env.PORT ?? 8000);
 const HOST = process.env.HOST ?? "127.0.0.1";
@@ -56,6 +58,12 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const result = await runWhy(parsed.data.input);
     return send(res, result.status === "success" ? 200 : 502, parsed.data.run_id ? { ...result, request_id: parsed.data.run_id } : result);
   }
+  if (req.method === "POST" && url.pathname === "/api/memory/feedback") {
+    const body = z.object({ repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/), ids: z.array(z.string()).min(1).max(20), kind: z.enum(Object.keys(FEEDBACK_DELTAS) as [FeedbackKind, ...FeedbackKind[]]) }).parse(await readBody(req));
+    const hmem = memoryFor(body.repo);
+    const updated = body.ids.filter((id) => hmem.store.get(id)).map((id) => hmem.feedback(id, body.kind));
+    return send(res, 200, { updated: updated.map((m) => ({ id: m.id, confidence: m.confidence, tags: m.tags })) });
+  }
   if (req.method !== "GET") return send(res, 405, { error: "method not allowed" });
 
   switch (url.pathname) {
@@ -83,6 +91,11 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
       const full = path.join(root, file);
       if (!full.startsWith(root + path.sep) || !existsSync(full)) return send(res, 404, { error: "file not found" });
       return send(res, 200, { path: file, text: readFileSync(full, "utf8"), ranges: await lineStatus(q, `${repo}:${file}`) });
+    }
+    case "/api/memory": {
+      const hmem = memoryFor(repoParam(url));
+      const memories = hmem.store.all().sort((a, b) => b.timestamp - a.timestamp).map(({ embedding: _e, ...m }) => ({ ...m, history: hmem.ledger.history(m.id).map((h) => ({ action: h.action, timestamp: h.timestamp, details: h.details })) }));
+      return send(res, 200, { memories, ledger: hmem.ledger.stats() });
     }
     case "/api/trace": {
       const id = url.searchParams.get("id") ?? "";
