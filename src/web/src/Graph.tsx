@@ -87,7 +87,7 @@ const ComponentNode = memo(function ComponentNode({ data }: NodeProps<Node<Carto
     <div
       title={node.summary}
       className={cn(
-        "group relative flex h-16 w-[232px] items-center gap-3 rounded-[14px] border bg-surface px-3 shadow-card transition-all duration-300 hover:shadow-pop",
+        "group relative flex h-16 w-[232px] items-center gap-3 rounded-[4px] border bg-surface px-3 shadow-card transition-all duration-300 hover:shadow-pop",
         NODE_VISUAL[visual],
       )}
     >
@@ -95,7 +95,7 @@ const ComponentNode = memo(function ComponentNode({ data }: NodeProps<Node<Carto
       <Handle id="b" type="source" position={Position.Bottom} />
       <Handle id="ts" type="source" position={Position.Top} />
       <Handle id="bt" type="target" position={Position.Bottom} />
-      <span className={cn("grid size-9 shrink-0 place-items-center rounded-[10px]", visual === "dead" ? "bg-danger/12 text-danger" : k.tile)}>
+      <span className={cn("grid size-9 shrink-0 place-items-center rounded-[3px]", visual === "dead" ? "bg-danger/12 text-danger" : k.tile)}>
         <k.Icon size={18} strokeWidth={1.8} />
       </span>
       <div className="min-w-0 flex-1">
@@ -283,7 +283,9 @@ export function Graph(props: GraphProps) {
           </linearGradient>
         </defs>
       </svg>
-      <Background variant={BackgroundVariant.Dots} gap={20} size={1.4} color="var(--grid)" />
+      {/* Survey grid: fine lines every 24px, heavier every 120px. */}
+      <Background id="minor" variant={BackgroundVariant.Lines} gap={24} lineWidth={1} color="var(--grid)" />
+      <Background id="major" variant={BackgroundVariant.Lines} gap={120} lineWidth={1} color="var(--grid-major)" />
       <Controls showInteractive={false} position="bottom-left" />
       <FitOnChange fitKey={`${props.fitKey}|${sizeKey}`} focusIds={props.focusIds} />
     </ReactFlow>

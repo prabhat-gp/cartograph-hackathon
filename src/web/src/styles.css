@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap");
 @import "tailwindcss";
 
 /* Dark mode follows the MCP host or the toggle via data-theme on <html>. */
@@ -5,62 +6,68 @@
 
 /* ------------------------------------------------------------------ tokens */
 :root {
-  --bg: #fafaf9;
-  --canvas: #f6f6f4;
-  --surface: #ffffff;
-  --surface-2: #f4f4f3;
-  --surface-3: #ececea;
-  --line: #e7e6e3;
-  --line-strong: #d6d5d1;
-  --text: #111110;
-  --muted: #6f6e69;
-  --faint: #a3a29d;
-  --grid: #dcdbd6;
-  --edge: #c4c3be;
-  --edge-dim: #e6e5e1;
-  --accent: #5b4cf0;
-  --accent-2: #2f6bff;
-  --accent-soft: #eeecff;
-  --code-bg: #fbfbfa;
-  --danger: #e5484d;
-  --warn: #e38b10;
-  --ok: #30a46c;
-  --info: #3e63dd;
-  --shadow-card: 0 1px 2px rgb(16 16 15 / 0.04), 0 2px 8px -2px rgb(16 16 15 / 0.06);
-  --shadow-pop: 0 12px 32px -8px rgb(16 16 15 / 0.18), 0 2px 6px rgb(16 16 15 / 0.06);
+  /* The atlas: paper, ink and one survey red (same language as the landing page). */
+  --bg: #f2ede1;
+  --canvas: #f6f2e8;
+  --surface: #faf7f0;
+  --surface-2: #efe9db;
+  --surface-3: #e6dfcd;
+  --line: #ddd4c0;
+  --line-strong: #b9ae96;
+  --text: #1c1a16;
+  --muted: #5b564b;
+  --faint: #8e8778;
+  --grid: rgb(28 26 22 / 0.045);
+  --grid-major: rgb(28 26 22 / 0.08);
+  --edge: #7a7262;
+  --edge-dim: #d9d0bc;
+  --accent: #d9442b;
+  --accent-2: #b5321d;
+  --accent-soft: #f6ddd3;
+  --code-bg: #f8f5ee;
+  --danger: #b5321d;
+  --warn: #b07a1e;
+  --ok: #2f5d46;
+  --info: #2c5878;
+  --shadow-card: 2px 2px 0 0 rgb(28 26 22 / 0.1);
+  --shadow-pop: 4px 4px 0 0 rgb(28 26 22 / 0.85);
   color-scheme: light;
 }
 
 :root[data-theme="dark"] {
-  --bg: #0b0b0d;
-  --canvas: #0e0e11;
-  --surface: #141417;
-  --surface-2: #1a1a1e;
-  --surface-3: #222227;
-  --line: #26262c;
-  --line-strong: #34343b;
-  --text: #ededef;
-  --muted: #a0a0a8;
-  --faint: #63636c;
-  --grid: #222228;
-  --edge: #45454e;
-  --edge-dim: #232329;
-  --accent: #8b7dff;
-  --accent-2: #5b8cff;
-  --accent-soft: #221f3d;
-  --code-bg: #111114;
-  --danger: #ff6369;
-  --warn: #ffb224;
-  --ok: #4cc38a;
-  --info: #849dff;
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.5);
-  --shadow-pop: 0 16px 40px -8px rgb(0 0 0 / 0.7);
+  /* Night atlas: ink paper, cream type, the same red. */
+  --bg: #15130f;
+  --canvas: #19170f;
+  --surface: #201d16;
+  --surface-2: #27231b;
+  --surface-3: #302b21;
+  --line: #3a3428;
+  --line-strong: #544b3b;
+  --text: #f2ede1;
+  --muted: #b8b0a0;
+  --faint: #7c7464;
+  --grid: rgb(242 237 225 / 0.05);
+  --grid-major: rgb(242 237 225 / 0.09);
+  --edge: #8f8572;
+  --edge-dim: #3a3428;
+  --accent: #ff6a4d;
+  --accent-2: #ff8a70;
+  --accent-soft: #3d1f17;
+  --code-bg: #1b1812;
+  --danger: #ff6a4d;
+  --warn: #e0a84a;
+  --ok: #6fb38d;
+  --info: #7fa9cf;
+  --shadow-card: 2px 2px 0 0 rgb(0 0 0 / 0.35);
+  --shadow-pop: 4px 4px 0 0 rgb(0 0 0 / 0.7);
   color-scheme: dark;
 }
 
 @theme inline {
-  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, Roboto, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  /* Hosts that block web fonts fall back to the system serif, sans and mono. */
+  --font-sans: "Instrument Sans", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --color-bg: var(--bg);
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);

@@ -20,7 +20,9 @@
     "ingest": "tsx --env-file-if-exists=.env scripts/ingest.ts",
     "zetaris:setup": "tsx --env-file-if-exists=.env scripts/zetaris-setup.ts",
     "why": "tsx --env-file-if-exists=.env scripts/why.ts",
-    "hmem:conformance": "HMEM_IMPL=$PWD/src/memory/hmem.ts tsx third_party/meterless-hmem-conformance/runner.ts"
+    "hmem:conformance": "HMEM_IMPL=$PWD/src/memory/hmem.ts tsx third_party/meterless-hmem-conformance/runner.ts",
+    "build:site": "npm --prefix site run build",
+    "build": "npm run build:web && npm run build:site"
   },
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.7.5",

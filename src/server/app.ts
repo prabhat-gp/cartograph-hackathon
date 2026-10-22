@@ -3,6 +3,7 @@
 // remote callers) and bare, for this machine only. See security.ts.
 //
 //   /mcp              MCP endpoint for MCP clients (MCP 2026-07-28 + stateless 2025 fallback)
+//   /                 the landing page (site/, exported by `npm run build:site`)
 //   /app              the Cartograph UI in a browser (standalone mode)
 //   /api/tools/:name  REST access to the tools (standalone UI, scripts, tests)
 //   /hooks/local      review a local repo (called from a git post-commit hook)
@@ -10,6 +11,7 @@
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import { toNodeHandler } from "@modelcontextprotocol/node";
 import { execFile } from "node:child_process";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express, { type Express, type Request, type Response } from "express";
@@ -105,7 +107,10 @@ export function createApp(opts: { port: number }): Express {
     }
     res.json({ ok: true, runtime, model: runtimeLabel(), subscriptions: subscriptionCount(), demo: !!demoRepo });
   });
-  api.get("/", (req: Request, res: Response) => res.redirect(`${req.baseUrl}/app`));
+  // The landing page, when it has been built; otherwise straight to the desk.
+  const site = path.join(ROOT, "site", "out");
+  if (existsSync(path.join(site, "index.html"))) api.use(express.static(site, { index: "index.html", redirect: false }));
+  else api.get("/", (req: Request, res: Response) => res.redirect(`${req.baseUrl}/app`));
 
   // Secret prefix first, so its requests never reach the local-only mount.
   if (ACCESS_TOKEN) app.use(`/${ACCESS_TOKEN}`, api);

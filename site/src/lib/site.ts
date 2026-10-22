@@ -1,7 +1,7 @@
 // Everything the page states as fact lives here, next to where it was measured.
 
-/** The Cartograph desk (the map app). Set NEXT_PUBLIC_APP_URL when it's deployed. */
-export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:8787/app";
+/** The map desk, served by the same Cartograph server as this page. */
+export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "/app";
 
 export const REPO_URL = "https://github.com/prabhat-gp/cartograph-hackathon";
 export const CODE = (path: string) => `${REPO_URL}/tree/qa/${path}`;

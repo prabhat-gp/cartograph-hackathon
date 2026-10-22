@@ -523,7 +523,7 @@ export function App({ bridge }: { bridge: Bridge }) {
       <div className="flex flex-col bg-bg" style={shellStyle}>
         <div className="mx-auto w-full max-w-[560px] px-6 py-10">
           <CartographLogo size={40} />
-          <h1 className="mt-4 mb-2 text-[22px] font-semibold tracking-[-0.02em] text-text">Couldn't load the map</h1>
+          <h1 className="mt-4 mb-2 font-serif text-[30px] font-normal text-text">Couldn't load the map</h1>
           <p className="m-0 text-[13.5px] leading-relaxed text-muted">
             The host refused Cartograph's request ({loadError}). If Cartograph was just updated, <b className="text-text">refresh its tools</b> in your MCP client, then ask again.
           </p>
@@ -618,7 +618,7 @@ export function App({ bridge }: { bridge: Bridge }) {
       <header className="relative z-30 flex h-[52px] shrink-0 items-center gap-2.5 border-b border-line bg-surface/90 px-3.5 backdrop-blur">
         <div className="flex min-w-0 items-center gap-2">
           <CartographLogo size={24} />
-          <span className="text-[14px] font-semibold tracking-[-0.015em] text-text max-sm:hidden">Cartograph</span>
+          <span className="font-serif text-[21px] leading-none text-text max-sm:hidden">Cartograph</span>
           <span className="mx-1 h-4 w-px bg-line max-sm:hidden" />
           <button
             onClick={openHome}

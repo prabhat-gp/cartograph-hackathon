@@ -59,7 +59,7 @@ function PanelHead({ title, sub, icon, onClose }: { title: ReactNode; sub?: Reac
     <div className="mb-3 flex items-start gap-3">
       {icon}
       <div className="min-w-0 flex-1">
-        <h2 className="m-0 text-[16px] leading-snug font-semibold tracking-[-0.015em] text-text">{title}</h2>
+        <h2 className="m-0 font-serif text-[24px] leading-tight font-normal text-text">{title}</h2>
         {sub && <div className="mt-0.5 text-[12px] text-muted">{sub}</div>}
       </div>
       {onClose && (
@@ -147,7 +147,7 @@ export function OverviewPanel({ graph, onTrace, onSelect, onAsk }: { graph: Cart
           [graph.flows.length, "flows"],
         ].map(([n, l]) => (
           <Card key={l} className="px-3 py-2.5">
-            <div className="text-[22px] leading-none font-semibold tracking-[-0.03em] text-text tabular-nums">{n}</div>
+            <div className="font-serif text-[34px] leading-none font-normal text-text tabular-nums">{n}</div>
             <div className="mt-1 text-[11.5px] text-muted">{l}</div>
           </Card>
         ))}
@@ -596,7 +596,7 @@ export function Progress({ job }: { job: JobView | null }) {
       <motion.div {...fadeIn} className="mb-6 flex items-center gap-3.5">
         <CartographLogo size={40} />
         <div className="min-w-0 flex-1">
-          <div className="text-[18px] font-semibold tracking-[-0.02em] text-text">Mapping {job?.repoName ?? "repository"}</div>
+          <div className="font-serif text-[26px] leading-tight font-normal text-text">Surveying {job?.repoName ?? "repository"}</div>
           <div className="text-[12.5px] text-muted">{job?.status === "error" ? "Mapping failed" : "A team of agents is reading the code"}</div>
         </div>
         <div className="rounded-lg border border-line bg-surface px-2.5 py-1 font-mono text-[13px] text-text tabular-nums shadow-card">{mm}</div>
@@ -674,7 +674,7 @@ export function Home(props: {
       )}
       <motion.div {...fadeIn}>
         <CartographLogo size={44} />
-        <h1 className="mt-4 mb-1.5 text-[28px] leading-tight font-semibold tracking-[-0.03em] text-text">Map any codebase</h1>
+        <h1 className="mt-4 mb-1.5 font-serif text-[44px] leading-[1.02] font-normal text-text">Map any codebase. Know <em className="text-accent">why</em> every line exists.</h1>
         <p className="m-0 max-w-[520px] text-[14px] leading-relaxed text-muted">
           Paste a GitHub repo. Cartograph's agents read the code and draw its architecture, and every dependency is cited from a real line of code.
         </p>

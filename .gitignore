@@ -12,3 +12,5 @@ bin/
 .DS_Store
 logs/*.jsonl
 .cartograph-test/
+site/out/
+site/.next/
