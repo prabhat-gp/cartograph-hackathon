@@ -1,0 +1,14 @@
+{
+  "local__chai-commerce": {
+    "repo": {
+      "key": "local__chai-commerce",
+      "source": "local",
+      "name": "chai-commerce",
+      "location": "/Users/admin/Desktop/dev-day/cartograph-hackathon/.playground/chai-commerce"
+    },
+    "branch": "main",
+    "latestSha": "44fe0c75d0431a493d8445620f98c971b462a871",
+    "reviewedSha": "44fe0c75d0431a493d8445620f98c971b462a871",
+    "mappedAt": "2026-10-22T11:30:51.930Z"
+  }
+}

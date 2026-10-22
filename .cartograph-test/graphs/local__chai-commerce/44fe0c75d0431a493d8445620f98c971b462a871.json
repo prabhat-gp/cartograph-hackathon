@@ -1,0 +1,853 @@
+{
+  "version": 1,
+  "repo": {
+    "key": "local__chai-commerce",
+    "source": "local",
+    "name": "chai-commerce",
+    "location": "/Users/admin/Desktop/dev-day/cartograph-hackathon/.playground/chai-commerce"
+  },
+  "sha": "44fe0c75d0431a493d8445620f98c971b462a871",
+  "branch": "main",
+  "generatedAt": "2026-10-22T11:30:51.930Z",
+  "mode": "full",
+  "stack": [
+    "Node.js",
+    "TypeScript",
+    "Express",
+    "Next.js",
+    "PostgreSQL",
+    "Redis",
+    "BullMQ",
+    "Razorpay",
+    "SendGrid",
+    "Shiprocket",
+    "MSG91"
+  ],
+  "summary": "chai-commerce is a direct-to-consumer storefront for loose-leaf chai built as a monorepo with three services: a Next.js web frontend, an Express REST API, and a BullMQ worker for asynchronous post-order jobs. The API handles authentication, product catalog, cart, orders, and Razorpay payments; the worker processes shipment creation and email receipts via Shiprocket and SendGrid.",
+  "nodes": [
+    {
+      "id": "web-frontend",
+      "kind": "frontend",
+      "label": "Next.js Storefront",
+      "summary": "Server-rendered Next.js 15 storefront with pages for product listing, detail, cart, checkout, login, and order history. Communicates with the API over HTTP and embeds Razorpay Checkout SDK in the browser.",
+      "tech": "Next.js 15, React 19",
+      "files": [
+        {
+          "path": "web/app"
+        },
+        {
+          "path": "web/lib/api.ts"
+        },
+        {
+          "path": "web/lib/razorpay.ts"
+        },
+        {
+          "path": "web/package.json"
+        },
+        {
+          "path": "web/Dockerfile"
+        }
+      ],
+      "details": [
+        "Next.js 15 storefront with Server Components and Client Components",
+        "Razorpay Checkout SDK runs in browser with PUBLIC key only",
+        "Order payment status polled every 3 seconds via GET /api/orders/:id",
+        "OTP flow: client → /api/auth/otp → MSG91 SMS → /api/auth/verify → JWT stored in localStorage"
+      ]
+    },
+    {
+      "id": "api-gateway",
+      "kind": "api",
+      "label": "Express REST API",
+      "summary": "Central Express 5 REST API exposing auth, products, cart, orders, and payments routes. Uses JWT auth middleware, Zod validation, publishes jobs to BullMQ queue, and integrates Razorpay for payments.",
+      "tech": "Express 5, TypeScript",
+      "files": [
+        {
+          "path": "api/src/server.ts"
+        },
+        {
+          "path": "api/src/routes"
+        },
+        {
+          "path": "api/src/middleware/auth.ts"
+        },
+        {
+          "path": "api/src/lib/razorpay.ts"
+        },
+        {
+          "path": "api/src/queue.ts"
+        },
+        {
+          "path": "api/src/redis.ts"
+        },
+        {
+          "path": "api/src/db.ts"
+        },
+        {
+          "path": "api/package.json"
+        },
+        {
+          "path": "api/Dockerfile"
+        }
+      ],
+      "details": [
+        "Express 5 REST API with Zod validation",
+        "BullMQ queue for async jobs (order.created, shipment.created, send-receipt)",
+        "Central payment integration: Razorpay orders.create, webhook signature verification",
+        "JWT auth middleware protecting all routes"
+      ]
+    },
+    {
+      "id": "auth-service",
+      "kind": "service",
+      "label": "Authentication & OTP Service",
+      "summary": "Handles user registration, login, JWT issuance, and OTP-based verification via MSG91 SMS. Protects API routes with bearer-token middleware.",
+      "tech": "jsonwebtoken, MSG91",
+      "files": [
+        {
+          "path": "api/src/routes/auth.ts"
+        },
+        {
+          "path": "api/src/services/otp.ts"
+        },
+        {
+          "path": "api/src/middleware/auth.ts"
+        }
+      ],
+      "details": [
+        "Handles registration, login, JWT issuance, and OTP verification via MSG91 SMS",
+        "Bearer-token middleware protects API routes",
+        "OTP flow: POST /api/auth/otp → MSG91 SMS → user enters OTP → POST /api/auth/verify → JWT",
+        "Redis stores session sid for logout revocation"
+      ]
+    },
+    {
+      "id": "products-service",
+      "kind": "service",
+      "label": "Product Catalog Service",
+      "summary": "Manages product listings, variants, and inventory reads. Serves product data to the web frontend and validates stock during cart/checkout.",
+      "tech": "PostgreSQL, pg",
+      "files": [
+        {
+          "path": "api/src/routes/products.ts"
+        },
+        {
+          "path": "api/src/services/inventory.ts"
+        }
+      ],
+      "details": [
+        "Manages product listings, variants, and inventory reads",
+        "Serves product data to web frontend and validates stock during cart/checkout",
+        "Uses PostgreSQL for data store"
+      ]
+    },
+    {
+      "id": "cart-service",
+      "kind": "service",
+      "label": "Cart Service",
+      "summary": "Stores per-user cart state in Redis with TTL. Provides add, update, remove, and merge operations used during browsing and checkout.",
+      "tech": "Redis, ioredis",
+      "files": [
+        {
+          "path": "api/src/routes/cart.ts"
+        },
+        {
+          "path": "api/src/redis.ts"
+        }
+      ],
+      "details": [
+        "Stores per-user cart state in Redis with TTL",
+        "Provides add, update, remove, and merge operations",
+        "Used during browsing and checkout flow"
+      ]
+    },
+    {
+      "id": "orders-service",
+      "kind": "service",
+      "label": "Orders Service",
+      "summary": "Creates orders from validated carts, persists order items, calculates totals, and coordinates payment capture. Emits post-order jobs to the queue.",
+      "tech": "PostgreSQL, pg",
+      "files": [
+        {
+          "path": "api/src/routes/orders.ts"
+        },
+        {
+          "path": "api/src/services/orders.ts"
+        },
+        {
+          "path": "api/src/queue.ts"
+        }
+      ],
+      "details": [
+        "Creates orders from validated carts, persists order items, calculates totals",
+        "Coordinates payment capture",
+        "Emits post-order jobs to the queue (order.created / order.paid)",
+        "Order status polled from API by web frontend every 3 seconds"
+      ]
+    },
+    {
+      "id": "payments-service",
+      "kind": "service",
+      "label": "Payments Service (Razorpay)",
+      "summary": "Creates Razorpay orders, verifies payment signatures, handles webhooks, and updates order payment status. Integrates UPI, cards, and netbanking.",
+      "tech": "Razorpay Node SDK",
+      "files": [
+        {
+          "path": "api/src/routes/payments.ts"
+        },
+        {
+          "path": "api/src/services/payments.ts"
+        },
+        {
+          "path": "api/src/lib/razorpay.ts"
+        }
+      ],
+      "details": [
+        "Razorpay SDK: orders.create on order placement, payments.verified signature check on webhook",
+        "Webhook payload: razorpay_order_id + razorpay_signature HMAC-SHA256 verification against RAZORPAY_KEY_SECRET",
+        "Updates order payment status in PostgreSQL after verification",
+        "Integrates UPI, cards, and netbanking"
+      ]
+    },
+    {
+      "id": "worker",
+      "kind": "worker",
+      "label": "BullMQ Worker",
+      "summary": "Consumes jobs from Redis queue to create Shiprocket shipments and send order receipt emails via SendGrid. Runs as a separate process for reliability.",
+      "tech": "BullMQ, pg, @sendgrid/mail",
+      "files": [
+        {
+          "path": "worker/src/index.ts"
+        },
+        {
+          "path": "worker/src/jobs/createShipment.ts"
+        },
+        {
+          "path": "worker/src/jobs/sendReceipt.ts"
+        },
+        {
+          "path": "worker/src/db.ts"
+        },
+        {
+          "path": "worker/package.json"
+        },
+        {
+          "path": "worker/Dockerfile"
+        }
+      ],
+      "details": [
+        "BullMQ Worker process consuming from order-queue",
+        "Two job types: createShipment (Shiprocket API) and sendReceipt (SendGrid email)",
+        "Runs as separate process for reliability; retries on failure",
+        "Dockerfile uses node:22-slim, installs @sendgrid/mail, bullmq, pg"
+      ]
+    },
+    {
+      "id": "postgres-db",
+      "kind": "database",
+      "label": "PostgreSQL Database",
+      "summary": "Primary relational store for products, variants, inventory, users, orders, order items, and payments. Initialized from db/schema.sql.",
+      "tech": "PostgreSQL 17",
+      "files": [
+        {
+          "path": "db/schema.sql"
+        },
+        {
+          "path": "api/src/db.ts"
+        },
+        {
+          "path": "worker/src/db.ts"
+        }
+      ],
+      "details": [
+        "Primary relational store for: products, variants, inventory, users, orders, order items, payments",
+        "Schema initialized from db/schema.sql",
+        "pg pool used by API and worker processes",
+        "Tables include products, inventory, order_items, orders"
+      ]
+    },
+    {
+      "id": "redis-cache-queue",
+      "kind": "cache",
+      "label": "Redis (Cache & Queue)",
+      "summary": "Provides caching, session storage, OTP storage, cart persistence, and BullMQ job queue for async tasks.",
+      "tech": "Redis 7, ioredis, BullMQ",
+      "files": [
+        {
+          "path": "api/src/redis.ts"
+        },
+        {
+          "path": "api/src/queue.ts"
+        },
+        {
+          "path": "worker/src/index.ts"
+        }
+      ],
+      "details": [
+        "Redis 7 serves multiple roles: session store, OTP cache, cart persistence (TTL), and BullMQ job queue backend",
+        "Key patterns: cart:{userId} with TTL, otp:{phone} with TTL, order-queue as BullMQ list",
+        "Provides caching, session storage, OTP storage, cart persistence with TTL",
+        "BullMQ job queue for async tasks"
+      ]
+    },
+    {
+      "id": "razorpay",
+      "kind": "external",
+      "label": "Razorpay Payment Gateway",
+      "summary": "External payment provider for UPI, card, and netbanking payments. API creates orders and verifies signatures; web frontend renders checkout.",
+      "tech": "Razorpay",
+      "files": [
+        {
+          "path": "api/src/lib/razorpay.ts"
+        },
+        {
+          "path": "api/src/services/payments.ts"
+        },
+        {
+          "path": "web/lib/razorpay.ts"
+        }
+      ],
+      "details": [
+        "External payment gateway for UPI, card, and netbanking",
+        "Server-side: orders.create on checkout, webhook signature verification",
+        "Client-side: Razorpay Checkout SDK with PUBLIC key in browser"
+      ]
+    },
+    {
+      "id": "sendgrid",
+      "kind": "external",
+      "label": "SendGrid Email",
+      "summary": "Transactional email service used by the worker to send order receipt emails.",
+      "tech": "SendGrid",
+      "files": [
+        {
+          "path": "worker/src/jobs/sendReceipt.ts"
+        }
+      ],
+      "details": [
+        "Transactional email service used by worker to send order receipt emails",
+        "SendGrid API call from worker job sendReceipt"
+      ]
+    },
+    {
+      "id": "shiprocket",
+      "kind": "external",
+      "label": "Shiprocket Shipping",
+      "summary": "Logistics integration used by the worker to create shipments and generate tracking for fulfilled orders.",
+      "tech": "Shiprocket",
+      "files": [
+        {
+          "path": "worker/src/jobs/createShipment.ts"
+        }
+      ],
+      "details": [
+        "Logistics integration used by worker to create shipments and generate tracking",
+        "Shiprocket API called from worker job createShipment"
+      ]
+    },
+    {
+      "id": "msg91",
+      "kind": "external",
+      "label": "MSG91 SMS/OTP",
+      "summary": "SMS provider used by the auth service to send OTP codes for phone verification.",
+      "tech": "MSG91",
+      "files": [
+        {
+          "path": "api/src/services/otp.ts"
+        }
+      ],
+      "details": [
+        "SMS provider used by auth service to send OTP codes for phone verification",
+        "API endpoint: POST https://control.msg91.com/api/v5/otp"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "web-frontend--http--api-gateway",
+      "from": "web-frontend",
+      "to": "api-gateway",
+      "kind": "http",
+      "label": "GET /api/products, POST /api/orders, POST /api/auth/otp, POST /api/auth/verify, GET /api/orders/:id · GET /api/products, GET /api/orders, POST /api/cart",
+      "evidence": [
+        {
+          "path": "web/lib/api.ts",
+          "line": 29,
+          "snippet": "products: () => call<Product[]>(\"/api/products\"),"
+        },
+        {
+          "path": "web/lib/api.ts",
+          "line": 36,
+          "snippet": "order: (id: number) => call<{ id: number; status: string; total_paise: number; shipment_id: string | null }>(`/api/orders/${id}`),"
+        },
+        {
+          "path": "web/lib/api.ts",
+          "line": 37,
+          "snippet": "requestOtp: (phone: string) => call<void>(\"/api/auth/otp\", { method: \"POST\", body: JSON.stringify({ phone }) }),"
+        },
+        {
+          "path": "web/lib/api.ts",
+          "line": 38,
+          "snippet": "verifyOtp: (phone: string, otp: string) => call<{ token: string }>(\"/api/auth/verify\", { method: \"POST\", body: JSON.stringify({ phone, otp }) }),"
+        },
+        {
+          "path": "api/src/server.ts",
+          "line": 14,
+          "snippet": "app.use(\"/api/auth\", authRouter);"
+        }
+      ]
+    },
+    {
+      "id": "web-frontend--sdk--razorpay",
+      "from": "web-frontend",
+      "to": "razorpay",
+      "kind": "sdk",
+      "label": "Razorpay SDK browser init with PUBLIC key",
+      "evidence": [
+        {
+          "path": "web/lib/razorpay.ts",
+          "line": 23,
+          "snippet": "key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,"
+        },
+        {
+          "path": "web/lib/razorpay.ts",
+          "line": 13,
+          "snippet": "script.src = \"https://checkout.razorpay.com/v1/checkout.js\";"
+        }
+      ]
+    },
+    {
+      "id": "api-gateway--sql--postgres-db",
+      "from": "api-gateway",
+      "to": "postgres-db",
+      "kind": "sql",
+      "label": "SELECT/INSERT orders, products, users, payments tables · SELECT/INSERT INTO products, orders, order items, users",
+      "evidence": [
+        {
+          "path": "api/src/db.ts",
+          "line": 1,
+          "snippet": "import pg from \"pg\";"
+        },
+        {
+          "path": "api/src/db.ts",
+          "line": 3,
+          "snippet": "export const db = new pg.Pool({"
+        }
+      ]
+    },
+    {
+      "id": "api-gateway--publish--redis-cache-queue",
+      "from": "api-gateway",
+      "to": "redis-cache-queue",
+      "kind": "publish",
+      "label": "BullMQ enqueue: order.created, shipment.created, send-receipt · publish order.created, order.paid",
+      "evidence": [
+        {
+          "path": "api/src/queue.ts",
+          "line": 1,
+          "snippet": "import { Queue } from \"bullmq\";"
+        }
+      ]
+    },
+    {
+      "id": "worker--consume--redis-cache-queue",
+      "from": "worker",
+      "to": "redis-cache-queue",
+      "kind": "consume",
+      "label": "BullMQ dequeue: order.created, shipment.created, send-receipt",
+      "evidence": [
+        {
+          "path": "worker/src/index.ts",
+          "line": 1,
+          "snippet": "import { Worker } from \"bullmq\";"
+        }
+      ]
+    },
+    {
+      "id": "worker--sql--postgres-db",
+      "from": "worker",
+      "to": "postgres-db",
+      "kind": "sql",
+      "label": "SELECT orders by id; UPDATE shipment_id, status · SELECT/INSERT orders, order items for shipment",
+      "evidence": [
+        {
+          "path": "worker/src/jobs/createShipment.ts",
+          "line": 16,
+          "snippet": "const { rows } = await db.query(\"select id, address, total_paise from orders where id = $1 and shipment_id is null\", [orderId]);"
+        },
+        {
+          "path": "worker/src/jobs/createShipment.ts",
+          "line": 35,
+          "snippet": "await db.query(\"update orders set shipment_id = $1, status = 'shipped' where id = $2\", [String(shipment.shipment_id), orderId]);"
+        },
+        {
+          "path": "worker/src/db.ts",
+          "line": 1,
+          "snippet": "import pg from \"pg\";"
+        }
+      ]
+    },
+    {
+      "id": "worker--webhook--shiprocket",
+      "from": "worker",
+      "to": "shiprocket",
+      "kind": "webhook",
+      "label": "POST /orders/create/adhoc (Shiprocket API)",
+      "evidence": [
+        {
+          "path": "worker/src/jobs/createShipment.ts",
+          "line": 20,
+          "snippet": "const res = await fetch(`${SHIPROCKET}/orders/create/adhoc`, {"
+        }
+      ]
+    },
+    {
+      "id": "worker--sdk--sendgrid",
+      "from": "worker",
+      "to": "sendgrid",
+      "kind": "sdk",
+      "label": "sendReceipt via SendGrid SDK",
+      "evidence": [
+        {
+          "path": "worker/src/jobs/sendReceipt.ts",
+          "line": 16,
+          "snippet": "await sgMail.send({"
+        }
+      ]
+    },
+    {
+      "id": "api-gateway--cache--redis-cache-queue",
+      "from": "api-gateway",
+      "to": "redis-cache-queue",
+      "kind": "cache",
+      "label": "Redis get/set for sessions, carts, OTP; Queue operations",
+      "evidence": [
+        {
+          "path": "api/src/redis.ts",
+          "line": 3,
+          "snippet": "export const redis = new Redis(process.env.REDIS_URL ?? \"redis://localhost:6379\");"
+        }
+      ]
+    },
+    {
+      "id": "api-gateway--publish--worker",
+      "from": "api-gateway",
+      "to": "worker",
+      "kind": "publish",
+      "label": "enqueue order.created / order.paid",
+      "evidence": [
+        {
+          "path": "api/src/queue.ts",
+          "line": 12,
+          "snippet": "return orderEvents.add(event.type, event, { attempts: 5, backoff: { type: \"exponential\", delay: 2000 } });"
+        }
+      ]
+    },
+    {
+      "id": "api-gateway--sdk--razorpay",
+      "from": "api-gateway",
+      "to": "razorpay",
+      "kind": "sdk",
+      "label": "Razorpay SDK initialization and order creation · razorpay.orders.create, razorpay.orders.verify",
+      "evidence": [
+        {
+          "path": "api/src/lib/razorpay.ts",
+          "line": 4,
+          "snippet": "export const razorpay = new Razorpay({"
+        },
+        {
+          "path": "api/src/lib/razorpay.ts",
+          "line": 2,
+          "snippet": "import Razorpay from \"razorpay\";"
+        }
+      ]
+    },
+    {
+      "id": "api-gateway--webhook--razorpay",
+      "from": "api-gateway",
+      "to": "razorpay",
+      "kind": "webhook",
+      "label": "Razorpay webhook POST /api/payments/razorpay · Razorpay payment.captured webhook POST /api/webhook",
+      "evidence": [
+        {
+          "path": "api/src/server.ts",
+          "line": 11,
+          "snippet": "app.use(\"/api/payments\", paymentsRouter);"
+        },
+        {
+          "path": "api/src/routes/payments.ts",
+          "line": 8,
+          "snippet": "paymentsRouter.post(\"/webhook\", express.raw({ type: \"application/json\" }), async (req, res) => {"
+        }
+      ]
+    },
+    {
+      "id": "auth-service--sql--postgres-db",
+      "from": "auth-service",
+      "to": "postgres-db",
+      "kind": "sql",
+      "label": "INSERT users, OTP records; SELECT user by phone",
+      "evidence": [
+        {
+          "path": "api/src/db.ts",
+          "line": 3,
+          "snippet": "export const db = new pg.Pool({"
+        }
+      ]
+    },
+    {
+      "id": "products-service--sql--postgres-db",
+      "from": "products-service",
+      "to": "postgres-db",
+      "kind": "sql",
+      "label": "SELECT products, variants, inventory; UPDATE stock",
+      "evidence": [
+        {
+          "path": "api/src/db.ts",
+          "line": 3,
+          "snippet": "export const db = new pg.Pool({"
+        }
+      ]
+    },
+    {
+      "id": "cart-service--cache--redis-cache-queue",
+      "from": "cart-service",
+      "to": "redis-cache-queue",
+      "kind": "cache",
+      "label": "Redis HSET/HGET cart items with TTL",
+      "evidence": [
+        {
+          "path": "api/src/redis.ts",
+          "line": 3,
+          "snippet": "export const redis = new Redis(process.env.REDIS_URL ?? \"redis://localhost:6379\");"
+        }
+      ]
+    },
+    {
+      "id": "orders-service--sql--postgres-db",
+      "from": "orders-service",
+      "to": "postgres-db",
+      "kind": "sql",
+      "label": "INSERT orders, order items; UPDATE order status",
+      "evidence": [
+        {
+          "path": "api/src/db.ts",
+          "line": 3,
+          "snippet": "export const db = new pg.Pool({"
+        }
+      ]
+    },
+    {
+      "id": "payments-service--sql--postgres-db",
+      "from": "payments-service",
+      "to": "postgres-db",
+      "kind": "sql",
+      "label": "INSERT payments, UPDATE order payment status",
+      "evidence": [
+        {
+          "path": "api/src/db.ts",
+          "line": 3,
+          "snippet": "export const db = new pg.Pool({"
+        }
+      ]
+    },
+    {
+      "id": "payments-service--sdk--razorpay",
+      "from": "payments-service",
+      "to": "razorpay",
+      "kind": "sdk",
+      "label": "Razorpay orders.create, verify signature",
+      "evidence": [
+        {
+          "path": "api/src/lib/razorpay.ts",
+          "line": 4,
+          "snippet": "export const razorpay = new Razorpay({"
+        }
+      ]
+    },
+    {
+      "id": "api-gateway--rpc--cart-service",
+      "from": "api-gateway",
+      "to": "cart-service",
+      "kind": "rpc",
+      "label": "HTTP cart read/write HGETALL/HINCRBY",
+      "evidence": [
+        {
+          "path": "api/src/routes/cart.ts",
+          "line": 12,
+          "snippet": "const items = await redis.hgetall(cartKey(req.customerId!));"
+        }
+      ]
+    },
+    {
+      "id": "api-gateway--rpc--auth-service",
+      "from": "api-gateway",
+      "to": "auth-service",
+      "kind": "rpc",
+      "label": "JWT verify, OTP send/verify",
+      "evidence": [
+        {
+          "path": "api/src/middleware/auth.ts",
+          "line": 2,
+          "snippet": "import jwt from \"jsonwebtoken\";"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "browse-products",
+      "name": "Browse Products",
+      "trigger": "User visits product listing page",
+      "description": "User browses the product catalog rendered by the Next.js storefront.",
+      "steps": [
+        {
+          "edge": "web-frontend--http--api-gateway",
+          "note": "Frontend calls API to fetch product catalog"
+        },
+        {
+          "edge": "products-service--sql--postgres-db",
+          "note": "Products service queries PostgreSQL for products and inventory"
+        }
+      ]
+    },
+    {
+      "id": "add-to-cart",
+      "name": "Add to Cart",
+      "trigger": "User adds a product to cart",
+      "description": "User adds an item to their cart, stored in Redis with TTL.",
+      "steps": [
+        {
+          "edge": "web-frontend--http--api-gateway",
+          "note": "Frontend sends add-to-cart request to API"
+        },
+        {
+          "edge": "cart-service--cache--redis-cache-queue",
+          "note": "Cart service writes cart data to Redis with TTL"
+        }
+      ]
+    },
+    {
+      "id": "checkout-order",
+      "name": "Checkout Order",
+      "trigger": "User initiates checkout",
+      "description": "User places an order, creating a Razorpay order and persisting order data.",
+      "steps": [
+        {
+          "edge": "web-frontend--http--api-gateway",
+          "note": "Frontend calls API to place order"
+        },
+        {
+          "edge": "orders-service--sql--postgres-db",
+          "note": "Orders service inserts order and items into PostgreSQL"
+        },
+        {
+          "edge": "web-frontend--sdk--razorpay",
+          "note": "Frontend renders Razorpay checkout with public key"
+        }
+      ]
+    },
+    {
+      "id": "payment-webhook",
+      "name": "Payment Webhook",
+      "trigger": "Razorpay sends payment.captured webhook",
+      "description": "Razorpay webhook verifies payment and enqueues post-order jobs.",
+      "steps": [
+        {
+          "edge": "payments-service--sdk--razorpay",
+          "note": "Payments service verifies signature via Razorpay SDK"
+        },
+        {
+          "edge": "payments-service--sql--postgres-db",
+          "note": "Payments service updates order payment status in PostgreSQL"
+        }
+      ]
+    },
+    {
+      "id": "async-post-order",
+      "name": "Async Post-Order Processing",
+      "trigger": "Worker consumes order.created job from queue",
+      "description": "Background worker creates shipment and sends receipt email.",
+      "steps": [
+        {
+          "edge": "worker--consume--redis-cache-queue",
+          "note": "Worker dequeues order.created job from Redis queue"
+        },
+        {
+          "edge": "worker--sql--postgres-db",
+          "note": "Worker updates order with shipment ID and status in PostgreSQL"
+        }
+      ]
+    },
+    {
+      "id": "view-order-history",
+      "name": "View Order History",
+      "trigger": "User visits order history page",
+      "description": "User views their past orders fetched from the database.",
+      "steps": [
+        {
+          "edge": "web-frontend--http--api-gateway",
+          "note": "Frontend calls API to fetch user orders"
+        },
+        {
+          "edge": "api-gateway--sql--postgres-db",
+          "note": "API queries PostgreSQL for orders and returns them"
+        }
+      ]
+    }
+  ],
+  "stats": {
+    "files": 39,
+    "tokens": 7210,
+    "edgesProposed": 71,
+    "edgesVerified": 20,
+    "edgesDropped": 45,
+    "nodesDropped": 0,
+    "model": "nvidia/nemotron-3-ultra-550b-a55b + nvidia/nemotron-3.5-lightning-30b-a3b via NVIDIA",
+    "durationMs": 164148,
+    "agents": [
+      {
+        "agent": "scout",
+        "durationMs": 35049,
+        "inputTokens": 2834,
+        "outputTokens": 2211
+      },
+      {
+        "agent": "reader:worker-jobs",
+        "durationMs": 13901,
+        "inputTokens": 3267,
+        "outputTokens": 933
+      },
+      {
+        "agent": "reader:infrastructure",
+        "durationMs": 51762,
+        "inputTokens": 3304,
+        "outputTokens": 2402
+      },
+      {
+        "agent": "reader:api-services",
+        "durationMs": 41475,
+        "inputTokens": 5699,
+        "outputTokens": 2071
+      },
+      {
+        "agent": "reader:api-core",
+        "durationMs": 58128,
+        "inputTokens": 3300,
+        "outputTokens": 2700
+      },
+      {
+        "agent": "reader:web-frontend",
+        "durationMs": 63388,
+        "inputTokens": 5494,
+        "outputTokens": 3434
+      },
+      {
+        "agent": "cartographer",
+        "durationMs": 65543,
+        "inputTokens": 7169,
+        "outputTokens": 4046
+      }
+    ]
+  }
+}

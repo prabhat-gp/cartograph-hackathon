@@ -1,6 +1,6 @@
 import type { CartographEdge, CartographFlow, CartographGraph, CartographNode, Evidence } from "../../shared/graph";
 import { numberLines, type ChangedFile, type RepoFile, type RepoSnapshot } from "../repo";
-import type { CartographerEdge, Component, ReaderGroup, ReaderOutput, StructuredNode } from "./schemas";
+import type { Component, ReaderGroup, ReaderOutput, StructuredNode } from "./schemas";
 
 export const READER_GROUP_TOKENS = 60_000;
 export const READER_TOTAL_TOKENS = 350_000;
@@ -124,29 +124,59 @@ export function numberReaderEdges(outputs: ReaderOutput[]): NumberedReaderEdge[]
   return outputs.flatMap((output) => output.edges).map((edge, i) => ({ ...edge, id: `r${i + 1}` }));
 }
 
-/** Only source reader edges supply evidence; the cartographer cannot rewrite it. */
-export function mergeEvidence(
-  edges: CartographerEdge[], readers: NumberedReaderEdge[], nodes: CartographNode[],
-): CartographEdge[] {
-  const sources = new Map(readers.map((edge) => [edge.id, edge]));
-  const nodeIds = new Set(nodes.map((node) => node.id));
-  const seenIds = new Set<string>();
-  const result: CartographEdge[] = [];
-  for (const edge of edges) {
-    if (!nodeIds.has(edge.from) || !nodeIds.has(edge.to) || seenIds.has(edge.id)) continue;
-    const evidence = new Map<string, Evidence>();
-    for (const source of edge.sources) {
-      for (const item of sources.get(source)?.evidence ?? []) {
-        const key = JSON.stringify([item.path, item.line]);
-        if (!evidence.has(key)) evidence.set(key, item);
-      }
+/**
+ * Merges the readers' edges into the map's dependencies, in code: one edge per
+ * from → to, kind and label, with the union of their evidence (by path and
+ * line). Evidence only ever comes from the readers.
+ */
+export function mergeReaderEdges(readers: NumberedReaderEdge[]): CartographEdge[] {
+  const merged = new Map<string, CartographEdge>();
+  for (const edge of readers) {
+    const key = JSON.stringify([edge.from, edge.to, edge.kind, edge.label.trim().toLowerCase()]);
+    const existing = merged.get(key);
+    if (!existing) {
+      merged.set(key, { id: `e${merged.size + 1}`, from: edge.from, to: edge.to, kind: edge.kind, label: edge.label, evidence: dedupeEvidence(edge.evidence) });
+    } else {
+      existing.evidence = dedupeEvidence([...existing.evidence, ...edge.evidence]);
     }
-    if (!evidence.size) continue;
-    const { sources: _, ...dependency } = edge;
-    result.push({ ...dependency, evidence: [...evidence.values()] });
-    seenIds.add(edge.id);
   }
-  return result;
+  return [...merged.values()];
+}
+
+function dedupeEvidence(items: Evidence[]): Evidence[] {
+  return [...new Map(items.map((item) => [JSON.stringify([item.path, item.line]), item])).values()];
+}
+
+/**
+ * Applies the Cartographer's component merges (aliases) to the edges, drops
+ * edges whose ends aren't components, and folds edges that became duplicates
+ * into the first one. Returns the edges and where each dropped id went.
+ */
+export function remapEdges(
+  edges: CartographEdge[], nodes: CartographNode[], aliases: { from: string; to: string }[],
+): { edges: CartographEdge[]; redirect: Map<string, string> } {
+  const alias = new Map(aliases.map((a) => [a.from, a.to]));
+  const resolve = (id: string) => {
+    for (let i = 0; i < 5 && alias.has(id); i++) id = alias.get(id)!;
+    return id;
+  };
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  const byKey = new Map<string, CartographEdge>();
+  const redirect = new Map<string, string>();
+  for (const edge of edges) {
+    const from = resolve(edge.from);
+    const to = resolve(edge.to);
+    if (!nodeIds.has(from) || !nodeIds.has(to) || from === to) continue;
+    const key = JSON.stringify([from, to, edge.kind, edge.label.trim().toLowerCase()]);
+    const kept = byKey.get(key);
+    if (kept) {
+      kept.evidence = dedupeEvidence([...kept.evidence, ...edge.evidence]);
+      redirect.set(edge.id, kept.id);
+    } else {
+      byKey.set(key, { ...edge, from, to });
+    }
+  }
+  return { edges: [...byKey.values()], redirect };
 }
 
 export function cleanFlows(flows: CartographFlow[], edges: Pick<CartographEdge, "id">[]): CartographFlow[] {

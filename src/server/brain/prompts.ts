@@ -34,16 +34,15 @@ newComponents ids. Record endpoints, tables, queue names and other useful concre
 facts in componentNotes. Return empty arrays when there is no evidence.`;
 
 export const CARTOGRAPHER_PROMPT = `${grounding}
-Synthesize the catalog, reader dependencies numbered globally r1, r2, …, and notes.
+Synthesize the catalog, the dependencies (already merged, ids e1, e2, …) and notes.
 Merge duplicate components, correct kinds, write useful summaries and fold facts
-into details. Aim for 6–24 nodes, without inventing unsupported components. Keep
-stable kebab-case node ids, map paths into files and use null for unknown tech/line.
-Produce one edge per distinct dependency; preserve distinct operations when useful.
-Assign unique sequential ids e1, e2, … and sources containing ONLY supplied r* ids
-that prove that dependency. When consolidating nodes, consistently remap endpoints.
+into at most 4 short details each. Aim for 6–24 nodes, without inventing unsupported
+components. Keep stable kebab-case node ids, map paths into files and use null for
+unknown tech/line. Do not output edges: when you merge or rename a component, add an
+alias { from: old id, to: kept id } so its dependencies follow it.
 You have no code or evidence: never invent, rewrite or output evidence.
 Compose 3–6 supported flows from flowHints with unique kebab-case ids. Each flow
-follows a request or job in execution order using your e* ids; notes are one short
+follows a request or job in execution order using the given e* ids; notes are one short
 sentence. Queue consumers can be the next execution step even though their edge
 points worker → queue. Do not force unrelated edges into a journey. Return fewer
 flows if the available dependencies cannot support more. Summarize the system and stack.`;

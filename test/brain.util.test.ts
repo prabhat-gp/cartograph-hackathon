@@ -4,7 +4,7 @@ import type { CartographGraph, CartographNode } from "../src/shared/graph";
 import type { RepoFile, RepoSnapshot } from "../src/server/repo";
 import {
   budgetGroups, cleanFlows, compactGraph, concurrentMap, fallbackGroups,
-  isSuppliedEvidence, mergeComponents, mergeEvidence, numberReaderEdges,
+  isSuppliedEvidence, mergeComponents, mergeReaderEdges, numberReaderEdges, remapEdges,
   renderFiles, reviewFiles, scoutInput, toNode,
 } from "../src/server/brain/util";
 import {
@@ -86,17 +86,25 @@ describe("graph assembly", () => {
     const output: ReaderOutput = { edges: [dependency], newComponents: [], componentNotes: [] };
     expect(numberReaderEdges([output, { ...output, edges: [] }, output]).map((edge) => edge.id)).toEqual(["r1", "r2"]);
   });
-  it("merges original evidence by path and line and drops unsupported edges", () => {
+  it("merges reader edges in code, unioning their evidence by path and line", () => {
     const readers = numberReaderEdges([
-      { edges: [dependency, { ...dependency, evidence: [evidence, { ...evidence, line: 3, snippet: "third" }] }], newComponents: [], componentNotes: [] },
+      { edges: [dependency, { ...dependency, label: "select orders ", evidence: [evidence, { ...evidence, line: 3, snippet: "third" }] }], newComponents: [], componentNotes: [] },
+      { edges: [{ ...dependency, label: "INSERT INTO orders" }], newComponents: [], componentNotes: [] },
     ]);
-    const proposed = { id: "e1", from: "api", to: "db", kind: "sql" as const, label: "Query orders", sources: ["r1", "r2", "unknown"] };
-    const edges = mergeEvidence([proposed, proposed, { ...proposed, id: "e2", sources: ["unknown"] },
-      { ...proposed, id: "e3", to: "missing" }], readers, [node, { ...node, id: "db" }]);
-    expect(edges).toHaveLength(1);
+    const edges = mergeReaderEdges(readers);
+    expect(edges.map((e) => [e.id, e.label])).toEqual([["e1", "SELECT orders"], ["e2", "INSERT INTO orders"]]);
     expect(edges[0].evidence).toEqual([evidence, { ...evidence, line: 3, snippet: "third" }]);
-    expect(edges[0].evidence[0]).toBe(evidence);
-    expect(edges[0]).not.toHaveProperty("sources");
+  });
+  it("follows component merges, drops edges to unknown components and folds new duplicates", () => {
+    const edges = [
+      { id: "e1", ...dependency },
+      { id: "e2", ...dependency, from: "orders-api", evidence: [{ ...evidence, line: 9 }] },
+      { id: "e3", ...dependency, to: "missing" },
+    ];
+    const { edges: out, redirect } = remapEdges(edges, [node, { ...node, id: "db" }], [{ from: "orders-api", to: "api" }]);
+    expect(out.map((e) => e.id)).toEqual(["e1"]);
+    expect(out[0].evidence.map((e) => e.line)).toEqual([2, 9]);
+    expect(redirect.get("e2")).toBe("e1");
   });
   it("prunes missing flow steps, empty flows and duplicate flow ids", () => {
     expect(cleanFlows([flow, flow, { ...flow, id: "empty", steps: [{ edge: "missing", note: "Gone" }] }], graph.edges))

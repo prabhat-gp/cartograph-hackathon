@@ -94,6 +94,50 @@ function requestBody(provider: ProviderConfig, model: string, messages: ChatMess
   };
 }
 
+const ID_KEYS = new Set(["id", "from", "to", "edge", "path", "kind", "flowId"]);
+
+/**
+ * Repairs an answer without another model call: a null or missing descriptive
+ * string becomes "", and a list item that still doesn't fit is dropped on its
+ * own. Identifiers are never invented. Returns the parse result after salvage.
+ */
+export function salvage<S extends z.ZodType>(schema: S, value: unknown): z.ZodSafeParseResult<z.infer<S>> {
+  let current = structuredClone(value);
+  let parsed = schema.safeParse(current);
+  for (let round = 0; round < 25 && !parsed.success; round++) {
+    let changed = false;
+    const drops: { list: unknown[]; index: number }[] = [];
+    for (const issue of parsed.error.issues) {
+      const at = issue.path;
+      const key = at.at(-1);
+      const parent = at.slice(0, -1).reduce<unknown>((node, k) => (node as Record<PropertyKey, unknown>)?.[k as PropertyKey], current);
+      const expected = (issue as { expected?: string }).expected;
+      if (issue.code === "invalid_type" && expected === "string" && typeof key === "string" && !ID_KEYS.has(key) && parent && typeof parent === "object") {
+        (parent as Record<string, unknown>)[key] = "";
+        changed = true;
+        continue;
+      }
+      const i = at.findLastIndex((k) => typeof k === "number");
+      if (i < 0) continue;
+      const list = at.slice(0, i).reduce<unknown>((node, k) => (node as Record<PropertyKey, unknown>)?.[k as PropertyKey], current);
+      if (Array.isArray(list)) drops.push({ list, index: at[i] as number });
+    }
+    // Drop from the end so earlier indexes stay valid; an item with several issues goes once.
+    const done = new Map<unknown[], Set<number>>();
+    for (const d of drops.sort((a, b) => b.index - a.index)) {
+      const indexes = done.get(d.list) ?? new Set<number>();
+      if (indexes.has(d.index) || d.index >= d.list.length) continue;
+      indexes.add(d.index);
+      done.set(d.list, indexes);
+      d.list.splice(d.index, 1);
+      changed = true;
+    }
+    if (!changed) break;
+    parsed = schema.safeParse(current);
+  }
+  return parsed;
+}
+
 /** Parse the model's text as JSON, tolerating a ```json fence around it. */
 export function extractJson(text: string): unknown {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -170,7 +214,7 @@ export async function callJson<S extends z.ZodType>(call: JsonCall<S>, deps: Cli
       const choice = data.choices?.[0];
       text = choice?.message?.content ?? "";
       if (choice?.finish_reason === "length") throw new ModelOutputError("output hit max_tokens before the JSON finished");
-      const parsed = call.schema.safeParse(extractJson(text));
+      const parsed = salvage(call.schema, extractJson(text));
       if (!parsed.success) throw new ModelOutputError(`JSON did not match the schema: ${z.prettifyError(parsed.error)}`);
       log(true);
       return parsed.data;

@@ -35,12 +35,11 @@ export const FlowSchema = z.object({
   id: z.string(), name: z.string(), trigger: z.string(), description: z.string(),
   steps: z.array(z.object({ edge: z.string(), note: z.string() })).min(1),
 });
-export const CartographerEdgeSchema = z.object({
-  id: z.string(), from: z.string(), to: z.string(), kind: z.enum(EDGE_KINDS),
-  label: z.string(), sources: z.array(z.string()).default([]),
-});
+// The Cartographer no longer writes edges (code merges the readers' edges, which is
+// most of the old answer's length); it renames merged components through aliases.
 export const CartographerSchema = z.object({
-  nodes: z.array(NodeSchema).default([]), edges: z.array(CartographerEdgeSchema).default([]),
+  nodes: z.array(NodeSchema).default([]),
+  aliases: z.array(z.object({ from: z.string(), to: z.string() })).default([]),
   flows: z.array(FlowSchema).default([]), summary: z.string(), stack: z.array(z.string()).default([]),
 });
 export const ReviewerSchema = z.object({
@@ -60,4 +59,3 @@ export type Component = z.infer<typeof ComponentSchema>;
 export type ReaderGroup = z.infer<typeof ReaderGroupSchema>;
 export type ReaderOutput = z.infer<typeof ReaderSchema>;
 export type StructuredNode = z.infer<typeof NodeSchema>;
-export type CartographerEdge = z.infer<typeof CartographerEdgeSchema>;

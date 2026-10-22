@@ -4,7 +4,7 @@ import { callJson } from "../../llm/client";
 import type { AgentName, BrainOptions } from "./types";
 
 // Output budgets per agent: the Cartographer writes the whole graph in one answer.
-const MAX_TOKENS: Record<AgentName, number> = { scout: 6000, reader: 6000, cartographer: 10000, reviewer: 6000, tracer: 2500 };
+const MAX_TOKENS: Record<AgentName, number> = { scout: 6000, reader: 6000, cartographer: 7000, reviewer: 6000, tracer: 2500 };
 // Nemotron writes roughly 50-70 tokens a second, so long answers need long timeouts.
 const TIMEOUT_MS: Record<AgentName, number> = { scout: 180_000, reader: 180_000, cartographer: 330_000, reviewer: 240_000, tracer: 90_000 };
 

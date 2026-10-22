@@ -6,7 +6,7 @@ import { CartographerSchema, ReaderSchema, ScoutSchema, type ReaderOutput } from
 import type { BrainOptions, DraftGraph } from "./types";
 import {
   budgetGroups, cleanFlows, concurrentMap, fallbackGroups, mergeComponents,
-  mergeEvidence, numberReaderEdges, renderFiles, scoutInput, toNode,
+  mergeReaderEdges, numberReaderEdges, remapEdges, renderFiles, scoutInput, toNode,
 } from "./util";
 
 export async function mapRepository(snapshot: RepoSnapshot, opts: BrainOptions = {}): Promise<DraftGraph> {
@@ -50,17 +50,19 @@ export async function mapRepository(snapshot: RepoSnapshot, opts: BrainOptions =
   });
   opts.signal?.throwIfAborted();
   const catalog = mergeComponents([...scout.components, ...outputs.flatMap((output) => output.newComponents)]);
-  const readerEdges = numberReaderEdges(outputs);
-  progress?.({ agent: "cartographer", phase: "start", message: `Cartographer · organizing ${readerEdges.length} dependencies` });
+  const merged = mergeReaderEdges(numberReaderEdges(outputs));
+  progress?.({ agent: "cartographer", phase: "start", message: `Cartographer · organizing ${merged.length} dependencies` });
   const result = await runAgent("cartographer", CARTOGRAPHER_PROMPT, CartographerSchema, JSON.stringify({
     repo: snapshot.repo.name, catalog, summary: scout.summary, stack: scout.stack,
     flowHints: scout.flowHints,
-    edges: readerEdges.map(({ evidence: _, ...edge }) => edge),
+    edges: merged.map(({ evidence: _, ...edge }) => edge),
     notes: outputs.flatMap((output) => output.componentNotes),
   }), opts, agentStats);
   const nodes = [...new Map(result.nodes.map((node) => [node.id, toNode(node)])).values()];
-  const edges = mergeEvidence(result.edges, readerEdges, nodes);
-  const flows = cleanFlows(result.flows, edges);
+  const { edges, redirect } = remapEdges(merged, nodes, result.aliases);
+  const flows = cleanFlows(result.flows.map((flow) => ({
+    ...flow, steps: flow.steps.map((step) => ({ ...step, edge: redirect.get(step.edge) ?? step.edge })),
+  })), edges);
   progress?.({ agent: "cartographer", phase: "done", message: `Cartographer · ${nodes.length} components, ${edges.length} dependencies, ${flows.length} flows`,
     data: { nodes: nodes.length, edges: edges.length, flows: flows.length } });
   return { nodes, edges, flows, summary: result.summary, stack: result.stack, agentStats };
