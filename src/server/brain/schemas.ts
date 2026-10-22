@@ -1,17 +1,18 @@
 import { z } from "zod";
 import { EDGE_KINDS, NODE_KINDS, SEVERITIES } from "../../shared/graph";
 
-// Separate agent schemas from the shared schemas: strict outputs require every field.
+// Agent output schemas. Lists that can legitimately be empty default to [] so a
+// model that leaves one out doesn't cost the whole answer.
 export const ComponentSchema = z.object({
   id: z.string(), kind: z.enum(NODE_KINDS), label: z.string(),
-  tech: z.string().nullable(), summary: z.string(), paths: z.array(z.string()),
+  tech: z.string().nullable().default(null), summary: z.string(), paths: z.array(z.string()).default([]),
 });
 export const ReaderGroupSchema = z.object({
-  name: z.string(), focus: z.string(), files: z.array(z.string()),
+  name: z.string(), focus: z.string(), files: z.array(z.string()).default([]),
 });
 export const ScoutSchema = z.object({
-  stack: z.array(z.string()), summary: z.string(), components: z.array(ComponentSchema),
-  readerGroups: z.array(ReaderGroupSchema), flowHints: z.array(z.string()),
+  stack: z.array(z.string()).default([]), summary: z.string(), components: z.array(ComponentSchema).default([]),
+  readerGroups: z.array(ReaderGroupSchema).default([]), flowHints: z.array(z.string()).default([]),
 });
 export const EvidenceSchema = z.object({
   path: z.string(), line: z.number().int().positive(), snippet: z.string(),
@@ -21,14 +22,14 @@ export const ReaderEdgeSchema = z.object({
   evidence: z.array(EvidenceSchema).min(1),
 });
 export const ReaderSchema = z.object({
-  edges: z.array(ReaderEdgeSchema), newComponents: z.array(ComponentSchema),
-  componentNotes: z.array(z.object({ id: z.string(), details: z.array(z.string()) })),
+  edges: z.array(ReaderEdgeSchema).default([]), newComponents: z.array(ComponentSchema).default([]),
+  componentNotes: z.array(z.object({ id: z.string(), details: z.array(z.string()) })).default([]),
 });
 export const NodeSchema = z.object({
   id: z.string(), kind: z.enum(NODE_KINDS), label: z.string(), summary: z.string(),
-  tech: z.string().nullable(),
-  files: z.array(z.object({ path: z.string(), line: z.number().int().positive().nullable() })),
-  details: z.array(z.string()),
+  tech: z.string().nullable().default(null),
+  files: z.array(z.object({ path: z.string(), line: z.number().int().positive().nullable() })).default([]),
+  details: z.array(z.string()).default([]),
 });
 export const FlowSchema = z.object({
   id: z.string(), name: z.string(), trigger: z.string(), description: z.string(),
@@ -36,20 +37,20 @@ export const FlowSchema = z.object({
 });
 export const CartographerEdgeSchema = z.object({
   id: z.string(), from: z.string(), to: z.string(), kind: z.enum(EDGE_KINDS),
-  label: z.string(), sources: z.array(z.string()),
+  label: z.string(), sources: z.array(z.string()).default([]),
 });
 export const CartographerSchema = z.object({
-  nodes: z.array(NodeSchema), edges: z.array(CartographerEdgeSchema),
-  flows: z.array(FlowSchema), summary: z.string(), stack: z.array(z.string()),
+  nodes: z.array(NodeSchema).default([]), edges: z.array(CartographerEdgeSchema).default([]),
+  flows: z.array(FlowSchema).default([]), summary: z.string(), stack: z.array(z.string()).default([]),
 });
 export const ReviewerSchema = z.object({
-  addNodes: z.array(NodeSchema),
-  addEdges: z.array(ReaderEdgeSchema.extend({ id: z.string() })),
-  removeEdgeIds: z.array(z.string()),
+  addNodes: z.array(NodeSchema).default([]),
+  addEdges: z.array(ReaderEdgeSchema.extend({ id: z.string() })).default([]),
+  removeEdgeIds: z.array(z.string()).default([]),
   findings: z.array(z.object({
     severity: z.enum(SEVERITIES), title: z.string(), detail: z.string(),
     nodeIds: z.array(z.string()), edgeIds: z.array(z.string()),
-  })),
+  })).default([]),
   summary: z.string(),
 });
 export const TracerSchema = z.object({

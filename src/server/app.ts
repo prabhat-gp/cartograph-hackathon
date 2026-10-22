@@ -1,9 +1,9 @@
 // The Cartograph HTTP app. Every sensitive route lives on one router that is mounted
-// twice: under the secret prefix /<CARTOGRAPH_ACCESS_TOKEN> (for ChatGPT and other
+// twice: under the secret prefix /<CARTOGRAPH_ACCESS_TOKEN> (for MCP clients and other
 // remote callers) and bare, for this machine only. See security.ts.
 //
-//   /mcp              MCP endpoint for ChatGPT (MCP 2026-07-28 + stateless 2025 fallback)
-//   /app              the Cartograph UI outside ChatGPT (standalone mode)
+//   /mcp              MCP endpoint for MCP clients (MCP 2026-07-28 + stateless 2025 fallback)
+//   /app              the Cartograph UI in a browser (standalone mode)
 //   /api/tools/:name  REST access to the tools (standalone UI, scripts, tests)
 //   /hooks/local      review a local repo (called from a git post-commit hook)
 //   /webhooks/github  GitHub push webhooks (public, but HMAC-signed)
@@ -13,7 +13,7 @@ import { execFile } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express, { type Express, type Request, type Response } from "express";
-import { codexRuntime } from "./brain/codex";
+import { providerConfig, runtimeLabel } from "../config";
 import { subscriptionCount } from "./events";
 import { githubWebhook } from "./github";
 import { startReviewJob } from "./jobs";
@@ -95,8 +95,15 @@ export function createApp(opts: { port: number }): Express {
     res.type("html").send(await appHtml({ standalone: true }));
   });
   api.get("/health", (_req: Request, res: Response) => {
-    const runtime = process.env.CARTOGRAPH_BRAIN === "fixture" ? "fixture" : codexRuntime() ? "codex" : "api";
-    res.json({ ok: true, runtime, model: process.env.CARTOGRAPH_MODEL ?? "gpt-6.1-sol", subscriptions: subscriptionCount(), demo: !!demoRepo });
+    let runtime = "fixture";
+    if (process.env.CARTOGRAPH_BRAIN !== "fixture") {
+      try {
+        runtime = providerConfig().name;
+      } catch {
+        runtime = "unconfigured";
+      }
+    }
+    res.json({ ok: true, runtime, model: runtimeLabel(), subscriptions: subscriptionCount(), demo: !!demoRepo });
   });
   api.get("/", (req: Request, res: Response) => res.redirect(`${req.baseUrl}/app`));
 

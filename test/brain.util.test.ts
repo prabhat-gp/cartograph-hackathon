@@ -169,20 +169,13 @@ it("limits reader concurrency while preserving input order", async () => {
   await expect(concurrentMap([], 0, async () => 0)).rejects.toThrow();
 });
 
-it("uses strict-output compatible schemas with every object property required", () => {
-  function check(schema: Record<string, unknown>) {
-    if (schema.type === "object") {
-      expect(schema.required).toEqual(Object.keys(schema.properties as object));
-      expect(schema.additionalProperties).toBe(false);
-    }
-    expect(schema).not.toHaveProperty("default");
-    for (const value of Object.values(schema)) {
-      if (Array.isArray(value)) value.forEach((item) => { if (item && typeof item === "object") check(item); });
-      else if (value && typeof value === "object") check(value as Record<string, unknown>);
-    }
-  }
+it("accepts agent answers that leave out lists that may be empty", () => {
+  expect(ReaderSchema.parse({ edges: [] })).toEqual({ edges: [], newComponents: [], componentNotes: [] });
+  expect(ReviewerSchema.parse({ summary: "No change" })).toMatchObject({ addNodes: [], addEdges: [], removeEdgeIds: [], findings: [] });
+  // A dependency without evidence is still rejected: no citation, no arrow.
+  expect(() => ReaderSchema.parse({ edges: [{ from: "a", to: "b", kind: "http", label: "GET /", evidence: [] }] })).toThrow();
   for (const schema of [ScoutSchema, ReaderSchema, CartographerSchema, ReviewerSchema, TracerSchema]) {
-    check(z.toJSONSchema(schema));
+    expect(z.toJSONSchema(schema).type).toBe("object");
   }
 });
 

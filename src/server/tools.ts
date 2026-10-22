@@ -1,4 +1,4 @@
-// Tool implementations, shared by the MCP server (ChatGPT) and the REST API
+// Tool implementations, shared by the MCP server and the REST API
 // that powers the standalone UI and tests.
 import { type CartographFlow, type CartographGraph, type DriftReport, shortSha } from "../shared/graph";
 import { getBrain } from "./brain-select";
@@ -13,7 +13,6 @@ import {
   nodeMap,
 } from "./graph/analysis";
 import { remapFlows } from "./graph/verify";
-import { codexRuntime } from "./brain/codex";
 import { activeJob, activeJobs, getJob, startMapJob, startReviewJob } from "./jobs";
 import { resolveRepo } from "./repo";
 import { localRepoAllowed } from "./security";
@@ -124,7 +123,7 @@ export async function mapRepo(args: { repo: string; branch?: string; force?: boo
     text:
       `Mapping ${job.repoName} has started. Cartograph agents are reading the code: a Scout plans the work, Readers analyse ` +
       `modules in parallel, a Cartographer assembles the map, and a Verifier drops any dependency it can't find in the ` +
-      `code. The Cartograph view shows live progress; it takes ${codexRuntime() ? "a few minutes" : "about a minute"}. Don't call map_repo again for this repo.`,
+      `code. The Cartograph view shows live progress; it takes a few minutes. Don't call map_repo again for this repo.`,
     structured: { view: "map", repoKey: job.repoKey, jobId: job.id, status: "running", summary: null },
   };
 }

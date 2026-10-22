@@ -1,6 +1,6 @@
 // Cartograph server entry point. Routes and security live in app.ts / security.ts.
 import { createApp } from "./app";
-import { codexRuntime } from "./brain/codex";
+import { runtimeLabel } from "../config";
 import { emitDrift } from "./events";
 import { commentOnCommit } from "./github";
 import { onDrift, startReviewJob } from "./jobs";
@@ -9,7 +9,7 @@ import { ACCESS_TOKEN } from "./security";
 
 const PORT = Number(process.env.PORT ?? 8787);
 const publicUrl = () => process.env.PUBLIC_URL?.replace(/\/+$/, "");
-/** Links that only go to ChatGPT (private) may carry the secret prefix. */
+/** Links that only go to the private MCP client may carry the secret prefix. */
 const privateBase = () => (publicUrl() ? `${publicUrl()}${ACCESS_TOKEN ? `/${ACCESS_TOKEN}` : ""}` : undefined);
 
 // Drift fan-out: MCP Events subscribers (private links) + optional GitHub
@@ -30,6 +30,6 @@ createApp({ port: PORT }).listen(PORT, () => {
   console.log(`Cartograph on http://localhost:${PORT}  (MCP: /mcp, UI: /app)`);
   if (!ACCESS_TOKEN) console.warn("⚠ CARTOGRAPH_ACCESS_TOKEN is not set: remote access is disabled (the tunnel will 404 everything)");
   if (process.env.CARTOGRAPH_BRAIN !== "fixture") {
-    console.log(codexRuntime() ? "Agents run on Codex (your ChatGPT plan, no API key)" : "Agents run on the OpenAI API");
+    console.log(`Agents run on ${runtimeLabel()}`);
   }
 });

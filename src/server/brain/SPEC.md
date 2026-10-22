@@ -27,17 +27,17 @@ external → api (webhook, e.g. a payment provider calling our webhook route).
 
 ## Stack
 
-- `@openai/agents` (v0.19, already installed): `new Agent({ name, instructions, model, outputType, modelSettings })`,
-  `run(agent, input, { signal })`, `withTrace(name, fn)`. Read the `.d.ts` files in
-  `node_modules/@openai/agents-core/dist` if unsure about an API.
-- `zod` v4 for `outputType`. These go through OpenAI **strict structured outputs**:
-  every property must be required. Use `.nullable()` instead of `.optional()`, no
-  `.default()`, no unions of objects with different shapes, no `z.record`.
-- Model: `opts.model ?? process.env.CARTOGRAPH_MODEL ?? "gpt-6.1-sol"`.
-  `modelSettings: { reasoning: { effort } }` with effort `"low"` for readers and the
-  tracer, `"medium"` for scout, cartographer and reviewer.
-- Wrap each public function in `withTrace("Cartograph · <action> · <repo name>", …)` so a
-  whole run shows up as one trace in the OpenAI dashboard.
+- Every agent call goes through `runAgent` in `run.ts`, which calls `callJson` in
+  `src/llm/client.ts`: NVIDIA Nemotron, through Meterless Nightshift when
+  `METERLESS_API_KEY` is set and NVIDIA's API directly otherwise.
+- `zod` v4 schemas describe each agent's output. The client puts the JSON Schema in the
+  prompt, asks for a JSON object, validates the answer and gives the model one repair
+  turn with the exact validation error (NVIDIA's strict json_schema mode is not used:
+  it runs away into whitespace). Use `.nullable()` instead of `.optional()`.
+- Tiers: readers and the tracer use the fast tier (Nemotron 3.5 Lightning), scout,
+  cartographer and reviewer the deep tier (Nemotron 3 Ultra). `opts.model` overrides.
+- Every call is logged to the usage ledger with its tokens; daily caps protect the
+  free NVIDIA quota.
 - No other new dependencies.
 
 ## mapRepository(snapshot): the multi-agent pipeline
@@ -140,5 +140,5 @@ notes). In code, drop steps whose edge id doesn't exist; if nothing is left, ret
   `index.ts`. Pure helpers (grouping fallback, budget, numbering, evidence merging,
   compact graph) go in `util.ts`.
 - Unit tests for the pure helpers in `test/brain.util.test.ts` (vitest, no network).
-- `npx tsc --noEmit` and `npx vitest run test/brain.util.test.ts` must pass. Do not run
-  anything that calls the OpenAI API (there is no key in this environment).
+- `npx tsc --noEmit` and `npx vitest run test/brain.util.test.ts` must pass. Tests never
+  call a model; use the fixture brain (`CARTOGRAPH_BRAIN=fixture`) for offline runs.

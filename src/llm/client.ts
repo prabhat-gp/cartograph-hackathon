@@ -21,6 +21,10 @@ export interface JsonCall<S extends z.ZodType> {
   /** Nemotron reasoning traces cost tokens; off unless an agent needs them. */
   thinking?: boolean;
   signal?: AbortSignal;
+  /** Per-attempt timeout; defaults to 180 s on Meterless and 120 s on NVIDIA. */
+  timeoutMs?: number;
+  /** Called after every attempt with that attempt's token counts. */
+  onUsage?: (usage: { inputTokens: number; outputTokens: number; model: string; provider: string }) => void;
 }
 
 export interface ClientDeps {
@@ -122,11 +126,15 @@ export async function callJson<S extends z.ZodType>(call: JsonCall<S>, deps: Cli
         res = await doFetch(`${provider.baseUrl}/chat/completions`, {
           method: "POST",
           headers: headers(provider),
-          signal: call.signal ?? AbortSignal.timeout(provider.name === "meterless" ? METERLESS_TIMEOUT_MS : 120_000),
+          signal: AbortSignal.any([
+            ...(call.signal ? [call.signal] : []),
+            AbortSignal.timeout(call.timeoutMs ?? (provider.name === "meterless" ? METERLESS_TIMEOUT_MS : 120_000)),
+          ]),
           body: JSON.stringify(requestBody(provider, model, messages, call)),
         });
       } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") throw error;
+        // The caller cancelling is not a transport problem; our own timeout is.
+        if (call.signal?.aborted) throw error;
         throw new TransportError(`${provider.name} not reachable at ${provider.baseUrl}: ${error instanceof Error ? error.message : error}`);
       }
       if (res.status === 429 && i < RATE_LIMIT_WAITS.length) {
@@ -151,8 +159,10 @@ export async function callJson<S extends z.ZodType>(call: JsonCall<S>, deps: Cli
     let inputTokens = 0;
     let outputTokens = 0;
     let text = "";
-    const log = (ok: boolean, error?: string) =>
+    const log = (ok: boolean, error?: string) => {
+      call.onUsage?.({ inputTokens, outputTokens, model, provider: provider.name });
       recordUsage({ ts: new Date().toISOString(), provider: provider.name, model, agent: call.agent, inputTokens, outputTokens, ms: Math.round(performance.now() - started), ok, ...(error ? { error: error.slice(0, 300) } : {}) }, file);
+    };
     try {
       const data = await post();
       inputTokens = data.usage?.prompt_tokens ?? 0;

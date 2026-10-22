@@ -26,7 +26,7 @@ export interface ProgressEvent {
 export type OnProgress = (event: ProgressEvent) => void;
 
 export interface BrainOptions {
-  /** Defaults to process.env.CARTOGRAPH_MODEL ?? "gpt-6.1-sol". */
+  /** Overrides the tier model on the primary provider (see src/config.ts). */
   model?: string;
   onProgress?: OnProgress;
   signal?: AbortSignal;

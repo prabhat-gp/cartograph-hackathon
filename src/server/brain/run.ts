@@ -1,52 +1,50 @@
-import { Agent, run, setTracingDisabled } from "@openai/agents";
 import { z } from "zod";
 import type { AgentRunStat } from "../../shared/graph";
-import { codexRuntime, runCodex } from "./codex";
+import { callJson } from "../../llm/client";
 import type { AgentName, BrainOptions } from "./types";
 
-// Without an API key the agents run on Codex; the SDK has nowhere to send traces.
-if (codexRuntime()) setTracingDisabled(true);
+// Output budgets per agent: the Cartographer writes the whole graph in one answer.
+const MAX_TOKENS: Record<AgentName, number> = { scout: 6000, reader: 6000, cartographer: 10000, reviewer: 6000, tracer: 2500 };
+// Nemotron writes roughly 50-70 tokens a second, so long answers need long timeouts.
+const TIMEOUT_MS: Record<AgentName, number> = { scout: 180_000, reader: 180_000, cartographer: 330_000, reviewer: 240_000, tracer: 90_000 };
 
-/** Runs a structured agent with one retry. Stats include each attempted call. */
+/**
+ * Runs one structured agent call on Nemotron, through Meterless Nightshift when
+ * it's configured and NVIDIA directly otherwise. Readers and the Tracer use the
+ * fast tier, the rest the deep tier. callJson validates the output against the
+ * schema and gives the model one repair turn; stats get one entry per call.
+ */
 export async function runAgent<S extends z.ZodObject>(
   name: AgentName, instructions: string, schema: S, input: string,
   opts: BrainOptions, stats: AgentRunStat[], statName: string = name,
 ): Promise<z.infer<S>> {
-  const model = opts.model ?? process.env.CARTOGRAPH_MODEL ?? "gpt-6.1-sol";
-  const effort = name === "reader" || name === "tracer" ? "low" : "medium";
-  const useCodex = codexRuntime();
-  const agent = useCodex
-    ? undefined
-    : new Agent({ name: `Cartograph ${name}`, instructions, outputType: schema, model, modelSettings: { reasoning: { effort } } });
-  for (let attempt = 0; attempt < 2; attempt++) {
+  opts.signal?.throwIfAborted();
+  const started = performance.now();
+  const stat: AgentRunStat = { agent: statName, durationMs: 0, inputTokens: 0, outputTokens: 0 };
+  try {
+    return await callJson({
+      agent: statName,
+      instructions,
+      input,
+      schema,
+      tier: name === "reader" || name === "tracer" ? "fast" : "deep",
+      model: opts.model,
+      maxTokens: MAX_TOKENS[name],
+      timeoutMs: TIMEOUT_MS[name],
+      signal: opts.signal,
+      onUsage: (u) => {
+        stat.inputTokens = (stat.inputTokens ?? 0) + u.inputTokens;
+        stat.outputTokens = (stat.outputTokens ?? 0) + u.outputTokens;
+      },
+    });
+  } catch (error) {
     opts.signal?.throwIfAborted();
-    const started = performance.now();
-    const stat: AgentRunStat = { agent: statName, durationMs: 0 };
-    try {
-      if (useCodex) {
-        const output = await runCodex({
-          instructions, input, schema, model, effort, signal: opts.signal,
-          onUsage: (u) => {
-            stat.inputTokens = u.inputTokens;
-            stat.outputTokens = u.outputTokens;
-          },
-        });
-        return schema.parse(output);
-      }
-      const result = await run(agent!, input, { signal: opts.signal });
-      const usage = result.runContext.usage;
-      stat.inputTokens = usage.inputTokens;
-      stat.outputTokens = usage.outputTokens;
-      return schema.parse(result.finalOutput);
-    } catch (error) {
-      opts.signal?.throwIfAborted();
-      if (error instanceof Error && error.name === "AbortError") throw error;
-      if (attempt === 1) throw error;
-      opts.onProgress?.({ agent: name, phase: "progress", message: `${name} · retrying failed call` });
-    } finally {
-      stat.durationMs = Math.round(performance.now() - started);
-      stats.push(stat);
+    if (error instanceof Error && error.name !== "AbortError") {
+      opts.onProgress?.({ agent: name, phase: "progress", message: `${name} · model call failed: ${error.message.slice(0, 120)}` });
     }
+    throw error;
+  } finally {
+    stat.durationMs = Math.round(performance.now() - started);
+    stats.push(stat);
   }
-  throw new Error("Agent retry limit reached");
 }

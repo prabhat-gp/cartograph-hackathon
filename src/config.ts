@@ -45,3 +45,14 @@ export function fallbackProvider(primary: ProviderConfig, env: NodeJS.ProcessEnv
   if (primary.name !== "meterless" || !env.NVIDIA_API_KEY) return undefined;
   return nvidia(env);
 }
+
+/** Which provider and models the agents run on, for logs and the UI. */
+export function runtimeLabel(env: NodeJS.ProcessEnv = process.env): string {
+  try {
+    const p = providerConfig(env);
+    const via = p.name === "meterless" ? "Meterless Nightshift" : "NVIDIA";
+    return `${modelFor(p.name, "deep", env)} + ${modelFor(p.name, "fast", env)} via ${via}`;
+  } catch (error) {
+    return `no model provider (${error instanceof Error ? error.message : error})`;
+  }
+}

@@ -12,7 +12,7 @@ import {
   shortSha,
 } from "../shared/graph";
 import { getBrain } from "./brain-select";
-import { codexRuntime } from "./brain/codex";
+import { runtimeLabel } from "../config";
 import type { ProgressEvent } from "./brain/types";
 import { diffGraphs, isEmptyDiff, maxSeverity, ruleFindings } from "./graph/analysis";
 import { FileIndex, cleanNodes, remapFlows, reverifyEdges, verifyDraft, verifyEdges } from "./graph/verify";
@@ -65,14 +65,10 @@ export function activeJobs(): Job[] {
   return [...running.values()];
 }
 
-function model(): string {
-  return process.env.CARTOGRAPH_MODEL ?? "gpt-6.1-sol";
-}
-
 /** What produced the map, as shown in the UI. Never let fixture data pose as agent output. */
 function producedBy(): string {
   if (process.env.CARTOGRAPH_BRAIN === "fixture") return "fixture (offline dev data)";
-  return codexRuntime() ? `Codex · ${model()}` : model();
+  return runtimeLabel();
 }
 
 function newJob(kind: JobKind, repo: RepoRef): Job {
@@ -158,7 +154,7 @@ export function startMapJob(input: string, opts: StartMapOptions = {}): Job {
         data: { files: snapshot.files.length, tokens: snapshot.totalTokens },
       });
 
-      const draft = await (await getBrain()).mapRepository(snapshot, { model: model(), onProgress: log });
+      const draft = await (await getBrain()).mapRepository(snapshot, { onProgress: log });
 
       log({ agent: "pipeline", phase: "start", message: `Verifier · checking ${draft.edges.length} cited dependencies against the code…` });
       const { graph, dropped } = verifyDraft(draft, snapshot, {
@@ -233,7 +229,7 @@ export function startReviewJob(repoKey: string, opts: StartReviewOptions): Job |
 
       // 2. Agent: what did the change add?
       const review = changes.length
-        ? await (await getBrain()).reviewChanges({ graph: before, snapshot, changes }, { model: model(), onProgress: log })
+        ? await (await getBrain()).reviewChanges({ graph: before, snapshot, changes }, { onProgress: log })
         : { addNodes: [], addEdges: [], removeEdgeIds: [], findings: [], summary: "No source files changed.", agentStats: [] };
 
       // Reviewer removals only count for edges the change actually touched.
