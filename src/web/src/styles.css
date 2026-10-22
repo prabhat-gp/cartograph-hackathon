@@ -237,14 +237,6 @@ button:disabled {
 .cg-live-dot {
   animation: cg-live 2s infinite;
 }
-@keyframes cg-caret {
-  50% {
-    opacity: 0;
-  }
-}
-.cg-caret {
-  animation: cg-caret 1s steps(1) infinite;
-}
 
 /* Live survey animation */
 @keyframes cg-spin {

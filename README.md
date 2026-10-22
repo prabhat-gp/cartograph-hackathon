@@ -3,10 +3,16 @@
 **Google Maps for your codebase.** Paste a GitHub repo: Cartograph's agents (Scout → parallel Readers → Cartographer, plus a Reviewer for drift and a Tracer for questions) read the code and draw its architecture, every dependency cited from a real `file:line` (no citation, no arrow). Request flows animate hop by hop, and every push is reviewed for architecture drift.
 
 ```sh
-npm install
-npm run build:web
-npm start                 # http://localhost:8787/app (PORT)
+npm install && npm --prefix site install
+npm run build             # the map desk (Vite) and the landing page (Next.js)
+npm start                 # http://localhost:8787: landing page at /, map desk at /app
 ```
+
+| Part | Stack | Where |
+|---|---|---|
+| Landing page | Next.js + Tailwind, exported as static files | `site/` |
+| Map desk | React + Tailwind, built by Vite into one HTML file (MCP hosts render it inline) | `src/web/` |
+| Server, agents, MCP | Node + Express | `src/server/`, `src/agent/`, `src/llm/` |
 
 **The agent that can explain why.** Ask Cartograph why a piece of code is the way it is, and it answers with the evidence chain behind it: the code (`file:line`), the commit that introduced it, the pull request that reviewed it, and the issue that asked for it.
 

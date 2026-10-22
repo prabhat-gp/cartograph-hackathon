@@ -4,7 +4,6 @@
 import {
   Background,
   BackgroundVariant,
-  BaseEdge,
   Controls,
   type Edge,
   EdgeLabelRenderer,

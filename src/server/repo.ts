@@ -138,7 +138,7 @@ export async function syncRepo(
     await exec("git", [...githubAuth(repo.location), "clone", "--quiet", "--no-tags", "--filter=blob:none", repo.location, dir], {
       maxBuffer: 64 * 1024 * 1024,
       env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
-    }).catch((err: Error) => {
+    }).catch(() => {
       const hint = process.env.GITHUB_TOKEN ? "Does the GitHub token have access to it?" : "Is it public? For a private repo, set GITHUB_TOKEN.";
       throw new Error(`Could not clone ${repo.name}. ${hint}`);
     });

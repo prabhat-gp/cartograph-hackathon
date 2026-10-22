@@ -391,7 +391,7 @@ const OPPOSITES: [string, string][] = [["always", "never"], ["enable", "disable"
 export class ConflictDetectionService {
   private found: ConflictRecord[] = [];
 
-  constructor(private store: MemoryStoreService, private ledger: TrustLedgerService, private clock: () => number, private actor: string) {}
+  constructor(private store: MemoryStoreService, private ledger: TrustLedgerService, private actor: string) {}
 
   scan(): ConflictRecord[] {
     const all = this.store.all();
@@ -439,7 +439,7 @@ export class ConflictDetectionService {
     const wb = weight(b);
     const decision = clamp01(0.5 + Math.abs(wa - wb) + (c.confidence - 0.5) * 0.5);
     if (decision < DEFAULTS.conflictAutoResolveGate) return "queued";
-    const [winner, loser] = wa >= wb ? [a, b] : [b, a];
+    const winner = wa >= wb ? a : b;
     this.resolve(c, winner.id === a.id ? "keep_a" : "keep_b", { decision: round(decision), winner: winner.id });
     return "resolved";
   }
@@ -560,7 +560,7 @@ export interface DreamProposal {
 export class DreamingService {
   private proposals = new Map<string, DreamProposal>();
 
-  constructor(private store: MemoryStoreService, private ledger: TrustLedgerService, private clock: () => number, private actor: string) {}
+  constructor(private store: MemoryStoreService, private ledger: TrustLedgerService, private actor: string) {}
 
   private related(a: MemoryRecord, b: MemoryRecord): number {
     return (
@@ -657,9 +657,9 @@ export class HMEM {
     this.ledger = new TrustLedgerService(this.clock, file("ledger.jsonl"));
     this.store = new MemoryStoreService(this.clock, this.ledger, actor, file("state.json"));
     this.retrieval = new MemoryRetrievalService(this.store, this.ledger, this.clock, actor);
-    this.conflicts = new ConflictDetectionService(this.store, this.ledger, this.clock, actor);
+    this.conflicts = new ConflictDetectionService(this.store, this.ledger, actor);
     this.sleep = new SleepCycleService(this.store, this.ledger, this.clock, actor);
-    this.dreaming = new DreamingService(this.store, this.ledger, this.clock, actor);
+    this.dreaming = new DreamingService(this.store, this.ledger, actor);
   }
 
   add(input: AddInput): MemoryRecord {
