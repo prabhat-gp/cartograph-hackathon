@@ -1,0 +1,240 @@
+@import "tailwindcss";
+
+/* Dark mode follows the host (ChatGPT) or the toggle via data-theme on <html>. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ------------------------------------------------------------------ tokens */
+:root {
+  --bg: #fafaf9;
+  --canvas: #f6f6f4;
+  --surface: #ffffff;
+  --surface-2: #f4f4f3;
+  --surface-3: #ececea;
+  --line: #e7e6e3;
+  --line-strong: #d6d5d1;
+  --text: #111110;
+  --muted: #6f6e69;
+  --faint: #a3a29d;
+  --grid: #dcdbd6;
+  --edge: #c4c3be;
+  --edge-dim: #e6e5e1;
+  --accent: #5b4cf0;
+  --accent-2: #2f6bff;
+  --accent-soft: #eeecff;
+  --code-bg: #fbfbfa;
+  --danger: #e5484d;
+  --warn: #e38b10;
+  --ok: #30a46c;
+  --info: #3e63dd;
+  --shadow-card: 0 1px 2px rgb(16 16 15 / 0.04), 0 2px 8px -2px rgb(16 16 15 / 0.06);
+  --shadow-pop: 0 12px 32px -8px rgb(16 16 15 / 0.18), 0 2px 6px rgb(16 16 15 / 0.06);
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0b0b0d;
+  --canvas: #0e0e11;
+  --surface: #141417;
+  --surface-2: #1a1a1e;
+  --surface-3: #222227;
+  --line: #26262c;
+  --line-strong: #34343b;
+  --text: #ededef;
+  --muted: #a0a0a8;
+  --faint: #63636c;
+  --grid: #222228;
+  --edge: #45454e;
+  --edge-dim: #232329;
+  --accent: #8b7dff;
+  --accent-2: #5b8cff;
+  --accent-soft: #221f3d;
+  --code-bg: #111114;
+  --danger: #ff6369;
+  --warn: #ffb224;
+  --ok: #4cc38a;
+  --info: #849dff;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.5);
+  --shadow-pop: 0 16px 40px -8px rgb(0 0 0 / 0.7);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --color-bg: var(--bg);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-soft: var(--accent-soft);
+  --color-code: var(--code-bg);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --color-ok: var(--ok);
+  --color-info: var(--info);
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
+}
+
+/* ------------------------------------------------------------------ base */
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+:root[data-display="inline"] body,
+:root[data-display="inline"] #root {
+  height: auto;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+}
+
+/* ------------------------------------------------------------------ react flow */
+.react-flow__attribution {
+  display: none;
+}
+.react-flow__controls {
+  box-shadow: var(--shadow-card) !important;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.react-flow__controls-button {
+  background: var(--surface) !important;
+  border-bottom: 1px solid var(--line) !important;
+  fill: var(--muted) !important;
+  width: 28px !important;
+  height: 28px !important;
+}
+.react-flow__controls-button:hover {
+  background: var(--surface-2) !important;
+}
+.react-flow__handle {
+  opacity: 0;
+  width: 1px !important;
+  height: 1px !important;
+  min-width: 0 !important;
+  border: 0 !important;
+}
+
+/* edges */
+.cg-edge {
+  fill: none;
+  stroke: var(--edge);
+  stroke-width: 1.25;
+  transition: stroke 0.3s, stroke-width 0.3s, opacity 0.3s;
+}
+.cg-edge.dim {
+  stroke: var(--edge-dim);
+}
+.cg-edge.selected,
+.cg-edge.visited {
+  stroke: var(--accent);
+  stroke-width: 1.75;
+  opacity: 0.75;
+}
+.cg-edge.active {
+  stroke: url(#cg-gradient);
+  stroke-width: 2.5;
+  stroke-dasharray: 7 6;
+  animation: cg-flow 0.6s linear infinite;
+}
+.cg-edge.blast,
+.cg-edge.flagged {
+  stroke: var(--danger);
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+  animation: cg-flow 0.7s linear infinite;
+}
+.cg-edge.added {
+  stroke: var(--ok);
+  stroke-width: 2.25;
+}
+.cg-edge.removed {
+  stroke: var(--faint);
+  stroke-dasharray: 3 5;
+  opacity: 0.8;
+}
+.cg-edge-glow {
+  fill: none;
+  stroke-width: 10;
+  stroke-linecap: round;
+  opacity: 0.16;
+  stroke: var(--accent);
+  filter: blur(3px);
+}
+.cg-edge-glow.blast,
+.cg-edge-glow.flagged {
+  stroke: var(--danger);
+}
+.cg-edge-glow.added {
+  stroke: var(--ok);
+}
+.cg-packet {
+  fill: #fff;
+  stroke: var(--accent);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 6px var(--accent));
+}
+
+@keyframes cg-flow {
+  to {
+    stroke-dashoffset: -26;
+  }
+}
+@keyframes cg-ring {
+  0%,
+  100% {
+    box-shadow: 0 0 0 4px rgb(229 72 77 / 0.18), var(--shadow-card);
+  }
+  50% {
+    box-shadow: 0 0 0 9px rgb(229 72 77 / 0.06), var(--shadow-card);
+  }
+}
+.cg-ring-pulse {
+  animation: cg-ring 1.8s ease-in-out infinite;
+}
+@keyframes cg-live {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+.cg-live-dot {
+  animation: cg-live 2s infinite;
+}
+@keyframes cg-caret {
+  50% {
+    opacity: 0;
+  }
+}
+.cg-caret {
+  animation: cg-caret 1s steps(1) infinite;
+}

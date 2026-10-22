@@ -108,7 +108,7 @@ export async function callJson<S extends z.ZodType>(call: JsonCall<S>, deps: Cli
   const tier = call.tier ?? "fast";
 
   let provider = primary;
-  let model = call.model ?? process.env.CARTOGRAPH_MODEL ?? modelFor(provider.name, tier);
+  let model = call.model ?? modelFor(provider.name, tier);
 
   const messages: ChatMessage[] = [
     { role: "system", content: systemPrompt(call.instructions, call.schema) },

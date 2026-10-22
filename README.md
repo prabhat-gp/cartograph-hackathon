@@ -1,5 +1,13 @@
 # Cartograph
 
+**Google Maps for your codebase.** Paste a GitHub repo: Cartograph's agents (Scout → parallel Readers → Cartographer, plus a Reviewer for drift and a Tracer for questions) read the code and draw its architecture, every dependency cited from a real `file:line` (no citation, no arrow). Request flows animate hop by hop, and every push is reviewed for architecture drift.
+
+```sh
+npm install
+npm run build:web
+npm start                 # http://localhost:8787/app (PORT)
+```
+
 **The agent that can explain why.** Ask Cartograph why a piece of code is the way it is, and it answers with the evidence chain behind it: the code (`file:line`), the commit that introduced it, the pull request that reviewed it, and the issue that asked for it.
 
 Built for the Open Agent Hackathon 2026, Track 02 "The Agent That Can Explain Why".
