@@ -940,7 +940,7 @@ export function Home(props: {
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
   return (
-    <div className="mx-auto min-h-0 w-full max-w-[640px] overflow-y-auto px-6 py-10">
+    <div className="mx-auto w-full max-w-[640px] px-6 py-10">
       {props.onBack && (
         <Button variant="ghost" size="sm" onClick={props.onBack} className="-mt-5 mb-5 -ml-2.5">
           <ArrowLeft size={14} /> Back to the map

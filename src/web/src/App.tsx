@@ -614,8 +614,9 @@ export function App({ bridge }: { bridge: Bridge }) {
   }
 
   if (home || !repoKey || (!graph && !mapping && !jobId)) {
+    // The whole window scrolls, so the scrollbar sits at its edge rather than beside the column.
     return (
-      <div className="flex flex-col bg-bg" style={shellStyle}>
+      <div className="flex flex-col overflow-y-auto bg-bg" style={shellStyle}>
         <Home repos={repos} current={graph ? repoKey : null} onOpen={openRepo} onMap={mapRepo} onBack={home && graph ? () => setHome(false) : undefined} error={error} />
       </div>
     );
