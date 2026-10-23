@@ -22,6 +22,11 @@
   --color-forest: #2f5d46;
   --color-sea: #2c5878;
   --color-ochre: #c08a2d;
+
+  /* The same map colours, lifted for the dark sponsor plates */
+  --color-forest-light: #7fbf9a;
+  --color-sea-light: #86b4d6;
+  --color-ochre-light: #e3b25e;
 }
 
 html {
