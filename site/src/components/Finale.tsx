@@ -3,7 +3,7 @@
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import { type FormEvent, useState } from "react";
-import { APP_URL, REPO_URL } from "@/lib/site";
+import { APP_URL, AUTHOR_URL, REPO_URL } from "@/lib/site";
 import { GithubMark, Mark } from "./Mark";
 
 /** The last screen: type a repo, land in the desk with it ready to map. */
@@ -85,7 +85,12 @@ export function Finale() {
             <a href={REPO_URL} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 transition-colors hover:text-ink">
               <GithubMark className="size-4" /> Source
             </a>
-            <span>Built by Prabhat</span>
+            <span>
+              Made with chai, stubbornness and agents that cite their sources, by{" "}
+              <a href={AUTHOR_URL} target="_blank" rel="noreferrer" className="font-medium text-ink underline decoration-vermilion decoration-2 underline-offset-4 transition-colors hover:text-vermilion">
+                Prabhat
+              </a>
+            </span>
           </div>
         </div>
       </footer>

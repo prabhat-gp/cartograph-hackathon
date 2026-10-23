@@ -4,7 +4,9 @@
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "/app";
 
 export const REPO_URL = "https://github.com/prabhat-gp/cartograph-hackathon";
-export const CODE = (path: string) => `${REPO_URL}/tree/main/${path}`;
+/** A file or folder on main: files open as /blob/, folders as /tree/. */
+export const CODE = (path: string) => `${REPO_URL}/${/\.[a-z]+$/.test(path) ? "blob" : "tree"}/main/${path}`;
+export const AUTHOR_URL = "https://prabhatgp.me";
 
 /** A real answer from the explain agents on expressjs/express, 22 Oct 2026. */
 export const WHY_RUN = {
