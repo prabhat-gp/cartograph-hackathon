@@ -22,6 +22,11 @@
   --color-forest: #2f5d46;
   --color-sea: #2c5878;
   --color-ochre: #c08a2d;
+
+  /* The same map colours, lifted for the dark sponsor plates */
+  --color-forest-light: #7fbf9a;
+  --color-sea-light: #86b4d6;
+  --color-ochre-light: #e3b25e;
 }
 
 html {
@@ -74,39 +79,8 @@ body {
   animation: walk 1.4s linear infinite;
 }
 
-@keyframes draw {
-  from {
-    stroke-dashoffset: 1;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-.draw {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  animation: draw 2.2s ease-out 0.3s forwards;
-}
-
-@keyframes settle {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-.settle {
-  animation: settle 0.7s ease-out both;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .route,
-  .draw,
-  .settle {
+  .route {
     animation: none;
-    stroke-dashoffset: 0;
   }
 }

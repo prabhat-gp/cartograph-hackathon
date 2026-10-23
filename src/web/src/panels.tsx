@@ -937,10 +937,11 @@ export function Home(props: {
   error: string | null;
 }) {
   const { repos, current, onOpen, error } = props;
-  const [value, setValue] = useState("");
+  // Arriving from the landing page with a repo typed in (/app?map=owner/name).
+  const [value, setValue] = useState(() => new URLSearchParams(location.search).get("map") ?? "");
   const [busy, setBusy] = useState(false);
   return (
-    <div className="mx-auto min-h-0 w-full max-w-[640px] overflow-y-auto px-6 py-10">
+    <div className="mx-auto w-full max-w-[640px] px-6 py-10">
       {props.onBack && (
         <Button variant="ghost" size="sm" onClick={props.onBack} className="-mt-5 mb-5 -ml-2.5">
           <ArrowLeft size={14} /> Back to the map
