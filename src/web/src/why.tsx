@@ -32,6 +32,8 @@ interface EvidenceItem {
 interface WhyResult {
   run_id: string;
   execution_time_seconds: number;
+  /** Reused from an earlier approved run on the same commit. */
+  cached?: boolean;
   output: {
     answer: string;
     claims: { text: string; evidence: string[] }[];
@@ -237,7 +239,7 @@ function WhyCard({ repo, edgeId, callTool }: { repo: string; edgeId: string; cal
               <Brain size={11} /> {recalled} recalled from memory
             </span>
           )}
-          <span className="rounded-[3px] border border-line px-1.5 py-0.5 text-muted">{r.execution_time_seconds}s</span>
+          <span className="rounded-[3px] border border-line px-1.5 py-0.5 text-muted">{r.cached ? `saved answer · first took ${r.execution_time_seconds}s` : `${r.execution_time_seconds}s`}</span>
         </div>
       </div>
 

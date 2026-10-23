@@ -21,7 +21,8 @@ import { githubWebhook } from "./github";
 import { startReviewJob } from "./jobs";
 import { appHtml, createCartographServer } from "./mcp";
 import { resolveRepo } from "./repo";
-import { ACCESS_TOKEN, hostGuard, localOnly, originGuard, withCaller } from "./security";
+import { sponsorStatus } from "./status";
+import { ACCESS_TOKEN, hostGuard, isRemote, localOnly, originGuard, takeVisitorCall, withCaller } from "./security";
 import { findRepo, getRepo } from "./store";
 import { ToolError, appToolImpls, toolImpls } from "./tools";
 
@@ -33,6 +34,8 @@ export function createApp(opts: { port: number }): Express {
 
   const app = express();
   app.disable("x-powered-by");
+  // Behind Caddy on the same machine: the visitor's address comes from X-Forwarded-For.
+  app.set("trust proxy", "loopback");
   app.use(hostGuard);
   app.use(originGuard);
 
@@ -72,6 +75,10 @@ export function createApp(opts: { port: number }): Express {
       res.status(404).json({ error: `unknown tool ${name}` });
       return;
     }
+    if (isRemote(req) && !takeVisitorCall(req.ip ?? "unknown", name)) {
+      res.status(429).json({ error: "You've reached this demo's hourly limit for that action. Saved maps and answers still work; try again later." });
+      return;
+    }
     try {
       const out = (await withCaller(req, () => impl(req.body ?? {}))) as Record<string, unknown>;
       // Model-facing tools return { text, structured }; app tools return data directly.
@@ -96,7 +103,14 @@ export function createApp(opts: { port: number }): Express {
   api.get("/app", async (_req: Request, res: Response) => {
     res.type("html").send(await appHtml({ standalone: true }));
   });
-  api.get("/health", (_req: Request, res: Response) => {
+  api.get("/health", async (req: Request, res: Response) => {
+    // ?deep=1 for uptime monitors: every sponsor integration, 503 when one fails.
+    if (req.query.deep) {
+      const sponsors = await sponsorStatus();
+      const ok = !sponsors.some((s) => s.status === "fail");
+      res.status(ok ? 200 : 503).json({ ok, sponsors });
+      return;
+    }
     let runtime = "fixture";
     if (process.env.CARTOGRAPH_BRAIN !== "fixture") {
       try {

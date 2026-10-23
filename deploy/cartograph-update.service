@@ -1,0 +1,7 @@
+[Unit]
+Description=Deploy the latest Cartograph main branch
+
+[Service]
+Type=oneshot
+User=ubuntu
+ExecStart=/home/ubuntu/cartograph/current/deploy/update.sh

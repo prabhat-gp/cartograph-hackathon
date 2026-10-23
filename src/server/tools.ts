@@ -21,8 +21,9 @@ import {
 import { remapFlows } from "./graph/verify";
 import { activeJob, activeJobs, getJob, startMapJob, startReviewJob } from "./jobs";
 import { resolveRepo } from "./repo";
-import { localRepoAllowed } from "./security";
-import { findRepo, listDrift, listRepos, loadGraph, saveGraph } from "./store";
+import { assertPublicRepo, localRepoAllowed } from "./security";
+import { sponsorStatus } from "./status";
+import { findRepo, listDrift, listRepos, loadGraph, readDoc, saveGraph, writeDoc } from "./store";
 
 export interface ToolOutput {
   /** Text the model reads. */
@@ -108,6 +109,7 @@ export async function mapRepo(args: { repo: string; branch?: string; force?: boo
     if (ref.source === "local" && !localRepoAllowed(ref.location)) {
       throw new ToolError("Cartograph maps GitHub repositories. Give it a link like github.com/owner/repo.");
     }
+    if (ref.source === "github" && !known) await assertPublicRepo(ref.name);
     job = startMapJob(known ? known.repo.location : args.repo, { branch: args.branch, force: args.force });
   } catch (err) {
     if (err instanceof ToolError) throw err;
@@ -337,6 +339,10 @@ export async function explainDependency(args: { repo?: string; edgeId: string })
   if (!edge) throw new ToolError(`No dependency ${args.edgeId} on this map.`);
   const label = (id: string) => graph.nodes.find((n) => n.id === id)?.label ?? id;
   const cite = edge.evidence[0];
+  // An approved answer for this arrow at this commit is reused: same evidence, same answer.
+  const cacheKey = `${graph.repo.key}@${graph.sha}:${edge.id}`;
+  const cache = readDoc<Record<string, unknown>>("why-cache", {});
+  if (cache[cacheKey]) return { ...(cache[cacheKey] as object), cached: true };
   const target = await ensureHistory(graph);
   const result = await runWhy({
     repo: target.id,
@@ -347,7 +353,9 @@ export async function explainDependency(args: { repo?: string; edgeId: string })
   }, { quiet: true });
   if (result.status === "error") throw new ToolError(result.error?.message ?? "The explain agents could not answer.");
   const trace = readFileSync(result.log_file, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l) as Record<string, unknown>);
-  return { edgeId: edge.id, history: target.id, ...result, trace };
+  const answer = { edgeId: edge.id, history: target.id, ...result, trace };
+  if (result.output?.approved) await writeDoc("why-cache", { ...readDoc<Record<string, unknown>>("why-cache", {}), [cacheKey]: answer });
+  return answer;
 }
 
 type Coverage = "explained" | "reviewed" | "unreviewed" | "unknown";
@@ -388,7 +396,12 @@ export async function memoryFeedback(args: { repo?: string; ids: string[]; kind:
   return { updated: updated.map((m) => ({ id: m.id, confidence: m.confidence })) };
 }
 
+export async function appStatus() {
+  return { sponsors: await sponsorStatus() };
+}
+
 export const appToolImpls = {
+  cartograph_status: appStatus,
   explain_dependency: explainDependency,
   why_coverage: whyCoverage,
   memory_feedback: memoryFeedback,

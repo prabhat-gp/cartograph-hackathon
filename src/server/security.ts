@@ -10,6 +10,9 @@
 //    folders (a prompt-injected model must not be able to read local code).
 //  - MCP Events callbacks may not point into private networks (SSRF).
 //  - Full maps are capped per day so a leaked URL can't drain API credits.
+//  - Public mode (CARTOGRAPH_PUBLIC=1, a hosted demo): the bare routes are open
+//    to everyone, visitors may only map public GitHub repos, and each visitor's
+//    expensive tool calls are rate-limited.
 import { AsyncLocalStorage } from "node:async_hooks";
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
@@ -17,6 +20,7 @@ import path from "node:path";
 import type { NextFunction, Request, Response } from "express";
 
 export const ACCESS_TOKEN = process.env.CARTOGRAPH_ACCESS_TOKEN?.trim() || undefined;
+export const PUBLIC_MODE = process.env.CARTOGRAPH_PUBLIC === "1";
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
 
@@ -102,9 +106,9 @@ export function originGuard(req: Request, res: Response, next: NextFunction): vo
   next();
 }
 
-/** Bare (token-less) routes are for this machine only. */
+/** Bare (token-less) routes are for this machine only, unless the server is public. */
 export function localOnly(req: Request, res: Response, next: NextFunction): void {
-  if (!isRemote(req)) return next();
+  if (PUBLIC_MODE || !isRemote(req)) return next();
   res.status(404).send("Not found");
 }
 
@@ -159,6 +163,46 @@ export async function assertSafeCallbackUrl(raw: string): Promise<void> {
   const addresses = isIP(host) ? [host] : (await lookup(host, { all: true }).catch(() => [])).map((a) => a.address);
   if (addresses.length === 0) throw new Error("delivery.url host does not resolve");
   if (addresses.some(isPrivateAddress)) throw new Error("delivery.url points into a private network");
+}
+
+// ---------------------------------------------------------------- public repos only
+
+/**
+ * In public mode a visitor may only map repositories GitHub shows to anyone:
+ * the server's token can read private repos, and their code must not leak.
+ * Throws with a reason the visitor can act on.
+ */
+export async function assertPublicRepo(name: string, doFetch: typeof fetch = fetch): Promise<void> {
+  if (!PUBLIC_MODE || !callerIsRemote()) return;
+  const res = await doFetch(`https://api.github.com/repos/${name}`, {
+    headers: { Accept: "application/vnd.github+json", "User-Agent": "cartograph" },
+    signal: AbortSignal.timeout(10_000),
+  }).catch(() => undefined);
+  if (res?.status === 404) throw new Error(`${name} isn't a public GitHub repository. This demo maps public repositories only.`);
+  if (!res?.ok) throw new Error("GitHub didn't answer whether the repository is public. Try again in a minute.");
+  const repo = (await res.json()) as { private?: boolean };
+  if (repo.private !== false) throw new Error(`${name} isn't a public GitHub repository. This demo maps public repositories only.`);
+}
+
+// ---------------------------------------------------------------- per-visitor limits
+
+/** Calls per visitor per hour for the tools that spend model credits. */
+const HOURLY_LIMITS: Record<string, number> = { map_repo: 3, check_drift: 6, explain_dependency: 20, trace_flow: 20, why_coverage: 20 };
+const calls = new Map<string, number[]>();
+
+/** Counts one call; false when this visitor is over the hour's limit for this tool. */
+export function takeVisitorCall(visitor: string, tool: string, now = Date.now()): boolean {
+  const limit = HOURLY_LIMITS[tool];
+  if (!limit) return true;
+  const key = `${visitor} ${tool}`;
+  const recent = (calls.get(key) ?? []).filter((t) => now - t < 3_600_000);
+  if (recent.length >= limit) {
+    calls.set(key, recent);
+    return false;
+  }
+  recent.push(now);
+  calls.set(key, recent);
+  return true;
 }
 
 // ---------------------------------------------------------------- cost guard

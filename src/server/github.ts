@@ -72,7 +72,10 @@ export function githubWebhook(req: Request, res: Response): void {
 export async function commentOnCommit(report: DriftReport, publicUrl?: string): Promise<void> {
   const token = process.env.GITHUB_TOKEN;
   const record = getRepo(report.repoKey);
+  // Only repositories the owner opted in: the token can comment on anyone's public commits.
+  const optedIn = (process.env.CARTOGRAPH_COMMENT_REPOS ?? "").split(",").map((r) => r.trim().toLowerCase());
   if (!token || record?.repo.source !== "github" || report.maxSeverity === "none") return;
+  if (!optedIn.includes(record.repo.name.toLowerCase())) return;
 
   const icon = report.maxSeverity === "critical" ? "🔴" : report.maxSeverity === "warning" ? "🟠" : "🔵";
   const body = [

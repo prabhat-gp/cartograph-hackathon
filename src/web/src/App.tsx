@@ -12,6 +12,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { CartographLogo } from "./icons";
 import { CoverageLegend, DependencyPanel, type WhyCoverage } from "./why";
 import { Button, IconButton, SeverityBadge, Spinner, cn } from "./ui";
+import { PoweredBy } from "./status";
 import { Tour, type TourAction, TourOffer, buildTourSteps, tourDone } from "./tour";
 import { BlastPanel, DriftPanel, FlowsPanel, Home, NodePanel, OverviewPanel, Progress, TracePanel } from "./panels";
 
@@ -757,6 +758,7 @@ export function App({ bridge }: { bridge: Bridge }) {
             {busy ? <Spinner size={12} /> : <span className="cg-live-dot size-2 rounded-full bg-ok" />}
             <span className="max-sm:hidden">{busy ? "Reviewing push…" : "Live"}</span>
           </span>
+          <PoweredBy callTool={(name, args) => bridge.callTool(name, args)} />
           <IconButton label="Take the tour" data-tour="replay" onClick={startTour}>
             <CircleHelp size={15} />
           </IconButton>

@@ -1,0 +1,18 @@
+# Cartograph behind Caddy on the Zetaris server. Code: ~/cartograph/current
+# (a release folder, switched by update.sh); data and secrets live outside it.
+[Unit]
+Description=Cartograph
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/cartograph/current
+EnvironmentFile=/home/ubuntu/cartograph/cartograph.env
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+MemoryMax=3G
+
+[Install]
+WantedBy=multi-user.target
