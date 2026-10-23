@@ -5,7 +5,7 @@ import { emitDrift } from "./events";
 import { commentOnCommit } from "./github";
 import { onDrift, startReviewJob } from "./jobs";
 import { listRepos } from "./store";
-import { ACCESS_TOKEN } from "./security";
+import { ACCESS_TOKEN, PUBLIC_MODE } from "./security";
 
 const PORT = Number(process.env.PORT ?? 8787);
 const publicUrl = () => process.env.PUBLIC_URL?.replace(/\/+$/, "");
@@ -28,7 +28,7 @@ createApp({ port: PORT }).listen(PORT, () => {
     }
   }
   console.log(`Cartograph on http://localhost:${PORT}  (MCP: /mcp, UI: /app)`);
-  if (!ACCESS_TOKEN) console.warn("⚠ CARTOGRAPH_ACCESS_TOKEN is not set: remote access is disabled (the tunnel will 404 everything)");
+  if (!ACCESS_TOKEN && !PUBLIC_MODE) console.warn("⚠ CARTOGRAPH_ACCESS_TOKEN is not set: remote access is disabled (the tunnel will 404 everything)");
   if (process.env.CARTOGRAPH_BRAIN !== "fixture") {
     console.log(`Agents run on ${runtimeLabel()}`);
   }
