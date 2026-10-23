@@ -41,3 +41,27 @@ export const COMPREHENSION = {
   source: "Xia et al., IEEE TSE 2018",
   url: "https://doi.org/10.1109/TSE.2017.2734091",
 };
+
+/** Which agents run on which Nemotron model (src/config.ts, src/agent/agents.ts, src/server/brain/run.ts). */
+export const MODEL_ROSTER = [
+  { model: "nemotron-3-ultra-550b-a55b", tier: "deep", agents: "Scout, Cartographer, Reviewer, Critic" },
+  { model: "nemotron-3.5-lightning-30b-a3b", tier: "fast", agents: "Readers, Tracer, Planner, Writer" },
+];
+
+/** From the usage ledger (.cartograph/usage.jsonl, `npm run usage`), 22–23 Oct 2026. */
+export const USAGE = {
+  measured: "22–23 Oct 2026",
+  rows: [
+    { model: "nemotron-3.5-lightning-30b-a3b", calls: 64, tokens: 958_009 },
+    { model: "nemotron-3-ultra-550b-a55b", calls: 56, tokens: 284_179 },
+  ],
+};
+
+/** H-MEM ledger counts per repository (.cartograph/memory/<repo>/ledger.jsonl), 23 Oct 2026. */
+export const HMEM_LEDGER = [
+  { repo: "sindresorhus/ky", created: 15, reads: 54, updates: 1 },
+  { repo: "expressjs/express", created: 11, reads: 30, updates: 2 },
+];
+
+/** Share of ky's map arrows whose cited line traces to a pull request that states a reason (Why-coverage, 22 Oct). */
+export const KY_EXPLAINED_PCT = 13;
