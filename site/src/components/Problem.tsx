@@ -31,9 +31,9 @@ export function Problem() {
   const spread = useTransform(scrollYProgress, [0.15, 0.55], [reduce ? 1 : 0, 1]);
 
   return (
-    <section ref={ref} className="relative border-t border-ink bg-paper-light py-28 sm:py-36">
+    <section ref={ref} className="relative overflow-hidden border-t border-ink bg-paper-light py-28 sm:py-36">
       <div className="mx-auto grid max-w-7xl items-center gap-16 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <div>
+        <div className="min-w-0">
           <p className="font-serif text-[9rem] leading-[0.8] tracking-tight text-ink sm:text-[12rem]">
             <Count to={COMPREHENSION.pct} />
             <span className="text-[0.45em] text-vermilion">%</span>
@@ -44,7 +44,7 @@ export function Problem() {
           </a>
         </div>
 
-        <div className="relative grid h-[460px] place-items-center">
+        <div className="relative grid h-[460px] min-w-0 place-items-center max-sm:h-[340px] max-sm:scale-[0.6]">
           {scraps.map((s, i) => (
             <Scrap key={s.kind} scrap={s} spread={spread} index={i} />
           ))}

@@ -937,7 +937,8 @@ export function Home(props: {
   error: string | null;
 }) {
   const { repos, current, onOpen, error } = props;
-  const [value, setValue] = useState("");
+  // Arriving from the landing page with a repo typed in (/app?map=owner/name).
+  const [value, setValue] = useState(() => new URLSearchParams(location.search).get("map") ?? "");
   const [busy, setBusy] = useState(false);
   return (
     <div className="mx-auto w-full max-w-[640px] px-6 py-10">

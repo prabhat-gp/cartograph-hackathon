@@ -3,7 +3,7 @@
 import { ArrowUpRight } from "lucide-react";
 import { AnimatePresence, motion, useTransform } from "motion/react";
 import { type ReactNode, useRef } from "react";
-import { WhenSeen, usePinnedStep } from "./Pinned";
+import { Stage, WhenSeen, usePinnedStep } from "./Pinned";
 
 export interface ProofFrame {
   caption: string;
@@ -44,7 +44,9 @@ export function Chapter(p: ChapterProps) {
           {p.frames.map((f) => (
             <div key={f.caption}>
               <p className="mb-2 font-mono text-[11px] text-paper/60">{f.caption}</p>
-              <WhenSeen className="aspect-[16/11] overflow-hidden rounded-[6px] border border-paper/20 bg-[#24211c]">{f.view()}</WhenSeen>
+              <WhenSeen className="overflow-hidden rounded-[6px] border border-paper/20 bg-[#24211c]">
+                <Stage>{f.view()}</Stage>
+              </WhenSeen>
             </div>
           ))}
         </div>

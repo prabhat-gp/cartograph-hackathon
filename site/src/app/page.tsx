@@ -1,3 +1,4 @@
+import { Finale } from "@/components/Finale";
 import { Hero } from "@/components/Hero";
 import { Nav } from "@/components/Nav";
 import { Problem } from "@/components/Problem";
@@ -13,6 +14,7 @@ export default function Home() {
         <Problem />
         <Product />
         <Sponsors />
+        <Finale />
       </main>
     </>
   );

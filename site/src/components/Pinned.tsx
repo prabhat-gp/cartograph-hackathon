@@ -39,3 +39,26 @@ export function WhenSeen({ children, className }: { children: ReactNode; classNa
     </div>
   );
 }
+
+/**
+ * Draws a frame at its desktop size and scales it to fit, so a phone sees the
+ * same picture rather than a cramped reflow.
+ */
+export function Stage({ children, width = 780, height = 488 }: { children: ReactNode; width?: number; height?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setScale(e.contentRect.width / width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [width]);
+  return (
+    <div ref={ref} className="relative w-full overflow-hidden" style={{ height: height * scale }}>
+      <div className="absolute top-0 left-0 origin-top-left" style={{ width, height, transform: `scale(${scale})` }}>
+        {children}
+      </div>
+    </div>
+  );
+}

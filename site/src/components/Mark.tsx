@@ -18,14 +18,3 @@ export function GithubMark({ className = "size-5" }: { className?: string }) {
     </svg>
   );
 }
-
-/** A section label in the atlas style: "Plate I · Why". */
-export function PlateLabel({ plate, title }: { plate: string; title: string }) {
-  return (
-    <p className="flex items-center gap-3 font-mono text-[11px] tracking-[0.22em] text-ink-soft uppercase">
-      <span className="text-vermilion">Plate {plate}</span>
-      <span className="h-px w-8 bg-rule" />
-      {title}
-    </p>
-  );
-}

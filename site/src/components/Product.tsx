@@ -5,7 +5,7 @@ import { AnimatePresence, motion, useTransform } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { KyMap, type MapMode } from "./KyMap";
 import { Mark } from "./Mark";
-import { WhenSeen, scrollToStep, usePinnedStep } from "./Pinned";
+import { Stage, WhenSeen, scrollToStep, usePinnedStep } from "./Pinned";
 
 const steps: { title: string; line: string; frame: () => React.ReactNode }[] = [
   { title: "Paste a repo", line: "Any public GitHub repository.", frame: () => <PasteFrame /> },
@@ -73,7 +73,9 @@ export function Product() {
               {s.title}
             </p>
             <p className="mt-1 text-ink-soft">{s.line}</p>
-            <WhenSeen className="mt-5 aspect-[16/11] overflow-hidden rounded-[6px] border border-ink bg-paper-light">{s.frame()}</WhenSeen>
+            <WhenSeen className="mt-5 overflow-hidden rounded-[6px] border border-ink bg-paper-light">
+              <Stage>{s.frame()}</Stage>
+            </WhenSeen>
           </div>
         ))}
       </div>
@@ -256,7 +258,7 @@ function MapFrame({ mode }: { mode: MapMode }) {
         <KyMap mode={mode} />
       </motion.div>
       {mode === "draw" && (
-        <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2.8 }} className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-forest px-3 py-1 font-mono text-[11px] text-paper-light">
+        <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2.8 }} className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-forest px-3 py-1 font-mono text-[11px] text-paper-light">
           <Check className="size-3.5" /> 6 arrows, each proven in code
         </motion.p>
       )}
