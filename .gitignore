@@ -1,7 +1,16 @@
 node_modules/
 dist/
+bin/
 .env
 .env.*
 !.env.example
-.DS_Store
 .cartograph/
+.cartograph-dev/
+.playground/
+*.log
+.tunnel.log
+.DS_Store
+logs/*.jsonl
+.cartograph-test/
+site/out/
+site/.next/

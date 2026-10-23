@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { callJson, extractJson, ModelOutputError } from "../src/llm/client";
+import { callJson, extractJson, ModelOutputError, salvage } from "../src/llm/client";
 import { readUsage } from "../src/llm/usage";
 
 const schema = z.object({ module: z.string(), confidence: z.enum(["low", "medium", "high"]) });
@@ -136,5 +136,29 @@ describe("callJson providers", () => {
     await callJson(call, { ...d.deps, sleep: async (ms) => void waits.push(ms) });
     expect(waits).toEqual([2000]);
     expect(readUsage(d.usagePath)).toHaveLength(1);
+  });
+});
+
+describe("salvage", () => {
+  const Item = z.object({ id: z.string(), label: z.string(), tags: z.array(z.string()).default([]) });
+  const Answer = z.object({ summary: z.string(), items: z.array(Item).default([]) });
+
+  it("fills null descriptions and drops only the items that still don't fit", () => {
+    const out = salvage(Answer, { summary: null, items: [{ id: "a", label: null }, { label: "no id" }, { id: "c", label: "C" }] });
+    expect(out.success).toBe(true);
+    expect(out.data).toEqual({ summary: "", items: [{ id: "a", label: "", tags: [] }, { id: "c", label: "C", tags: [] }] });
+  });
+
+  it("never invents identifiers", () => {
+    expect(salvage(z.object({ id: z.string() }), { id: null }).success).toBe(false);
+  });
+
+  it("saves a repair turn when salvage fixes the answer", async () => {
+    const f = fakeFetch([{ content: '{"module":"security","confidence":"high","extra":1}' }]);
+    const loose = z.object({ module: z.string(), notes: z.array(z.object({ id: z.string() })).default([]) });
+    const g = fakeFetch([{ content: '{"module":null,"notes":[{"id":"x"},{"nope":1}]}' }]);
+    await expect(callJson({ ...call, schema: z.object({ module: z.string(), confidence: z.string() }) }, deps(f.fn).deps)).resolves.toMatchObject({ module: "security" });
+    await expect(callJson({ ...call, schema: loose }, deps(g.fn).deps)).resolves.toEqual({ module: "", notes: [{ id: "x" }] });
+    expect(g.bodies).toHaveLength(1);
   });
 });

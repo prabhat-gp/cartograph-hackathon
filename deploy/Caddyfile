@@ -1,0 +1,6 @@
+# HTTPS for Cartograph: Caddy gets and renews the certificate on its own.
+# setup.sh replaces CARTOGRAPH_DOMAIN with the site's host name.
+CARTOGRAPH_DOMAIN {
+	encode gzip
+	reverse_proxy 127.0.0.1:8787
+}

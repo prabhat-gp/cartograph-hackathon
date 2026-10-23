@@ -1,0 +1,10 @@
+# Checks GitHub for a new main every two minutes; a merge is live in about three.
+[Unit]
+Description=Check for a new Cartograph release
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+
+[Install]
+WantedBy=timers.target
