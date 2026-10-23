@@ -172,7 +172,7 @@ function WhyCard({ repo, edgeId, callTool }: { repo: string; edgeId: string; cal
         <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
           Agents follow the cited line to the commit that wrote it, the pull request that merged it and the issue that asked for it. Every claim in the answer is checked by a Critic.
         </p>
-        <Button variant="primary" className="mt-3 w-full" onClick={() => void ask()}>
+        <Button data-tour="why" variant="primary" className="mt-3 w-full" onClick={() => void ask()}>
           <CircleHelp size={14} /> Find out why
         </Button>
       </div>

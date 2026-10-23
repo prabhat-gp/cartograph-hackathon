@@ -341,7 +341,7 @@ export function NodePanel({ graph, nodeId, onClose, onSelect, onWhy, onBlast, on
           ))}
         </div>
       )}
-      <Button variant="danger" className="w-full" onClick={() => onBlast(node.id)}>
+      <Button data-tour="blast" variant="danger" className="w-full" onClick={() => onBlast(node.id)}>
         <Zap size={14} /> What breaks if this goes down?
       </Button>
       {out.length > 0 && <Eyebrow className="mt-6">Depends on · {out.length}</Eyebrow>}

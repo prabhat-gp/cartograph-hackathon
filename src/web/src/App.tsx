@@ -7,11 +7,12 @@ import { shortSha } from "../../shared/graph";
 import { type FlowView, blastRadius, flowView } from "../../server/graph/analysis";
 import type { Bridge, HostState, ToolResult } from "./bridge";
 import { type EdgeVisual, Graph, type NodeVisual } from "./Graph";
-import { ChevronsUpDown, GitCommitHorizontal, Maximize2, Moon, PanelBottomClose, PanelBottomOpen, Route, ShieldCheck, Sun, X, Zap } from "lucide-react";
+import { ChevronsUpDown, CircleHelp, GitCommitHorizontal, Maximize2, Moon, PanelBottomClose, PanelBottomOpen, Route, ShieldCheck, Sun, X, Zap } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { CartographLogo } from "./icons";
 import { CoverageLegend, DependencyPanel, type WhyCoverage } from "./why";
 import { Button, IconButton, SeverityBadge, Spinner, cn } from "./ui";
+import { Tour, type TourAction, TourOffer, buildTourSteps, tourDone } from "./tour";
 import { BlastPanel, DriftPanel, FlowsPanel, Home, NodePanel, OverviewPanel, Progress, TracePanel } from "./panels";
 
 export interface JobView {
@@ -82,6 +83,9 @@ export function App({ bridge }: { bridge: Bridge }) {
   // Newest drift report seen, per repo: polling only asks for reports after it.
   const lastReport = useRef<{ repo: string; id?: string } | null>(null);
   const pendingTraceRef = useRef<FlowView | null>(null);
+  // First-run tour: offered once per browser on a finished map, replayable from the header.
+  const [tourOpen, setTourOpen] = useState(false);
+  const [tourOffered, setTourOffered] = useState(() => tourDone());
 
   // ------------------------------------------------------------ data loading
   const loadGraph = useCallback(
@@ -560,6 +564,18 @@ export function App({ bridge }: { bridge: Bridge }) {
       /* private mode: fine, just not remembered */
     }
   };
+  const tourAction = useCallback((a: TourAction) => {
+    setCoverageOn(false);
+    setMode({ kind: "explore" });
+    setSelected(a.kind === "node" ? a.id : null);
+    setSelectedEdge(a.kind === "edge" ? a.id : null);
+    setTab(a.kind === "tab" ? a.tab : "overview");
+  }, []);
+  const tourSteps = useMemo(() => (graph ? buildTourSteps(graph, reports.length) : []), [graph, reports.length]);
+  const startTour = () => {
+    setTourOffered(true);
+    setTourOpen(true);
+  };
   const checkNow = async () => {
     if (!graph) return;
     const r = await bridge.callTool("check_drift", { repo: graph.repo.key });
@@ -722,7 +738,7 @@ export function App({ bridge }: { bridge: Bridge }) {
 
         <nav className="mx-auto flex items-center rounded-[10px] bg-surface-2 p-[3px]">
           {(["overview", "flows", "drift"] as Tab[]).map((t) => (
-            <button key={t} onClick={() => switchTab(t)} className={cn("relative flex h-7 items-center gap-1.5 rounded-[8px] px-3 text-[12.5px] font-medium transition-colors", tab === t ? "text-text" : "text-muted hover:text-text")}>
+            <button key={t} data-tour={`tab-${t}`} onClick={() => switchTab(t)} className={cn("relative flex h-7 items-center gap-1.5 rounded-[8px] px-3 text-[12.5px] font-medium transition-colors", tab === t ? "text-text" : "text-muted hover:text-text")}>
               {tab === t && <motion.span layoutId="cg-tab" className="absolute inset-0 rounded-[8px] bg-surface shadow-card" transition={{ type: "spring", duration: 0.35, bounce: 0.15 }} />}
               <span className="relative">{t === "overview" ? "Map" : t === "flows" ? "Flows" : "Drift"}</span>
               {t === "drift" && unseenDrift > 0 && <span className="relative grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">{unseenDrift}</span>}
@@ -741,6 +757,9 @@ export function App({ bridge }: { bridge: Bridge }) {
             {busy ? <Spinner size={12} /> : <span className="cg-live-dot size-2 rounded-full bg-ok" />}
             <span className="max-sm:hidden">{busy ? "Reviewing push…" : "Live"}</span>
           </span>
+          <IconButton label="Take the tour" data-tour="replay" onClick={startTour}>
+            <CircleHelp size={15} />
+          </IconButton>
           {bridge.mode === "standalone" && (
             <IconButton label="Toggle dark mode" onClick={toggleTheme}>
               {dark ? <Sun size={15} /> : <Moon size={15} />}
@@ -755,7 +774,7 @@ export function App({ bridge }: { bridge: Bridge }) {
       </header>
 
       <div className="flex min-h-0 flex-1 max-md:flex-col">
-        <main className="relative min-h-0 min-w-0 flex-1 bg-canvas">
+        <main data-tour="map" className="relative min-h-0 min-w-0 flex-1 bg-canvas">
           <ReactFlowProvider>
             <Graph
               graph={graph}
@@ -798,6 +817,8 @@ export function App({ bridge }: { bridge: Bridge }) {
               onToggle={() => void toggleCoverage()}
             />
           )}
+
+          {!tourOffered && !tourOpen && !inline && <TourOffer onStart={startTour} onDismiss={() => setTourOffered(true)} />}
 
           <AnimatePresence>
             {toast && (
@@ -871,6 +892,7 @@ export function App({ bridge }: { bridge: Bridge }) {
         </aside>
       </div>
 
+      {tourOpen && tourSteps.length > 0 && <Tour steps={tourSteps} onAction={tourAction} onClose={() => setTourOpen(false)} />}
       {error && <div className="absolute bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-danger px-3 py-2 text-[12.5px] text-white shadow-pop">{error}</div>}
     </div>
   );
