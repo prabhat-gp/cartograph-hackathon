@@ -1,19 +1,17 @@
-import { Colophon } from "@/components/Colophon";
-import { Header } from "@/components/Header";
-import { PlateInstruments } from "@/components/PlateInstruments";
-import { PlateSurvey } from "@/components/PlateSurvey";
-import { PlateWhy } from "@/components/PlateWhy";
+import { Hero } from "@/components/Hero";
+import { Nav } from "@/components/Nav";
+import { Problem } from "@/components/Problem";
+import { Product } from "@/components/Product";
 
 export default function Home() {
   return (
     <>
-      <Header />
+      <Nav />
       <main>
-        <PlateWhy />
-        <PlateSurvey />
-        <PlateInstruments />
+        <Hero />
+        <Problem />
+        <Product />
       </main>
-      <Colophon />
     </>
   );
 }
