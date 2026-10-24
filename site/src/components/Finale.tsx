@@ -86,7 +86,7 @@ export function Finale() {
               <GithubMark className="size-4" /> Source
             </a>
             <span>
-              Made with chai, stubbornness and agents that cite their sources, by{" "}
+              Made with Cursor, Claude Code and coffee, by{" "}
               <a href={AUTHOR_URL} target="_blank" rel="noreferrer" className="font-medium text-ink underline decoration-vermilion decoration-2 underline-offset-4 transition-colors hover:text-vermilion">
                 Prabhat
               </a>

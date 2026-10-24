@@ -338,12 +338,12 @@ export async function explainDependency(args: { repo?: string; edgeId: string })
   const edge = graph.edges.find((e) => e.id === args.edgeId);
   if (!edge) throw new ToolError(`No dependency ${args.edgeId} on this map.`);
   const label = (id: string) => graph.nodes.find((n) => n.id === id)?.label ?? id;
-  const cite = edge.evidence[0];
   // An approved answer for this arrow at this commit is reused: same evidence, same answer.
   const cacheKey = `${graph.repo.key}@${graph.sha}:${edge.id}`;
   const cache = readDoc<Record<string, unknown>>("why-cache", {});
   if (cache[cacheKey]) return { ...(cache[cacheKey] as object), cached: true };
   const target = await ensureHistory(graph);
+  const cite = await bestCitation(edge, target.id);
   const result = await runWhy({
     repo: target.id,
     dir: target.dir,
@@ -360,6 +360,23 @@ export async function explainDependency(args: { repo?: string; edgeId: string })
 
 type Coverage = "explained" | "reviewed" | "unreviewed" | "unknown";
 const RANK: Record<Coverage, number> = { explained: 3, reviewed: 2, unreviewed: 1, unknown: 0 };
+
+/**
+ * Of an arrow's citations, the one whose history says the most: a line from a
+ * pull request that states a reason beats one from a bare commit. The same
+ * ranking Why-coverage uses, so the answer starts where the overlay points.
+ */
+async function bestCitation(edge: CartographGraph["edges"][number], history: string) {
+  const fileId = (p: string) => `${history}:${p}`;
+  const ranges = await rangesForFiles(zetarisQuery, [...new Set(edge.evidence.map((ev) => fileId(ev.path)))]).catch(() => []);
+  let best = { cite: edge.evidence[0], rank: -1 };
+  for (const ev of edge.evidence) {
+    const r = ranges.find((x) => x.file_id === fileId(ev.path) && x.line_start <= ev.line && ev.line <= x.line_end);
+    const rank = r ? RANK[r.explained ? "explained" : r.pr_number ? "reviewed" : "unreviewed"] : 0;
+    if (rank > best.rank) best = { cite: ev, rank };
+  }
+  return best.cite;
+}
 
 /**
  * For every dependency on the map: does the line it cites trace to a pull
