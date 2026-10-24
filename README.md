@@ -79,10 +79,6 @@ In public mode (`CARTOGRAPH_PUBLIC=1`) visitors may only map public GitHub repos
 - "Why" answers are only as good as the history: a line committed without a pull request can be traced to its commit but rarely to a reason, and the answer says so.
 - Very large repositories are mapped from the files the Scout picks, not every file.
 
-## Pre-existing work
-
-The map pipeline, MCP server and map desk come from an earlier project of the author's (`github.com/prabhat-gp/dev-day`, before 22 October 2026); `metadata.json` lists the imported paths. Everything for the explain-why track was built during the build window: the explain agents, the Zetaris USL and ingest, the Meterless provider and H-MEM engine, Why-coverage, the tour, the landing page and hosting.
-
 ## Licences
 
 Third-party code: the Meterless H-MEM conformance suite in `third_party/` (its own licence file). Dependencies are listed in `package.json` and `site/package.json`.

@@ -3,7 +3,7 @@
 import { motion } from "motion/react";
 import { CODE } from "@/lib/site";
 import { Chapter, type ChapterProps } from "./Chapter";
-import { MemoryForget, MemoryRecall, MemorySave, RuntimePanel, RuntimeRoute } from "./proof/Meterless";
+import { MemoryForget, MemoryRecall, MemorySave, RuntimeConnect, RuntimeRoute } from "./proof/Meterless";
 import { NvidiaCrew, NvidiaGuard, NvidiaUsage } from "./proof/Nvidia";
 import { UslQuality, UslQuery, UslTables } from "./proof/Zetaris";
 
@@ -47,14 +47,15 @@ const chapters: Omit<ChapterProps, "index" | "total">[] = [
     sponsor: "Meterless Runtime",
     accent: "var(--color-ochre-light)",
     requirement: "Primary AI provider",
-    line: "Every agent call goes through Nightshift first. NVIDIA answers only if it's offline.",
+    line: "Paste Nightshift's connect link and every agent runs through it. Without it, NVIDIA answers directly.",
     frames: [
-      { caption: "1 · Live status in the desk", view: () => <RuntimePanel /> },
+      { caption: "1 · One paste connects it", view: () => <RuntimeConnect /> },
       { caption: "2 · Agent → Nightshift → Nemotron", view: () => <RuntimeRoute /> },
       { caption: "3 · Runtime offline, NVIDIA steps in", view: () => <RuntimeRoute offline /> },
     ],
     links: [
       { label: "Runtime provider", href: CODE("src/meterless/runtime.ts") },
+      { label: "Desk settings", href: CODE("src/meterless/settings.ts") },
       { label: "Provider choice", href: CODE("src/config.ts") },
       { label: "Model client", href: CODE("src/llm/client.ts") },
     ],

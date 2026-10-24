@@ -21,7 +21,8 @@ import { githubWebhook } from "./github";
 import { startReviewJob } from "./jobs";
 import { appHtml, createCartographServer } from "./mcp";
 import { resolveRepo } from "./repo";
-import { sponsorStatus } from "./status";
+import { resetSponsorStatus, sponsorStatus } from "./status";
+import { SettingsError, connect, currentSettings, detect, disconnect } from "../meterless/settings";
 import { ACCESS_TOKEN, hostGuard, isRemote, localOnly, originGuard, takeVisitorCall, withCaller } from "./security";
 import { findRepo, getRepo } from "./store";
 import { ToolError, appToolImpls, toolImpls } from "./tools";
@@ -99,6 +100,25 @@ export function createApp(opts: { port: number }): Express {
       res.json({ ok: !err, output: `${stdout}${stderr}`.trim() || (err ? err.message : "") });
     });
   });
+
+  // Meterless settings change which provider every agent uses, so only someone
+  // on this machine may see or change them, public mode or not.
+  const meterless = express.Router();
+  meterless.use((req: Request, res: Response, next) => (isRemote(req) ? res.status(404).send("Not found") : next()));
+  meterless.use(express.json());
+  const answer = (res: Response, work: () => Promise<unknown>) =>
+    work().then(
+      (health) => {
+        resetSponsorStatus();
+        res.json({ settings: currentSettings(), health });
+      },
+      (err) => res.status(err instanceof SettingsError ? 400 : 500).json({ error: (err as Error).message }),
+    );
+  meterless.get("/", (_req: Request, res: Response) => res.json({ settings: currentSettings() }));
+  meterless.post("/", (req: Request, res: Response) => answer(res, () => connect({ address: req.body?.address, token: req.body?.token })));
+  meterless.post("/detect", (req: Request, res: Response) => answer(res, () => detect({ token: req.body?.token })));
+  meterless.delete("/", (_req: Request, res: Response) => answer(res, async () => disconnect()));
+  api.use("/api/meterless", meterless);
 
   api.get("/app", async (_req: Request, res: Response) => {
     res.type("html").send(await appHtml({ standalone: true }));

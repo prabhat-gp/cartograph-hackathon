@@ -6,6 +6,7 @@ import { commentOnCommit } from "./github";
 import { onDrift, startReviewJob } from "./jobs";
 import { listRepos } from "./store";
 import { ACCESS_TOKEN, PUBLIC_MODE } from "./security";
+import { loadMeterlessSettings } from "../meterless/settings";
 
 const PORT = Number(process.env.PORT ?? 8787);
 const publicUrl = () => process.env.PUBLIC_URL?.replace(/\/+$/, "");
@@ -18,6 +19,8 @@ onDrift((report) => {
   void emitDrift(report, privateBase()).then((n) => n && console.log(`[events] ${report.id} → ${n} subscriber(s)`));
   void commentOnCommit(report, ACCESS_TOKEN ? undefined : publicUrl());
 });
+
+loadMeterlessSettings();
 
 createApp({ port: PORT }).listen(PORT, () => {
   // Catch up on pushes whose webhooks arrived while we were down (restart, sleep).

@@ -91,6 +91,12 @@ describe("security", () => {
     expect((await request("GET", `/${TOKEN.slice(0, -1)}x/health`, { remote: true })).status).toBe(404);
   });
 
+  it("keeps the Meterless settings to this machine, even under the secret prefix", async () => {
+    expect((await request("GET", "/api/meterless")).status).toBe(200);
+    expect((await request("GET", `/${TOKEN}/api/meterless`, { remote: true })).status).toBe(404);
+    expect((await request("POST", `/${TOKEN}/api/meterless`, { remote: true, body: { token: "x" } })).status).toBe(404);
+  });
+
   it("rejects unknown Host headers (DNS rebinding)", async () => {
     expect((await request("GET", "/health", { host: "evil.example" })).status).toBe(403);
   });
