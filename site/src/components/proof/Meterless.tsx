@@ -133,33 +133,78 @@ export function MemoryForget() {
 
 // ------------------------------------------------------------ Power: Runtime
 
-const status = [
-  { name: "Meterless Nightshift", role: "primary AI provider", dot: OCHRE, word: "primary" },
-  { name: "NVIDIA Nemotron", role: "the models", dot: "var(--color-forest-light)", word: "working" },
-  { name: "Zetaris", role: "provenance USL", dot: "var(--color-forest-light)", word: "working" },
-  { name: "Meterless H-MEM", role: "memory engine", dot: "var(--color-forest-light)", word: "working" },
+const others = [
+  { name: "NVIDIA Nemotron", role: "the models" },
+  { name: "Zetaris", role: "provenance USL" },
+  { name: "Meterless H-MEM", role: "memory engine" },
 ];
 
-export function RuntimePanel() {
+const LINK = "http://192.168.1.5:8088/connect#k=••••";
+
+/** The desk's Powered by panel: paste Nightshift's connect link, and it becomes the primary provider. */
+export function RuntimeConnect() {
+  // 0 standing by · 1 typing the link · 2 checking · 3 connected
+  const [phase, setPhase] = useState(0);
+  const [typed, setTyped] = useState(0);
+  useEffect(() => {
+    const timers = [setTimeout(() => setPhase(1), 900), setTimeout(() => setPhase(2), 2900), setTimeout(() => setPhase(3), 3700)];
+    return () => timers.forEach(clearTimeout);
+  }, []);
+  useEffect(() => {
+    if (phase !== 1) return;
+    const t = setInterval(() => setTyped((n) => Math.min(LINK.length, n + 2)), 45);
+    return () => clearInterval(t);
+  }, [phase]);
+  const live = phase === 3;
+
   return (
     <div className="grid h-full place-items-center p-7">
-      <motion.div initial={{ opacity: 0, y: -10, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="w-[360px] rounded-[5px] border border-paper/25 bg-[#1b1915] p-4">
+      <motion.div initial={{ opacity: 0, y: -10, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="w-[380px] rounded-[5px] border border-paper/25 bg-[#1b1915] p-4">
         <p className="font-serif text-[22px] text-paper-light">Powered by</p>
-        <ul className="mt-3 space-y-3">
-          {status.map((s, i) => (
-            <motion.li key={s.name} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.15 }} className="flex items-center justify-between gap-3">
-              <span>
-                <span className="block text-[13.5px] font-medium text-paper-light">{s.name}</span>
-                <span className="font-mono text-[10px] tracking-[0.1em] text-paper/45 uppercase">{s.role}</span>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <span>
+            <span className="block text-[13.5px] font-medium text-paper-light">Meterless Nightshift</span>
+            <span className="font-mono text-[10px] tracking-[0.1em] text-paper/45 uppercase">primary AI provider</span>
+          </span>
+          <span className="flex items-center gap-1.5 font-mono text-[10.5px] text-paper/60">
+            <motion.span
+              animate={{ scale: [1, 1.35, 1], background: live ? "var(--color-forest-light)" : OCHRE }}
+              transition={{ scale: { duration: 1.6, repeat: Infinity } }}
+              className="size-2 rounded-full"
+            />
+            {live ? "working" : "standing by"}
+          </span>
+        </div>
+        <div className="mt-2.5 rounded-[3px] border border-paper/15 bg-paper/[0.03] p-2.5">
+          <p className="font-mono text-[10px] text-paper/45">Connect link or base URL</p>
+          <p className="mt-1 h-7 truncate rounded-[3px] border border-paper/20 px-2 font-mono text-[11px] leading-7 text-paper/80">
+            {LINK.slice(0, typed)}
+            {phase === 1 && <span className="animate-pulse">|</span>}
+          </p>
+          <div className="mt-2 flex items-center gap-2">
+            <motion.span
+              animate={phase === 2 ? { scale: [1, 0.94, 1] } : {}}
+              className="rounded-[3px] px-2.5 py-1 font-sans text-[11.5px] text-paper-light"
+              style={{ background: "var(--color-vermilion)" }}
+            >
+              Connect
+            </motion.span>
+            <span className="rounded-[3px] border border-paper/20 px-2.5 py-1 font-sans text-[11.5px] text-paper/70">Auto Detect</span>
+          </div>
+          <motion.p initial={false} animate={{ opacity: live ? 1 : 0, y: live ? 0 : 4 }} className="mt-2 flex items-center gap-1.5 font-mono text-[10.5px] text-forest-light">
+            <Check className="size-3.5" /> online · meterless/auto, fast, deep · no restart
+          </motion.p>
+        </div>
+        <ul className="mt-3 space-y-2">
+          {others.map((s) => (
+            <li key={s.name} className="flex items-center justify-between gap-3 text-[12.5px] text-paper/60">
+              {s.name}
+              <span className="flex items-center gap-1.5 font-mono text-[10.5px]">
+                <span className="size-2 rounded-full bg-forest-light" /> working
               </span>
-              <span className="flex items-center gap-1.5 font-mono text-[10.5px] text-paper/60">
-                <motion.span animate={{ scale: [1, 1.35, 1] }} transition={{ duration: 1.6, repeat: Infinity, delay: i * 0.2 }} className="size-2 rounded-full" style={{ background: s.dot }} />
-                {s.word}
-              </span>
-            </motion.li>
+            </li>
           ))}
         </ul>
-        <p className="mt-4 border-t border-paper/10 pt-3 font-mono text-[10.5px] text-paper/45">live in the desk header</p>
       </motion.div>
     </div>
   );
