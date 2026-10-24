@@ -123,7 +123,14 @@ export function createApp(opts: { port: number }): Express {
   });
   // The landing page, when it has been built; otherwise straight to the desk.
   const site = path.join(ROOT, "site", "out");
-  if (existsSync(path.join(site, "index.html"))) api.use(express.static(site, { index: "index.html", redirect: false }));
+  // Next names its build files by content hash, so browsers can keep them for good.
+  const hashed = (file: string) => file.includes(`${path.sep}_next${path.sep}static${path.sep}`);
+  const siteFiles = express.static(site, {
+    index: "index.html",
+    redirect: false,
+    setHeaders: (res, file) => res.setHeader("Cache-Control", hashed(file) ? "public, max-age=31536000, immutable" : "no-cache"),
+  });
+  if (existsSync(path.join(site, "index.html"))) api.use(siteFiles);
   else api.get("/", (req: Request, res: Response) => res.redirect(`${req.baseUrl}/app`));
 
   // Secret prefix first, so its requests never reach the local-only mount.
