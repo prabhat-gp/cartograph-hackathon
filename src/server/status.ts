@@ -43,8 +43,10 @@ export function checkSponsors(env: NodeJS.ProcessEnv = process.env): Promise<Spo
       const base = env.NVIDIA_BASE_URL ?? "https://integrate.api.nvidia.com/v1";
       const res = await fetch(`${base}/models`, { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(10_000) });
       if (!res.ok) return { status: "fail", detail: `GET /models answered ${res.status}` };
-      const provider = providerConfig(env).name;
-      return { status: "ok", detail: `${modelFor(provider, "deep", env)} (deep) and ${modelFor(provider, "fast", env)} (fast)` };
+      const models = `${modelFor("nvidia", "deep", env)} (deep) and ${modelFor("nvidia", "fast", env)} (fast)`;
+      return providerConfig(env).name === "meterless"
+        ? { status: "ok", detail: `Nightshift serves Nemotron; ${models} directly whenever Nightshift can't be reached` }
+        : { status: "ok", detail: models };
     }),
     check("Zetaris", "History as a Unified Semantic Layer", async () => {
       if (!env.ZETARIS_API_KEY && !env.ZETARIS_PASSWORD) return { status: "todo", detail: "Set ZETARIS_API_KEY or ZETARIS_USERNAME/PASSWORD" };
@@ -66,4 +68,9 @@ let cached: { at: number; value: Promise<SponsorStatus[]> } | null = null;
 export function sponsorStatus(): Promise<SponsorStatus[]> {
   if (!cached || Date.now() - cached.at > 60_000) cached = { at: Date.now(), value: checkSponsors() };
   return cached.value;
+}
+
+/** After the provider changes, the next view checks again. */
+export function resetSponsorStatus() {
+  cached = null;
 }
