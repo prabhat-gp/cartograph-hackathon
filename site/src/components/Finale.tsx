@@ -6,6 +6,12 @@ import { type FormEvent, useState } from "react";
 import { APP_URL, AUTHOR_URL, REPO_URL } from "@/lib/site";
 import { GithubMark, Mark } from "./Mark";
 
+/** A pasted GitHub link becomes owner/repo; anything else is left as typed. */
+function ownerRepo(text: string): string {
+  const m = text.trim().match(/^(?:https?:\/\/|git@)?(?:www\.)?github\.com[/:]([\w.-]+)\/([\w.-]+?)(?:\.git)?(?:[/?#].*)?$/i);
+  return m ? `${m[1]}/${m[2]}` : text;
+}
+
 /** The last screen: type a repo, land in the desk with it ready to map. */
 export function Finale() {
   const [repo, setRepo] = useState("");
@@ -47,7 +53,7 @@ export function Finale() {
           <input
             id="finale-repo"
             value={repo}
-            onChange={(e) => setRepo(e.target.value)}
+            onChange={(e) => setRepo(ownerRepo(e.target.value))}
             placeholder="owner/repo"
             autoComplete="off"
             spellCheck={false}

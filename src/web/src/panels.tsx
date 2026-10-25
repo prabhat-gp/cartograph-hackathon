@@ -951,6 +951,12 @@ export function Progress({ job }: { job: JobView | null }) {
 
 // ---------------------------------------------------------------- home
 
+/** A pasted GitHub link becomes owner/repo; anything else is left as typed. */
+export function ownerRepo(text: string): string {
+  const m = text.trim().match(/^(?:https?:\/\/|git@)?(?:www\.)?github\.com[/:]([\w.-]+)\/([\w.-]+?)(?:\.git)?(?:[/?#].*)?$/i);
+  return m ? `${m[1]}/${m[2]}` : text;
+}
+
 export function Home(props: {
   repos: RepoSummary[];
   /** The repo whose map is open behind this picker, if any. */
@@ -962,7 +968,7 @@ export function Home(props: {
 }) {
   const { repos, current, onOpen, error } = props;
   // Arriving from the landing page with a repo typed in (/app?map=owner/name).
-  const [value, setValue] = useState(() => new URLSearchParams(location.search).get("map") ?? "");
+  const [value, setValue] = useState(() => ownerRepo(new URLSearchParams(location.search).get("map") ?? ""));
   const [busy, setBusy] = useState(false);
   return (
     <div className="mx-auto w-full max-w-[640px] flex-1 px-6 py-10">
@@ -991,7 +997,7 @@ export function Home(props: {
           <GithubMark size={18} className="shrink-0 text-muted" />
           <input
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => setValue(ownerRepo(e.target.value))}
             placeholder="owner/repo"
             aria-label="GitHub repository: owner/repo or a github.com link"
             spellCheck={false}
