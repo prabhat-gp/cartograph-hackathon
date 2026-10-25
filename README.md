@@ -17,6 +17,26 @@ Built for the Open Agent Hackathon 2026, Track 02 "The Agent That Can Explain Wh
 | **Why-coverage** | Which arrows have a stated reason, and which were never reviewed? |
 | **Tour** | A one-minute walk through the desk, built from whichever map is open |
 
+## Try it in one minute, no keys
+
+```sh
+docker build -t cartograph .
+docker run -p 8787:8787 -e SAMPLE_MODE=true cartograph
+curl -s localhost:8787/run                                    # the three examples
+curl -s -X POST localhost:8787/run -H 'content-type: application/json' -d '{"example": "02-google-oauth"}'
+```
+
+Without Docker: `npm install && npm run sample` replays all three and checks each answer against the live one.
+
+`SAMPLE_MODE=true` runs the real explain agents (Planner → Investigator → Writer ↔ Critic, plus H-MEM) on recorded data: what Zetaris returned for each query and what each model answered when the example ran live (`samples/`). The agent logic, citation checks and the Critic's revision loop all run again; only the network calls are replayed.
+
+| | |
+|---|---|
+| `input_examples/` | three real questions, each about an arrow on the PrepPilot map |
+| `output_examples/` | the live answers: one approved with high confidence, two the Critic sent back and still didn't approve |
+| `logs/trace-*.jsonl` | the live runs' traces: every agent, handoff, critique and retry |
+| `POST /run` | `{"repo", "question", "path"?, "line"?}` runs live; `{"example": "<id>"}` replays in sample mode |
+
 ## Run it
 
 ```sh

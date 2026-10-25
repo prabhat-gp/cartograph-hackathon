@@ -1,0 +1,7 @@
+{
+  "id": "01-gemini-provider",
+  "repo": "siddarth-ba-72/Interview-Prep-Pilot-AI",
+  "question": "Why does AI orchestration service depend on Gemini model provider (chat.completions.create through the compatible endpoint)?",
+  "path": "ai-service/app/llm.py",
+  "line": 26
+}

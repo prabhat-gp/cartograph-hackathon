@@ -3,6 +3,7 @@
 // tends to run away (pages of whitespace until max_tokens), so we ask for a
 // JSON object, put the schema in the prompt, validate with zod, and give the
 // model one repair turn with the exact validation error.
+import { AsyncLocalStorage } from "node:async_hooks";
 import { z } from "zod";
 import { fallbackProvider, modelFor, providerConfig, type ProviderConfig, type Tier } from "../config";
 import { METERLESS_APP, METERLESS_TIMEOUT_MS } from "../meterless/runtime";
@@ -46,6 +47,17 @@ interface ChatResponse {
   choices?: { message?: { content?: string | null }; finish_reason?: string }[];
   usage?: { prompt_tokens?: number; completion_tokens?: number };
 }
+
+/**
+ * Sample mode: record what the models answered during a live run, or replay
+ * those answers with no provider at all. A replayed answer is validated
+ * against the agent's schema exactly like a live one.
+ */
+export interface ModelTap {
+  replay?: (agent: string) => unknown;
+  record?: (agent: string, output: unknown) => void;
+}
+export const modelTap = new AsyncLocalStorage<ModelTap>();
 
 export class ModelOutputError extends Error {
   override name = "ModelOutputError";
@@ -147,6 +159,12 @@ export function extractJson(text: string): unknown {
 const RATE_LIMIT_WAITS = [2_000, 4_000, 8_000];
 
 export async function callJson<S extends z.ZodType>(call: JsonCall<S>, deps: ClientDeps = {}): Promise<z.infer<S>> {
+  const tap = modelTap.getStore();
+  if (tap?.replay) {
+    const parsed = salvage(call.schema, tap.replay(call.agent));
+    if (!parsed.success) throw new ModelOutputError(`recorded ${call.agent} answer no longer matches the schema: ${z.prettifyError(parsed.error)}`);
+    return parsed.data;
+  }
   const primary = deps.provider ?? providerConfig();
   const fallback = deps.fallback === undefined ? fallbackProvider(primary) : deps.fallback ?? undefined;
   const budget = deps.budget ?? budgetFromEnv();
@@ -217,6 +235,7 @@ export async function callJson<S extends z.ZodType>(call: JsonCall<S>, deps: Cli
       const parsed = salvage(call.schema, extractJson(text));
       if (!parsed.success) throw new ModelOutputError(`JSON did not match the schema: ${z.prettifyError(parsed.error)}`);
       log(true);
+      tap?.record?.(call.agent, parsed.data);
       return parsed.data;
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") throw error;

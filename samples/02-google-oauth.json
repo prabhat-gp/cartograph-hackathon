@@ -1,0 +1,1719 @@
+{
+  "id": "02-google-oauth",
+  "recorded_at": "2026-10-25T13:36:00.942Z",
+  "input": {
+    "repo": "siddarth-ba-72/Interview-Prep-Pilot-AI",
+    "question": "Why does User and identity API depend on Google identity provider (Google OAuth2 login)?",
+    "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/SecurityConfig.java",
+    "line": 31
+  },
+  "files": {
+    "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/SecurityConfig.java": "package com.preppilot.userservice.config;\n\nimport org.springframework.context.annotation.Bean;\nimport org.springframework.context.annotation.Configuration;\nimport org.springframework.security.config.annotation.web.builders.HttpSecurity;\nimport org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;\nimport org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;\nimport org.springframework.security.web.SecurityFilterChain;\n\n@Configuration\n@EnableWebSecurity\npublic class SecurityConfig {\n\n    private final OAuthSuccessHandler oauthSuccessHandler;\n    private final OAuthFailureHandler oauthFailureHandler;\n\n    public SecurityConfig(OAuthSuccessHandler oauthSuccessHandler, OAuthFailureHandler oauthFailureHandler) {\n        this.oauthSuccessHandler = oauthSuccessHandler;\n        this.oauthFailureHandler = oauthFailureHandler;\n    }\n\n    @Bean\n    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {\n        http\n                .csrf(AbstractHttpConfigurer::disable)\n                // Sessions are needed only for the OAuth2 state handshake. Access tokens are\n                // checked by the gateway and again by JwtAuthFilter for /api/v1/users/**.\n                .authorizeHttpRequests(auth -> auth\n                        .anyRequest().permitAll()\n                )\n                .oauth2Login(oauth2 -> oauth2\n                        .successHandler(oauthSuccessHandler)\n                        .failureHandler(oauthFailureHandler)\n                );\n\n        return http.build();\n    }\n}\n"
+  },
+  "queries": [
+    {
+      "sql": "SELECT id, path, lines, language FROM lightning.metastore.cartograph.provenance.source_file WHERE repo_id = 'siddarth-ba-72/Interview-Prep-Pilot-AI' ORDER BY path",
+      "rows": [
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:.github/workflows/_deploy-service-reusable.yml",
+          "path": ".github/workflows/_deploy-service-reusable.yml",
+          "lines": "140",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:.github/workflows/ai-service-lint.yml",
+          "path": ".github/workflows/ai-service-lint.yml",
+          "lines": "39",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:.github/workflows/backend-lint.yml",
+          "path": ".github/workflows/backend-lint.yml",
+          "lines": "30",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:.github/workflows/deploy-gateway.yml",
+          "path": ".github/workflows/deploy-gateway.yml",
+          "lines": "20",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:.github/workflows/deploy-topic-service.yml",
+          "path": ".github/workflows/deploy-topic-service.yml",
+          "lines": "20",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:.github/workflows/deploy-user-service.yml",
+          "path": ".github/workflows/deploy-user-service.yml",
+          "lines": "20",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:.github/workflows/frontend-lint.yml",
+          "path": ".github/workflows/frontend-lint.yml",
+          "lines": "36",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:.github/workflows/rollback-service.yml",
+          "path": ".github/workflows/rollback-service.yml",
+          "lines": "47",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:CLAUDE.md",
+          "path": "CLAUDE.md",
+          "lines": "209",
+          "language": "Markdown"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:README.md",
+          "path": "README.md",
+          "lines": "576",
+          "language": "Markdown"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:ai-service/GUARDRAILS.md",
+          "path": "ai-service/GUARDRAILS.md",
+          "lines": "104",
+          "language": "Markdown"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:ai-service/api/index.py",
+          "path": "ai-service/api/index.py",
+          "lines": "3",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:ai-service/app/auth.py",
+          "path": "ai-service/app/auth.py",
+          "lines": "19",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:ai-service/app/config.py",
+          "path": "ai-service/app/config.py",
+          "lines": "33",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:ai-service/app/error_handlers.py",
+          "path": "ai-service/app/error_handlers.py",
+          "lines": "84",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:ai-service/app/exceptions.py",
+          "path": "ai-service/app/exceptions.py",
+          "lines": "62",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:ai-service/app/llm.py",
+          "path": "ai-service/app/llm.py",
+          "lines": "166",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:ai-service/app/logging_config.py",
+          "path": "ai-service/app/logging_config.py",
+          "lines": "64",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:ai-service/app/main.py",
+          "path": "ai-service/app/main.py",
+          "lines": "36",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:ai-service/app/middleware.py",
+          "path": "ai-service/app/middleware.py",
+          "lines": "31",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:ai-service/app/prompts.py",
+          "path": "ai-service/app/prompts.py",
+          "lines": "638",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:ai-service/app/routers/interview.py",
+          "path": "ai-service/app/routers/interview.py",
+          "lines": "296",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:ai-service/app/routers/learn.py",
+          "path": "ai-service/app/routers/learn.py",
+          "lines": "53",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:ai-service/app/routers/test.py",
+          "path": "ai-service/app/routers/test.py",
+          "lines": "118",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:ai-service/app/schemas.py",
+          "path": "ai-service/app/schemas.py",
+          "lines": "204",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:ai-service/app/scope_validator.py",
+          "path": "ai-service/app/scope_validator.py",
+          "lines": "52",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:ai-service/test_guardrails.py",
+          "path": "ai-service/test_guardrails.py",
+          "lines": "61",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:deploy/README.md",
+          "path": "deploy/README.md",
+          "lines": "66",
+          "language": "Markdown"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:deploy/systemd/setup-ec2.sh",
+          "path": "deploy/systemd/setup-ec2.sh",
+          "lines": "33",
+          "language": "Shell"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:docker-compose.yml",
+          "path": "docker-compose.yml",
+          "lines": "60",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:e2e/README.md",
+          "path": "e2e/README.md",
+          "lines": "40",
+          "language": "Markdown"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:e2e/load/journeys.spec.ts",
+          "path": "e2e/load/journeys.spec.ts",
+          "lines": "90",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:e2e/playwright.config.ts",
+          "path": "e2e/playwright.config.ts",
+          "lines": "48",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:e2e/support/api.ts",
+          "path": "e2e/support/api.ts",
+          "lines": "47",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:e2e/support/app.ts",
+          "path": "e2e/support/app.ts",
+          "lines": "196",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:e2e/support/fixtures.ts",
+          "path": "e2e/support/fixtures.ts",
+          "lines": "60",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:e2e/support/global-setup.ts",
+          "path": "e2e/support/global-setup.ts",
+          "lines": "21",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:e2e/support/timing-reporter.ts",
+          "path": "e2e/support/timing-reporter.ts",
+          "lines": "107",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:e2e/tests/auth.spec.ts",
+          "path": "e2e/tests/auth.spec.ts",
+          "lines": "71",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:e2e/tests/dashboard.spec.ts",
+          "path": "e2e/tests/dashboard.spec.ts",
+          "lines": "38",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:e2e/tests/feedback.spec.ts",
+          "path": "e2e/tests/feedback.spec.ts",
+          "lines": "40",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:e2e/tests/learn.spec.ts",
+          "path": "e2e/tests/learn.spec.ts",
+          "lines": "55",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:e2e/tests/mock-interview.spec.ts",
+          "path": "e2e/tests/mock-interview.spec.ts",
+          "lines": "56",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:e2e/tests/test-mode.spec.ts",
+          "path": "e2e/tests/test-mode.spec.ts",
+          "lines": "57",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/.eslintrc.cjs",
+          "path": "frontend/.eslintrc.cjs",
+          "lines": "20",
+          "language": "JavaScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/App.tsx",
+          "path": "frontend/src/App.tsx",
+          "lines": "170",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/api/admin.ts",
+          "path": "frontend/src/api/admin.ts",
+          "lines": "113",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/api/axiosInstance.ts",
+          "path": "frontend/src/api/axiosInstance.ts",
+          "lines": "50",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/api/chat.ts",
+          "path": "frontend/src/api/chat.ts",
+          "lines": "30",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/api/chatStream.ts",
+          "path": "frontend/src/api/chatStream.ts",
+          "lines": "84",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/api/config.ts",
+          "path": "frontend/src/api/config.ts",
+          "lines": "32",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/api/feedback.ts",
+          "path": "frontend/src/api/feedback.ts",
+          "lines": "10",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/api/interviews.ts",
+          "path": "frontend/src/api/interviews.ts",
+          "lines": "151",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/api/profile.ts",
+          "path": "frontend/src/api/profile.ts",
+          "lines": "54",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/api/refreshSession.ts",
+          "path": "frontend/src/api/refreshSession.ts",
+          "lines": "22",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/api/tests.ts",
+          "path": "frontend/src/api/tests.ts",
+          "lines": "91",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/api/topics.ts",
+          "path": "frontend/src/api/topics.ts",
+          "lines": "34",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/AdminStats.tsx",
+          "path": "frontend/src/components/AdminStats.tsx",
+          "lines": "36",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/AdminTabs.tsx",
+          "path": "frontend/src/components/AdminTabs.tsx",
+          "lines": "43",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/AiMessage.tsx",
+          "path": "frontend/src/components/AiMessage.tsx",
+          "lines": "17",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/AppHeader.tsx",
+          "path": "frontend/src/components/AppHeader.tsx",
+          "lines": "84",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/AuthShell.tsx",
+          "path": "frontend/src/components/AuthShell.tsx",
+          "lines": "91",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/ChatHistory.tsx",
+          "path": "frontend/src/components/ChatHistory.tsx",
+          "lines": "96",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/FeedbackButton.tsx",
+          "path": "frontend/src/components/FeedbackButton.tsx",
+          "lines": "155",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/Footer.tsx",
+          "path": "frontend/src/components/Footer.tsx",
+          "lines": "19",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/MessageInput.tsx",
+          "path": "frontend/src/components/MessageInput.tsx",
+          "lines": "45",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/NewTopicForm.tsx",
+          "path": "frontend/src/components/NewTopicForm.tsx",
+          "lines": "76",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/PageContainer.tsx",
+          "path": "frontend/src/components/PageContainer.tsx",
+          "lines": "23",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/Pager.tsx",
+          "path": "frontend/src/components/Pager.tsx",
+          "lines": "61",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/PrepTrackExplorer.tsx",
+          "path": "frontend/src/components/PrepTrackExplorer.tsx",
+          "lines": "141",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/RatingBadge.tsx",
+          "path": "frontend/src/components/RatingBadge.tsx",
+          "lines": "40",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/ResultsModal.tsx",
+          "path": "frontend/src/components/ResultsModal.tsx",
+          "lines": "106",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/StreamingMessage.tsx",
+          "path": "frontend/src/components/StreamingMessage.tsx",
+          "lines": "21",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/ThemeToggle.tsx",
+          "path": "frontend/src/components/ThemeToggle.tsx",
+          "lines": "18",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/TopicCard.tsx",
+          "path": "frontend/src/components/TopicCard.tsx",
+          "lines": "185",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/TopicList.tsx",
+          "path": "frontend/src/components/TopicList.tsx",
+          "lines": "38",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/UserMessage.tsx",
+          "path": "frontend/src/components/UserMessage.tsx",
+          "lines": "17",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/dashboard/DashboardHero.tsx",
+          "path": "frontend/src/components/dashboard/DashboardHero.tsx",
+          "lines": "190",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/howItWorks/Hero.tsx",
+          "path": "frontend/src/components/howItWorks/Hero.tsx",
+          "lines": "167",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/howItWorks/Lightbox.tsx",
+          "path": "frontend/src/components/howItWorks/Lightbox.tsx",
+          "lines": "128",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/howItWorks/Reveal.tsx",
+          "path": "frontend/src/components/howItWorks/Reveal.tsx",
+          "lines": "28",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/howItWorks/ShotFrame.tsx",
+          "path": "frontend/src/components/howItWorks/ShotFrame.tsx",
+          "lines": "122",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/howItWorks/StepExtras.tsx",
+          "path": "frontend/src/components/howItWorks/StepExtras.tsx",
+          "lines": "111",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/howItWorks/StepNav.tsx",
+          "path": "frontend/src/components/howItWorks/StepNav.tsx",
+          "lines": "63",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/components/howItWorks/StepSection.tsx",
+          "path": "frontend/src/components/howItWorks/StepSection.tsx",
+          "lines": "153",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/features/admin/format.ts",
+          "path": "frontend/src/features/admin/format.ts",
+          "lines": "27",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/features/admin/queries.ts",
+          "path": "frontend/src/features/admin/queries.ts",
+          "lines": "11",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/features/analytics/clarity.ts",
+          "path": "frontend/src/features/analytics/clarity.ts",
+          "lines": "47",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/features/auth/authSlice.ts",
+          "path": "frontend/src/features/auth/authSlice.ts",
+          "lines": "40",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/features/auth/useSilentRefresh.ts",
+          "path": "frontend/src/features/auth/useSilentRefresh.ts",
+          "lines": "23",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/features/chat/chatSlice.ts",
+          "path": "frontend/src/features/chat/chatSlice.ts",
+          "lines": "117",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/features/howItWorks/content.ts",
+          "path": "frontend/src/features/howItWorks/content.ts",
+          "lines": "336",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/features/howItWorks/hooks.ts",
+          "path": "frontend/src/features/howItWorks/hooks.ts",
+          "lines": "110",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/features/interviews/interviewSlice.ts",
+          "path": "frontend/src/features/interviews/interviewSlice.ts",
+          "lines": "185",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/features/prepTrack/tracks.ts",
+          "path": "frontend/src/features/prepTrack/tracks.ts",
+          "lines": "69",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/features/tests/testSlice.ts",
+          "path": "frontend/src/features/tests/testSlice.ts",
+          "lines": "133",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/features/theme/ThemeProvider.tsx",
+          "path": "frontend/src/features/theme/ThemeProvider.tsx",
+          "lines": "54",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/hooks.ts",
+          "path": "frontend/src/hooks.ts",
+          "lines": "5",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/main.tsx",
+          "path": "frontend/src/main.tsx",
+          "lines": "31",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/pages/AdminDashboardPage.tsx",
+          "path": "frontend/src/pages/AdminDashboardPage.tsx",
+          "lines": "243",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/pages/AdminFeedbackPage.tsx",
+          "path": "frontend/src/pages/AdminFeedbackPage.tsx",
+          "lines": "81",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/pages/AdminUserPage.tsx",
+          "path": "frontend/src/pages/AdminUserPage.tsx",
+          "lines": "165",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/pages/DashboardPage.tsx",
+          "path": "frontend/src/pages/DashboardPage.tsx",
+          "lines": "213",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/pages/HowItWorksPage.tsx",
+          "path": "frontend/src/pages/HowItWorksPage.tsx",
+          "lines": "269",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/pages/LearnModePage.tsx",
+          "path": "frontend/src/pages/LearnModePage.tsx",
+          "lines": "100",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/pages/LoginPage.tsx",
+          "path": "frontend/src/pages/LoginPage.tsx",
+          "lines": "95",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/pages/MockInterviewHistoryPage.tsx",
+          "path": "frontend/src/pages/MockInterviewHistoryPage.tsx",
+          "lines": "259",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/pages/MockInterviewPage.tsx",
+          "path": "frontend/src/pages/MockInterviewPage.tsx",
+          "lines": "664",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/pages/MockInterviewReportPage.tsx",
+          "path": "frontend/src/pages/MockInterviewReportPage.tsx",
+          "lines": "337",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/pages/OAuthCallbackPage.tsx",
+          "path": "frontend/src/pages/OAuthCallbackPage.tsx",
+          "lines": "49",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/pages/OnboardingPage.tsx",
+          "path": "frontend/src/pages/OnboardingPage.tsx",
+          "lines": "153",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/pages/RegisterPage.tsx",
+          "path": "frontend/src/pages/RegisterPage.tsx",
+          "lines": "103",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/pages/TestHistoryPage.tsx",
+          "path": "frontend/src/pages/TestHistoryPage.tsx",
+          "lines": "193",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/pages/TestPage.tsx",
+          "path": "frontend/src/pages/TestPage.tsx",
+          "lines": "255",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/pages/TestReportPage.tsx",
+          "path": "frontend/src/pages/TestReportPage.tsx",
+          "lines": "280",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/src/store.ts",
+          "path": "frontend/src/store.ts",
+          "lines": "17",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/vite.config.d.ts",
+          "path": "frontend/vite.config.d.ts",
+          "lines": "2",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/vite.config.js",
+          "path": "frontend/vite.config.js",
+          "lines": "33",
+          "language": "JavaScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:frontend/vite.config.ts",
+          "path": "frontend/vite.config.ts",
+          "lines": "34",
+          "language": "TypeScript"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:loadtest/README.md",
+          "path": "loadtest/README.md",
+          "lines": "206",
+          "language": "Markdown"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:loadtest/docker-compose.yml",
+          "path": "loadtest/docker-compose.yml",
+          "lines": "146",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:loadtest/fake-llm/fake_llm/config.py",
+          "path": "loadtest/fake-llm/fake_llm/config.py",
+          "lines": "75",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:loadtest/fake-llm/fake_llm/content.py",
+          "path": "loadtest/fake-llm/fake_llm/content.py",
+          "lines": "711",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:loadtest/fake-llm/fake_llm/main.py",
+          "path": "loadtest/fake-llm/fake_llm/main.py",
+          "lines": "327",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:loadtest/fake-llm/fake_llm/scenarios.py",
+          "path": "loadtest/fake-llm/fake_llm/scenarios.py",
+          "lines": "462",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:loadtest/fake-llm/tests/conftest.py",
+          "path": "loadtest/fake-llm/tests/conftest.py",
+          "lines": "31",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:loadtest/fake-llm/tests/test_ai_service_contract.py",
+          "path": "loadtest/fake-llm/tests/test_ai_service_contract.py",
+          "lines": "150",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:loadtest/fake-llm/tests/test_scenarios.py",
+          "path": "loadtest/fake-llm/tests/test_scenarios.py",
+          "lines": "186",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:loadtest/fake-llm/tests/test_wire_format.py",
+          "path": "loadtest/fake-llm/tests/test_wire_format.py",
+          "lines": "134",
+          "language": "Python"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:loadtest/run.sh",
+          "path": "loadtest/run.sh",
+          "lines": "420",
+          "language": "Shell"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/cache-service/src/main/java/com/preppilot/cache/config/CacheAutoConfiguration.java",
+          "path": "preppilot-backend/cache-service/src/main/java/com/preppilot/cache/config/CacheAutoConfiguration.java",
+          "lines": "51",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/cache-service/src/main/java/com/preppilot/cache/config/CacheProperties.java",
+          "path": "preppilot-backend/cache-service/src/main/java/com/preppilot/cache/config/CacheProperties.java",
+          "lines": "55",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/cache-service/src/main/java/com/preppilot/cache/service/GenericCacheService.java",
+          "path": "preppilot-backend/cache-service/src/main/java/com/preppilot/cache/service/GenericCacheService.java",
+          "lines": "57",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/gateway/src/main/java/com/preppilot/gateway/GatewayApplication.java",
+          "path": "preppilot-backend/gateway/src/main/java/com/preppilot/gateway/GatewayApplication.java",
+          "lines": "11",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/gateway/src/main/java/com/preppilot/gateway/filter/JwtAuthFilter.java",
+          "path": "preppilot-backend/gateway/src/main/java/com/preppilot/gateway/filter/JwtAuthFilter.java",
+          "lines": "106",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/gateway/src/main/resources/application-dev.yml",
+          "path": "preppilot-backend/gateway/src/main/resources/application-dev.yml",
+          "lines": "5",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/gateway/src/main/resources/application-prod.yml",
+          "path": "preppilot-backend/gateway/src/main/resources/application-prod.yml",
+          "lines": "5",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/gateway/src/main/resources/application.yml",
+          "path": "preppilot-backend/gateway/src/main/resources/application.yml",
+          "lines": "62",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/TopicServiceApplication.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/TopicServiceApplication.java",
+          "lines": "15",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/config/AdminAccessInterceptor.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/config/AdminAccessInterceptor.java",
+          "lines": "62",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/config/JwtAuthFilter.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/config/JwtAuthFilter.java",
+          "lines": "137",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/config/WebClientConfig.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/config/WebClientConfig.java",
+          "lines": "19",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/config/WebConfig.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/config/WebConfig.java",
+          "lines": "20",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/controller/AdminActivityController.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/controller/AdminActivityController.java",
+          "lines": "38",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/controller/ChatController.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/controller/ChatController.java",
+          "lines": "73",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/controller/TopicController.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/controller/TopicController.java",
+          "lines": "139",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/dto/AdminDtos.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/dto/AdminDtos.java",
+          "lines": "41",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/dto/ChatDtos.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/dto/ChatDtos.java",
+          "lines": "31",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/dto/MockInterviewDtos.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/dto/MockInterviewDtos.java",
+          "lines": "200",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/dto/TestDtos.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/dto/TestDtos.java",
+          "lines": "111",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/dto/TopicDtos.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/dto/TopicDtos.java",
+          "lines": "23",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/exception/ApiException.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/exception/ApiException.java",
+          "lines": "28",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/exception/ChatSessionNotFoundException.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/exception/ChatSessionNotFoundException.java",
+          "lines": "10",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/exception/DuplicateTopicException.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/exception/DuplicateTopicException.java",
+          "lines": "9",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/exception/ErrorCode.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/exception/ErrorCode.java",
+          "lines": "48",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/exception/GlobalExceptionHandler.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/exception/GlobalExceptionHandler.java",
+          "lines": "55",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/exception/MockInterviewNotFoundException.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/exception/MockInterviewNotFoundException.java",
+          "lines": "10",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/exception/TopicNotFoundException.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/exception/TopicNotFoundException.java",
+          "lines": "9",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/model/ChatSession.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/model/ChatSession.java",
+          "lines": "52",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/model/Message.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/model/Message.java",
+          "lines": "24",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/model/MockInterviewReport.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/model/MockInterviewReport.java",
+          "lines": "117",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/model/MockInterviewSession.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/model/MockInterviewSession.java",
+          "lines": "136",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/model/TestReport.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/model/TestReport.java",
+          "lines": "112",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/model/TestSession.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/model/TestSession.java",
+          "lines": "122",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/model/Topic.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/model/Topic.java",
+          "lines": "59",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/repository/ChatSessionRepository.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/repository/ChatSessionRepository.java",
+          "lines": "13",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/repository/MockInterviewReportRepository.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/repository/MockInterviewReportRepository.java",
+          "lines": "18",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/repository/MockInterviewSessionRepository.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/repository/MockInterviewSessionRepository.java",
+          "lines": "14",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/repository/TestReportRepository.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/repository/TestReportRepository.java",
+          "lines": "15",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/repository/TestSessionRepository.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/repository/TestSessionRepository.java",
+          "lines": "15",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/repository/TopicRepository.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/repository/TopicRepository.java",
+          "lines": "22",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/AdminActivityService.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/AdminActivityService.java",
+          "lines": "163",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/AiClient.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/AiClient.java",
+          "lines": "244",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/AiStreamException.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/AiStreamException.java",
+          "lines": "7",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/ChatSessionService.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/ChatSessionService.java",
+          "lines": "194",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/MockInterviewService.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/MockInterviewService.java",
+          "lines": "736",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/TestService.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/TestService.java",
+          "lines": "340",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/TopicService.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/TopicService.java",
+          "lines": "58",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/util/StructuredLogger.java",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/util/StructuredLogger.java",
+          "lines": "127",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/resources/application-dev.yml",
+          "path": "preppilot-backend/topic-service/src/main/resources/application-dev.yml",
+          "lines": "2",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/resources/application-prod.yml",
+          "path": "preppilot-backend/topic-service/src/main/resources/application-prod.yml",
+          "lines": "2",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/main/resources/application.yml",
+          "path": "preppilot-backend/topic-service/src/main/resources/application.yml",
+          "lines": "35",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/test/java/com/preppilot/topicservice/config/AdminAccessInterceptorTest.java",
+          "path": "preppilot-backend/topic-service/src/test/java/com/preppilot/topicservice/config/AdminAccessInterceptorTest.java",
+          "lines": "90",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/test/java/com/preppilot/topicservice/config/JwtAuthFilterTest.java",
+          "path": "preppilot-backend/topic-service/src/test/java/com/preppilot/topicservice/config/JwtAuthFilterTest.java",
+          "lines": "113",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/test/java/com/preppilot/topicservice/exception/ApiExceptionUnitTest.java",
+          "path": "preppilot-backend/topic-service/src/test/java/com/preppilot/topicservice/exception/ApiExceptionUnitTest.java",
+          "lines": "158",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/test/java/com/preppilot/topicservice/exception/ErrorCodeTest.java",
+          "path": "preppilot-backend/topic-service/src/test/java/com/preppilot/topicservice/exception/ErrorCodeTest.java",
+          "lines": "116",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/test/java/com/preppilot/topicservice/service/AdminActivityServiceIntegrationTest.java",
+          "path": "preppilot-backend/topic-service/src/test/java/com/preppilot/topicservice/service/AdminActivityServiceIntegrationTest.java",
+          "lines": "188",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/test/java/com/preppilot/topicservice/service/MockInterviewAiContractTest.java",
+          "path": "preppilot-backend/topic-service/src/test/java/com/preppilot/topicservice/service/MockInterviewAiContractTest.java",
+          "lines": "115",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/topic-service/src/test/java/com/preppilot/topicservice/service/MockInterviewServiceTest.java",
+          "path": "preppilot-backend/topic-service/src/test/java/com/preppilot/topicservice/service/MockInterviewServiceTest.java",
+          "lines": "327",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/UserServiceApplication.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/UserServiceApplication.java",
+          "lines": "13",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/AdminAccessInterceptor.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/AdminAccessInterceptor.java",
+          "lines": "63",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/JwtAuthFilter.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/JwtAuthFilter.java",
+          "lines": "131",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/OAuthFailureHandler.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/OAuthFailureHandler.java",
+          "lines": "41",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/OAuthSuccessHandler.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/OAuthSuccessHandler.java",
+          "lines": "63",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/SecurityConfig.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/SecurityConfig.java",
+          "lines": "38",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/WebConfig.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/WebConfig.java",
+          "lines": "20",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/controller/AdminFeedbackController.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/controller/AdminFeedbackController.java",
+          "lines": "24",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/controller/AdminUserController.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/controller/AdminUserController.java",
+          "lines": "37",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/controller/AuthController.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/controller/AuthController.java",
+          "lines": "95",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/controller/FeedbackController.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/controller/FeedbackController.java",
+          "lines": "27",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/controller/OAuthController.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/controller/OAuthController.java",
+          "lines": "16",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/controller/UserController.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/controller/UserController.java",
+          "lines": "39",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/dto/AdminDtos.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/dto/AdminDtos.java",
+          "lines": "34",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/dto/AuthDtos.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/dto/AuthDtos.java",
+          "lines": "64",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/dto/FeedbackDtos.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/dto/FeedbackDtos.java",
+          "lines": "40",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/model/AuthProvider.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/model/AuthProvider.java",
+          "lines": "6",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/model/ExperienceLevel.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/model/ExperienceLevel.java",
+          "lines": "12",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/model/Feedback.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/model/Feedback.java",
+          "lines": "46",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/model/RefreshToken.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/model/RefreshToken.java",
+          "lines": "39",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/model/Role.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/model/Role.java",
+          "lines": "8",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/model/User.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/model/User.java",
+          "lines": "70",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/repository/FeedbackRepository.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/repository/FeedbackRepository.java",
+          "lines": "7",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/repository/RefreshTokenRepository.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/repository/RefreshTokenRepository.java",
+          "lines": "9",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/repository/UserRepository.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/repository/UserRepository.java",
+          "lines": "12",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/service/AdminUserService.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/service/AdminUserService.java",
+          "lines": "66",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/service/AuthService.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/service/AuthService.java",
+          "lines": "161",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/service/FeedbackService.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/service/FeedbackService.java",
+          "lines": "45",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/service/JwtService.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/service/JwtService.java",
+          "lines": "54",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/service/UserService.java",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/service/UserService.java",
+          "lines": "46",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/resources/application-dev.yml",
+          "path": "preppilot-backend/user-service/src/main/resources/application-dev.yml",
+          "lines": "2",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/resources/application-prod.yml",
+          "path": "preppilot-backend/user-service/src/main/resources/application-prod.yml",
+          "lines": "2",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/resources/application.yml",
+          "path": "preppilot-backend/user-service/src/main/resources/application.yml",
+          "lines": "45",
+          "language": "YAML"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/test/java/com/preppilot/userservice/config/AdminAccessInterceptorTest.java",
+          "path": "preppilot-backend/user-service/src/test/java/com/preppilot/userservice/config/AdminAccessInterceptorTest.java",
+          "lines": "102",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/test/java/com/preppilot/userservice/config/JwtAuthFilterTest.java",
+          "path": "preppilot-backend/user-service/src/test/java/com/preppilot/userservice/config/JwtAuthFilterTest.java",
+          "lines": "85",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/test/java/com/preppilot/userservice/service/AdminUserServiceIntegrationTest.java",
+          "path": "preppilot-backend/user-service/src/test/java/com/preppilot/userservice/service/AdminUserServiceIntegrationTest.java",
+          "lines": "118",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/test/java/com/preppilot/userservice/service/FeedbackServiceIntegrationTest.java",
+          "path": "preppilot-backend/user-service/src/test/java/com/preppilot/userservice/service/FeedbackServiceIntegrationTest.java",
+          "lines": "121",
+          "language": "Java"
+        },
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/test/java/com/preppilot/userservice/service/JwtServiceTest.java",
+          "path": "preppilot-backend/user-service/src/test/java/com/preppilot/userservice/service/JwtServiceTest.java",
+          "lines": "21",
+          "language": "Java"
+        }
+      ]
+    },
+    {
+      "sql": "SELECT lo.file_id, lo.line_start, lo.line_end, lo.commit_sha, c.subject, c.body, c.author_name,\n            CAST(c.authored_at AS string) AS authored_at, c.url AS commit_url, c.pr_id\n     FROM lightning.metastore.cartograph.provenance.line_origin lo JOIN lightning.metastore.cartograph.provenance.code_change c ON c.sha = lo.commit_sha\n     WHERE lo.file_id = 'siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/SecurityConfig.java' AND lo.line_end >= 31 AND lo.line_start <= 31\n     ORDER BY c.authored_at DESC",
+      "rows": [
+        {
+          "file_id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/SecurityConfig.java",
+          "line_start": "28",
+          "line_end": "32",
+          "commit_sha": "448dedb1e01459a9323465f26f038981a9dc012b",
+          "subject": "Int-prep : Authentication",
+          "body": null,
+          "author_name": "siddarth-ba-72",
+          "authored_at": "2026-07-12 14:19:41",
+          "commit_url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/commit/448dedb1e01459a9323465f26f038981a9dc012b",
+          "pr_id": null
+        }
+      ]
+    },
+    {
+      "sql": "SELECT lo.file_id, lo.line_start, lo.line_end, lo.commit_sha, c.subject, c.body, c.author_name,\n            CAST(c.authored_at AS string) AS authored_at, c.url AS commit_url, c.pr_id\n     FROM lightning.metastore.cartograph.provenance.line_origin lo JOIN lightning.metastore.cartograph.provenance.code_change c ON c.sha = lo.commit_sha\n     WHERE lo.file_id = 'siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/SecurityConfig.java' AND lo.line_end >= 21 AND lo.line_start <= 41\n     ORDER BY c.authored_at DESC",
+      "rows": [
+        {
+          "file_id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/SecurityConfig.java",
+          "line_start": "26",
+          "line_end": "27",
+          "commit_sha": "c4af81d06e89947934078fbee7365376a0304de0",
+          "subject": "feat: Implement usage limits for user actions with a sliding window mechanism",
+          "body": "- Add UsageLimitProperties to bind configuration from application.yml.\n- Create UsageController to expose an API for retrieving usage information.\n- Define UsageDtos for structured response data.\n- Implement UsageLimitExceededException for handling limit breaches.\n- Introduce UsageAction enum to represent different user actions.\n- Create UsageWindow model to track user actions and limits.\n- Develop UsageLimitService to manage usage tracking and limits.\n- Add JwtAuthFilter for JWT validation on user service endpoints.\n- Implement integration tests for UsageLimitService to ensure correct behavior under various scenarios.\n- Create unit tests for JwtAuthFilter to validate token handling and authorization logic.",
+          "author_name": "siddarth-ba-72",
+          "authored_at": "2026-10-06 07:38:42",
+          "commit_url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/commit/c4af81d06e89947934078fbee7365376a0304de0",
+          "pr_id": "siddarth-ba-72/Interview-Prep-Pilot-AI#3"
+        },
+        {
+          "file_id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/SecurityConfig.java",
+          "line_start": "33",
+          "line_end": "33",
+          "commit_sha": "635d46fa3c1ce525a5ad89d69f18865bb801f09a",
+          "subject": "Redirect failed Google OAuth logins back to the frontend with the error code",
+          "body": "Without a failure handler Spring fell back to its default /login?error page\non the user-service host, which only shows \"Invalid credentials\". Log the\nreal OAuth exception and send the user to the SPA login page instead.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+          "author_name": "siddarth-ba-72",
+          "authored_at": "2026-10-06 03:54:54",
+          "commit_url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/commit/635d46fa3c1ce525a5ad89d69f18865bb801f09a",
+          "pr_id": null
+        },
+        {
+          "file_id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/SecurityConfig.java",
+          "line_start": "20",
+          "line_end": "25",
+          "commit_sha": "448dedb1e01459a9323465f26f038981a9dc012b",
+          "subject": "Int-prep : Authentication",
+          "body": null,
+          "author_name": "siddarth-ba-72",
+          "authored_at": "2026-07-12 14:19:41",
+          "commit_url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/commit/448dedb1e01459a9323465f26f038981a9dc012b",
+          "pr_id": null
+        },
+        {
+          "file_id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/SecurityConfig.java",
+          "line_start": "28",
+          "line_end": "32",
+          "commit_sha": "448dedb1e01459a9323465f26f038981a9dc012b",
+          "subject": "Int-prep : Authentication",
+          "body": null,
+          "author_name": "siddarth-ba-72",
+          "authored_at": "2026-07-12 14:19:41",
+          "commit_url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/commit/448dedb1e01459a9323465f26f038981a9dc012b",
+          "pr_id": null
+        },
+        {
+          "file_id": "siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/SecurityConfig.java",
+          "line_start": "34",
+          "line_end": "38",
+          "commit_sha": "448dedb1e01459a9323465f26f038981a9dc012b",
+          "subject": "Int-prep : Authentication",
+          "body": null,
+          "author_name": "siddarth-ba-72",
+          "authored_at": "2026-07-12 14:19:41",
+          "commit_url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/commit/448dedb1e01459a9323465f26f038981a9dc012b",
+          "pr_id": null
+        }
+      ]
+    },
+    {
+      "sql": "SELECT c.sha, c.subject, c.body, c.author_name, CAST(c.authored_at AS string) AS authored_at, c.url, c.pr_id\n     FROM lightning.metastore.cartograph.provenance.code_change c\n     JOIN lightning.metastore.cartograph.provenance.file_change fc ON fc.commit_sha = c.sha\n     WHERE fc.file_id = 'siddarth-ba-72/Interview-Prep-Pilot-AI:preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/SecurityConfig.java'\n     ORDER BY c.authored_at DESC LIMIT 5",
+      "rows": [
+        {
+          "sha": "c4af81d06e89947934078fbee7365376a0304de0",
+          "subject": "feat: Implement usage limits for user actions with a sliding window mechanism",
+          "body": "- Add UsageLimitProperties to bind configuration from application.yml.\n- Create UsageController to expose an API for retrieving usage information.\n- Define UsageDtos for structured response data.\n- Implement UsageLimitExceededException for handling limit breaches.\n- Introduce UsageAction enum to represent different user actions.\n- Create UsageWindow model to track user actions and limits.\n- Develop UsageLimitService to manage usage tracking and limits.\n- Add JwtAuthFilter for JWT validation on user service endpoints.\n- Implement integration tests for UsageLimitService to ensure correct behavior under various scenarios.\n- Create unit tests for JwtAuthFilter to validate token handling and authorization logic.",
+          "author_name": "siddarth-ba-72",
+          "authored_at": "2026-10-06 07:38:42",
+          "url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/commit/c4af81d06e89947934078fbee7365376a0304de0",
+          "pr_id": "siddarth-ba-72/Interview-Prep-Pilot-AI#3"
+        },
+        {
+          "sha": "635d46fa3c1ce525a5ad89d69f18865bb801f09a",
+          "subject": "Redirect failed Google OAuth logins back to the frontend with the error code",
+          "body": "Without a failure handler Spring fell back to its default /login?error page\non the user-service host, which only shows \"Invalid credentials\". Log the\nreal OAuth exception and send the user to the SPA login page instead.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+          "author_name": "siddarth-ba-72",
+          "authored_at": "2026-10-06 03:54:54",
+          "url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/commit/635d46fa3c1ce525a5ad89d69f18865bb801f09a",
+          "pr_id": null
+        },
+        {
+          "sha": "8d7ab9b5280cc4e5e821486ce5f1c601cc897dac",
+          "subject": "Backend structure refactpr",
+          "body": null,
+          "author_name": "siddarth-ba-72",
+          "authored_at": "2026-08-01 14:59:28",
+          "url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/commit/8d7ab9b5280cc4e5e821486ce5f1c601cc897dac",
+          "pr_id": null
+        }
+      ]
+    },
+    {
+      "sql": "SELECT c.sha, c.subject, c.body, c.author_name, CAST(c.authored_at AS string) AS authored_at, c.url, c.pr_id\n     FROM lightning.metastore.cartograph.provenance.code_change c LEFT JOIN lightning.metastore.cartograph.provenance.pull_request p ON p.id = c.pr_id\n     WHERE c.repo_id = 'siddarth-ba-72/Interview-Prep-Pilot-AI' AND ((lower(COALESCE(c.subject, '')) LIKE '%google%' AND lower(COALESCE(c.subject, '')) LIKE '%oauth2%' AND lower(COALESCE(c.subject, '')) LIKE '%client-id%' AND lower(COALESCE(c.subject, '')) LIKE '%provider%') OR (lower(COALESCE(c.body, '')) LIKE '%google%' AND lower(COALESCE(c.body, '')) LIKE '%oauth2%' AND lower(COALESCE(c.body, '')) LIKE '%client-id%' AND lower(COALESCE(c.body, '')) LIKE '%provider%') OR (lower(COALESCE(p.title, '')) LIKE '%google%' AND lower(COALESCE(p.title, '')) LIKE '%oauth2%' AND lower(COALESCE(p.title, '')) LIKE '%client-id%' AND lower(COALESCE(p.title, '')) LIKE '%provider%') OR (lower(COALESCE(p.body, '')) LIKE '%google%' AND lower(COALESCE(p.body, '')) LIKE '%oauth2%' AND lower(COALESCE(p.body, '')) LIKE '%client-id%' AND lower(COALESCE(p.body, '')) LIKE '%provider%'))\n     ORDER BY c.authored_at DESC LIMIT 12",
+      "rows": []
+    },
+    {
+      "sql": "SELECT id, number, title, body, author, CAST(merged_at AS string) AS merged_at, url, issue_count, discussion_count\n     FROM lightning.metastore.cartograph.provenance.pull_request WHERE id IN ('siddarth-ba-72/Interview-Prep-Pilot-AI#3')",
+      "rows": [
+        {
+          "id": "siddarth-ba-72/Interview-Prep-Pilot-AI#3",
+          "number": "3",
+          "title": "feat: Implement usage limits for user actions with a sliding window mechanism",
+          "body": "- Add UsageLimitProperties to bind configuration from application.yml.\r\n- Create UsageController to expose an API for retrieving usage information.\r\n- Define UsageDtos for structured response data.\r\n- Implement UsageLimitExceededException for handling limit breaches.\r\n- Introduce UsageAction enum to represent different user actions.\r\n- Create UsageWindow model to track user actions and limits.\r\n- Develop UsageLimitService to manage usage tracking and limits.\r\n- Add JwtAuthFilter for JWT validation on user service endpoints.\r\n- Implement integration tests for UsageLimitService to ensure correct behavior under various scenarios.\r\n- Create unit tests for JwtAuthFilter to validate token handling and authorization logic.",
+          "author": "siddarth-ba-72",
+          "merged_at": "2026-10-06 07:40:38",
+          "url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/pull/3",
+          "issue_count": "0",
+          "discussion_count": "7"
+        }
+      ]
+    },
+    {
+      "sql": "SELECT i.id, i.number, i.title, i.body, i.labels, i.state, i.url, l.pr_id, l.relation\n     FROM lightning.metastore.cartograph.provenance.pr_issue l JOIN lightning.metastore.cartograph.provenance.issue i ON i.id = l.issue_id\n     WHERE l.pr_id IN ('siddarth-ba-72/Interview-Prep-Pilot-AI#3')",
+      "rows": []
+    },
+    {
+      "sql": "SELECT id, parent_id, kind, author, body, path, line, url FROM lightning.metastore.cartograph.provenance.discussion\n     WHERE parent_id IN ('siddarth-ba-72/Interview-Prep-Pilot-AI#3') AND length(body) > 20\n     ORDER BY CASE WHEN path = 'preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/SecurityConfig.java' THEN 0 ELSE 1 END, created_at LIMIT 10",
+      "rows": [
+        {
+          "id": "IC_kwDOTi5Zdc8AAAABZlMd8Q",
+          "parent_id": "siddarth-ba-72/Interview-Prep-Pilot-AI#3",
+          "kind": "comment",
+          "author": "vercel",
+          "body": "[vc]: #1769Qay/DaC5M9d1cCR+JEGM6sZxdfu4r9YmW892MNQ=:eyJpc01vbm9yZXBvIjp0cnVlLCJ0eXBlIjoiZ2l0aHViIiwicHJvamVjdHMiOlt7Im5hbWUiOiJpbnRlcnZpZXctcHJlcC1waWxvdC1haSIsInByb2plY3RJZCI6InByal9QQTJmSEVsa2Z2b3VPYzMxcHdHOWtBWldaam5kIiwicm9vdERpcmVjdG9yeSI6ImFpLXNlcnZpY2UiLCJsaXZlRmVlZGJhY2siOnsicmVzb2x2ZWQiOjAsInVucmVzb2x2ZWQiOjAsInRvdGFsIjowLCJsaW5rIjoiaW50ZXJ2aWV3LXByZXAtcGlsb3QtYWktZ2l0LWZlYXQtYzMwM2JhLXNpZGRhcnRoYmE3MnMtcHJvamVjdHMudmVyY2VsLmFwcCJ9LCJpbnNwZWN0b3JVcmwiOiJodHRwczovL3ZlcmNlbC5jb20vc2lkZGFydGhiYTcycy1wcm9qZWN0cy9pbnRlcnZpZXctcHJlcC1waWxvdC1haS82NlZXNFFVRlh1aTF4YkpSc1lCOXBzcmZhcEtaIiwicHJldmlld1VybCI6ImludGVydmlldy1wcmVwLXBpbG90LWFpLWdpdC1mZWF0LWMzMDNiYS1zaWRkYXJ0aGJhNzJzLXByb2plY3RzLnZlcmNlbC5hcHAiLCJuZXh0Q29tbWl0U3RhdHVzIjoiREVQTE9ZRUQifSx7Im5hbWUiOiJwcmVwLXBpbG90IiwicHJvamVjdElkIjoicHJqX2x5cE1mY1c5NDY4QThXckk5OG9TZm5mMEQ0cXYiLCJyb290RGlyZWN0b3J5IjoiZnJvbnRlbmQiLCJsaXZlRmVlZGJhY2siOnsicmVzb2x2ZWQiOjAsInVucmVzb2x2ZWQiOjAsInRvdGFsIjowLCJsaW5rIjoicHJlcC1waWxvdC1naXQtZmVhdC11c2FnZS1saW1pdHMtc2lkZGFydGhiYTcycy1wcm9qZWN0cy52ZXJjZWwuYXBwIn0sImluc3BlY3RvclVybCI6Imh0dHBzOi8vdmVyY2VsLmNvbS9zaWRkYXJ0aGJhNzJzLXByb2plY3RzL3ByZXAtcGlsb3QvQXNxZnVaWEdCcnRBWUJwb0RzTnlIbkhSOEdXSyIsInByZXZpZXdVcmwiOiJwcmVwLXBpbG90LWdpdC1mZWF0LXVzYWdlLWxpbWl0cy1zaWRkYXJ0aGJhNzJzLXByb2plY3RzLnZlcmNlbC5hcHAiLCJuZXh0Q29tbWl0U3RhdHVzIjoiREVQTE9ZRUQifV19\nThe latest updates on your projects. Learn more about [Vercel for GitHub](https://vercel.link/github-learn-more).\n\n| Project | Deployment | Actions | Updated |\n| :--- | :----- | :------ | :------ |\n| <a href=\"https://vercel.com/siddarthba72s-projects/interview-prep-pilot-ai\"><sup><img src=\"https://vercel.com/api/www/avatar?projectId=prj_PA2fHElkfvouOc31pwG9kAZWZjnd&teamId=team_9bh4V87SqwWjp1s2lFsviwmn&s=32\" width=\"16\" height=\"16\" align=\"middle\" alt=\"\" /></sup></a> [interview-prep-pilot-ai](https://vercel.com/siddarthba72s-projects/interview-prep-pilot-ai) | ![Ready](https://vercel.com/static/status/ready.svg) [Ready](https://vercel.com/siddarthba72s-projects/interview-prep-pilot-ai/66VW4QUFXui1xbJRsYB9psrfapKZ) | [Preview](https://interview-prep-pilot-ai-git-feat-c303ba-siddarthba72s-projects.vercel.app) | <relative-time datetime=\"2026-10-06T07:40:08.458Z\">Oct 6, 2026 7:40am UTC</relative-time> |\n| <a href=\"https://vercel.com/siddarthba72s-projects/prep-pilot\"><sup><img src=\"https://vercel.com/api/www/avatar?projectId=prj_lypMfcW9468A8WrI98oSfnf0D4qv&teamId=team_9bh4V87SqwWjp1s2lFsviwmn&s=32\" width=\"16\" height=\"16\" align=\"middle\" alt=\"\" /></sup></a> [prep-pilot](https://vercel.com/siddarthba72s-projects/prep-pilot) | ![Ready](https://vercel.com/static/status/ready.svg) [Ready](https://vercel.com/siddarthba72s-projects/prep-pilot/AsqfuZXGBrtAYBpoDsNyHnHR8GWK) | [Preview](https://prep-pilot-git-feat-usage-limits-siddarthba72s-projects.vercel.app) | <relative-time datetime=\"2026-10-06T07:40:08.458Z\">Oct 6, 2026 7:40am UTC</relative-time> |\n\n\n",
+          "path": null,
+          "line": null,
+          "url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/pull/3#issuecomment-6011690481"
+        },
+        {
+          "id": "PRR_kwDOTi5Zdc8AAAABQ2Axdw",
+          "parent_id": "siddarth-ba-72/Interview-Prep-Pilot-AI#3",
+          "kind": "review",
+          "author": "copilot-pull-request-reviewer",
+          "body": "<!-- ccr-overview-v2 -->\n\n## Copilot review overview\n\n### 🟡 Changes recommended\n\nUnresolved authentication and usage-management defects affect account security and reliable limit enforcement.\n\n**Review effort:** Balanced  \n**Findings:** 1 <picture><source media=\"(prefers-color-scheme: dark)\" srcset=\"https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg\"><source media=\"(prefers-color-scheme: light)\" srcset=\"https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg\"><img src=\"https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png\" alt=\"High severity\" width=\"62\" height=\"18\" align=\"texttop\"></picture> · 4 <picture><source media=\"(prefers-color-scheme: dark)\" srcset=\"https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg\"><source media=\"(prefers-color-scheme: light)\" srcset=\"https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg\"><img src=\"https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png\" alt=\"Medium severity\" width=\"62\" height=\"18\" align=\"texttop\"></picture>\n\n<details open>\n<summary><strong>Open (5)</strong></summary>\n\n- <picture><source media=\"(prefers-color-scheme: dark)\" srcset=\"https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg\"><source media=\"(prefers-color-scheme: light)\" srcset=\"https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg\"><img src=\"https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png\" alt=\"High severity\" width=\"62\" height=\"18\" align=\"texttop\"></picture> [Match decoded paths to prevent encoded URI filter bypass](#discussion_r4192813121) · New\n- <picture><source media=\"(prefers-color-scheme: dark)\" srcset=\"https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg\"><source media=\"(prefers-color-scheme: light)\" srcset=\"https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg\"><img src=\"https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png\" alt=\"Medium severity\" width=\"62\" height=\"18\" align=\"texttop\"></picture> [Refetch usage when availability time arrives](#discussion_r4192813171) · New\n- <picture><source media=\"(prefers-color-scheme: dark)\" srcset=\"https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg\"><source media=\"(prefers-color-scheme: light)\" srcset=\"https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg\"><img src=\"https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png\" alt=\"Medium severity\" width=\"62\" height=\"18\" align=\"texttop\"></picture> [Scope usage queries by authenticated user](#discussion_r4192813199) · New\n- <picture><source media=\"(prefers-color-scheme: dark)\" srcset=\"https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg\"><source media=\"(prefers-color-scheme: light)\" srcset=\"https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg\"><img src=\"https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png\" alt=\"Medium severity\" width=\"62\" height=\"18\" align=\"texttop\"></picture> [Atomically reserve per-user topic capacity](#discussion_r4192813246) · New\n- <picture><source media=\"(prefers-color-scheme: dark)\" srcset=\"https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg\"><source media=\"(prefers-color-scheme: light)\" srcset=\"https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg\"><img src=\"https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png\" alt=\"Medium severity\" width=\"62\" height=\"18\" align=\"texttop\"></picture> [Safely clear locks when refunding consumed slots](#discussion_r4192813288) · New\n</details>\n\n<details>\n<summary><strong>What changed in this PR</strong></summary>\n\nAdds tier-based usage limits across PrepPilot’s learning modes, with backend enforcement, frontend allowance displays, and stronger service authentication.\n\n**Changes:**\n- Track sliding-window usage, refunds, topic caps, and retry times.\n- Validate JWTs in downstream services and restrict AI access to internal callers.\n- Display allowances and disabled controls; add authentication and usage tests.\n\n| File | Description |\r\n| ---- | ----------- |\r\n| preppilot-backend/​user-service/​src/​test/​java/​com/​preppilot/​userservice/​config/​JwtAuthFilterTest.java | Tests token validation and trusted identity headers. |\r\n| preppilot-backend/​user-service/​src/​main/​java/​com/​preppilot/​userservice/​service/​JwtService.java | Adds access-token verification. |\r\n| preppilot-backend/​user-service/​src/​main/​java/​com/​preppilot/​userservice/​config/​SecurityConfig.java | Updates authentication comments only. |\r\n| preppilot-backend/​user-service/​src/​main/​java/​com/​preppilot/​userservice/​config/​JwtAuthFilter.java | Protects user endpoints with JWT validation. |\r\n| preppilot-backend/​topic-service/​src/​test/​java/​com/​preppilot/​topicservice/​service/​UsageLimitServiceIntegrationTest.java | Tests windows, refunds, concurrency, and tiers. |\r\n| preppilot-backend/​topic-service/​src/​test/​java/​com/​preppilot/​topicservice/​service/​MockInterviewServiceTest.java | Tests interview usage enforcement. |\r\n| preppilot-backend/​topic-service/​src/​test/​java/​com/​preppilot/​topicservice/​config/​JwtAuthFilterTest.java | Tests authentication and identity-header replacement. |\r\n| preppilot-backend/​topic-service/​src/​main/​resources/​application.yml | Configures JWT verification and tier limits. |\r\n| preppilot-backend/​topic-service/​src/​main/​java/​com/​preppilot/​topicservice/​TopicServiceApplication.java | Enables configuration-properties scanning. |\r\n| preppilot-backend/​topic-service/​src/​main/​java/​com/​preppilot/​topicservice/​service/​UsageLimitService.java | Implements usage tracking, locks, and refunds. |\r\n| preppilot-backend/​topic-service/​src/​main/​java/​com/​preppilot/​topicservice/​service/​TopicService.java | Checks topic capacity before creation. |\r\n| preppilot-backend/​topic-service/​src/​main/​java/​com/​preppilot/​topicservice/​service/​TestService.java | Charges test starts and refunds AI failures. |\r\n| preppilot-backend/​topic-service/​src/​main/​java/​com/​preppilot/​topicservice/​service/​MockInterviewService.java | Charges new interview sessions. |\r\n| preppilot-backend/​topic-service/​src/​main/​java/​com/​preppilot/​topicservice/​service/​ChatSessionService.java | Charges Learn messages and refunds stream failures. |\r\n| preppilot-backend/​topic-service/​src/​main/​java/​com/​preppilot/​topicservice/​repository/​TopicRepository.java | Adds per-user topic counting. |\r\n| preppilot-backend/​topic-service/​src/​main/​java/​com/​preppilot/​topicservice/​model/​UsageWindow.java | Models usage events, locks, and expiry. |\r\n| preppilot-backend/​topic-service/​src/​main/​java/​com/​preppilot/​topicservice/​model/​UsageAction.java | Defines metered actions and tier limits. |\r\n| preppilot-backend/​topic-service/​src/​main/​java/​com/​preppilot/​topicservice/​exception/​UsageLimitExceededException.java | Carries usage-limit retry times. |\r\n| preppilot-backend/​topic-service/​src/​main/​java/​com/​preppilot/​topicservice/​exception/​GlobalExceptionHandler.java | Returns retry metadata for exhausted limits. |\r\n| preppilot-backend/​topic-service/​src/​main/​java/​com/​preppilot/​topicservice/​exception/​ErrorCode.java | Adds topic and usage limit errors. |\r\n| preppilot-backend/​topic-service/​src/​main/​java/​com/​preppilot/​topicservice/​dto/​UsageDtos.java | Defines allowance response records. |\r\n| preppilot-backend/​topic-service/​src/​main/​java/​com/​preppilot/​topicservice/​controller/​UsageController.java | Exposes current user allowances. |\r\n| preppilot-backend/​topic-service/​src/​main/​java/​com/​preppilot/​topicservice/​controller/​TopicController.java | Passes the user tier into creation. |\r\n| preppilot-backend/​topic-service/​src/​main/​java/​com/​preppilot/​topicservice/​controller/​ChatController.java | Includes limit metadata in streaming errors. |\r\n| preppilot-backend/​topic-service/​src/​main/​java/​com/​preppilot/​topicservice/​config/​UsageLimitProperties.java | Binds usage configuration. |\r\n| preppilot-backend/​topic-service/​src/​main/​java/​com/​preppilot/​topicservice/​config/​JwtAuthFilter.java | Verifies tokens and replaces identity headers. |\r\n| preppilot-backend/​topic-service/​build.gradle.kts | Adds JWT dependencies. |\r\n| preppilot-backend/​gateway/​src/​main/​resources/​application.yml | Routes usage requests to topic-service. |\r\n| frontend/​src/​pages/​TestPage.tsx | Refreshes usage and displays limit errors. |\r\n| frontend/​src/​pages/​MockInterviewPage.tsx | Displays interview allowances and blocks exhausted starts. |\r\n| frontend/​src/​pages/​LearnModePage.tsx | Displays message allowances and disables exhausted input. |\r\n| frontend/​src/​pages/​DashboardPage.tsx | Shows usage and enforces topic-cap controls. |\r\n| frontend/​src/​features/​usage/​useUsage.ts | Adds the shared usage query hook. |\r\n| frontend/​src/​components/​UsageSummary.tsx | Renders allowance summaries. |\r\n| frontend/​src/​components/​NewTopicForm.tsx | Supports explained disabled states. |\r\n| frontend/​src/​api/​usage.ts | Adds usage types, fetching, and time helpers. |\r\n| frontend/​src/​api/​topics.ts | Adds retry times to error messages. |\r\n| frontend/​src/​api/​interviews.ts | Adds retry times to interview errors. |\r\n| frontend/​src/​api/​chatStream.ts | Formats streaming limit errors. |\r\n| CLAUDE.md | Documents usage rules and authentication boundaries. |\r\n| ai-service/​app/​routers/​test.py | Requires internal authentication for test operations. |\r\n| ai-service/​app/​routers/​learn.py | Requires internal authentication for Learn streaming. |\r\n| ai-service/​app/​routers/​interview.py | Requires internal authentication for interview operations. |\r\n| ai-service/​app/​auth.py | Removes user-header authentication and compares internal keys securely. |\n</details>\n\n---\n\n💡 <a href=\"/siddarth-ba-72/Interview-Prep-Pilot-AI/new/main?filename=.github/skills/code-review/SKILL.md\" class=\"Link--inTextBlock\" target=\"_blank\" rel=\"noopener noreferrer\">Add a `code-review` agent skill</a> or configure MCP servers for context-aware, tailored reviews. <a href=\"https://docs.github.com/copilot/how-tos/use-copilot-agents/request-a-code-review/use-code-review?tool=webui#mcp-servers-and-agent-skills\" class=\"Link--inTextBlock\" target=\"_blank\" rel=\"noopener noreferrer\">Learn more in the docs.</a>",
+          "path": null,
+          "line": null,
+          "url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/pull/3#pullrequestreview-5425344887"
+        },
+        {
+          "id": "PRRC_kwDOTi5Zdc756UBB",
+          "parent_id": "siddarth-ba-72/Interview-Prep-Pilot-AI#3",
+          "kind": "review_comment",
+          "author": "copilot-pull-request-reviewer",
+          "body": "Matching the raw request URI lets `/api/v1/%75sers/me/profile` skip this filter, although Spring MVC decodes it to the protected endpoint. SecurityConfig permits every request, so the controller can accept a caller-supplied X-User-Id and issue an access token for that user. Match the decoded, context-relative application path instead, and add an encoded-path regression test through the request-routing stack.",
+          "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/JwtAuthFilter.java",
+          "line": "46",
+          "url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/pull/3#discussion_r4192813121"
+        },
+        {
+          "id": "PRRC_kwDOTi5Zdc756UBz",
+          "parent_id": "siddarth-ba-72/Interview-Prep-Pilot-AI#3",
+          "kind": "review_comment",
+          "author": "copilot-pull-request-reviewer",
+          "body": "Nothing refreshes usage when availableAt passes. On a Learn page left open and focused, MessageInput can remain disabled after the server allowance resets: isLocked checks time only during render, and query staleness alone does not trigger a refetch. The mock-interview start control has the same dependency. Schedule a refetch at the earliest availableAt so these controls recover without navigation or a reload.",
+          "path": "frontend/src/features/usage/useUsage.ts",
+          "line": "7",
+          "url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/pull/3#discussion_r4192813171"
+        },
+        {
+          "id": "PRRC_kwDOTi5Zdc756UCP",
+          "parent_id": "siddarth-ba-72/Interview-Prep-Pilot-AI#3",
+          "kind": "review_comment",
+          "author": "copilot-pull-request-reviewer",
+          "body": "This shared query key survives logout: the app retains one QueryClient, while logout only clears Redux credentials. Another account can therefore see the previous account's usage and have actions disabled by its limits while the refetch is pending. Include the authenticated user ID in the key and disable the query without a user. Existing USAGE_QUERY_KEY prefix invalidations will still work.",
+          "path": "frontend/src/features/usage/useUsage.ts",
+          "line": "8",
+          "url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/pull/3#discussion_r4192813199"
+        },
+        {
+          "id": "PRRC_kwDOTi5Zdc756UC-",
+          "parent_id": "siddarth-ba-72/Interview-Prep-Pilot-AI#3",
+          "kind": "review_comment",
+          "author": "copilot-pull-request-reviewer",
+          "body": "The topic-limit check and insert are separate operations. A student with one topic can submit two concurrent requests with different names: both count one topic, pass the check, and save, exceeding the two-topic limit. The unique name index does not prevent this. Reserve capacity atomically per user in the database, coordinate it with creation and deletion, and release reservations when creation fails. A process-local lock would not protect multiple service instances.",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/TopicService.java",
+          "line": "34",
+          "url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/pull/3#discussion_r4192813246"
+        },
+        {
+          "id": "PRRC_kwDOTi5Zdc756UDo",
+          "parent_id": "siddarth-ba-72/Interview-Prep-Pilot-AI#3",
+          "kind": "review_comment",
+          "author": "copilot-pull-request-reviewer",
+          "body": "Refunding an earlier event does not restore a usable slot after a later event sets the lock. For example, two concurrent student tests consume both slots; the second succeeds and the first fails. The refund removes the first event, but remaining stays zero and new tests are rejected until the lock expires. Clear the lock atomically when the refunded event is actually present and removed, rather than only when it owns lockedBy. Repeated refunds must not clear a newer lock.",
+          "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/UsageLimitService.java",
+          "line": "123",
+          "url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/pull/3#discussion_r4192813288"
+        }
+      ]
+    }
+  ],
+  "replies": [
+    {
+      "agent": "writer",
+      "output": {
+        "answer": "The User and identity API depends on Google OAuth2 login because the SecurityConfig was configured to enable oauth2Login, which was introduced in commit 448dedb1e0 as part of authentication improvements. The decision to use Google as the identity provider was made during that authentication refactor to integrate OAuth2 login support.",
+        "claims": [
+          {
+            "text": "The SecurityConfig enables oauth2Login, which supports Google OAuth2 login.",
+            "evidence": [
+              "[E1]"
+            ]
+          },
+          {
+            "text": "Commit 448dedb1e0 introduced authentication changes including oauth2Login.",
+            "evidence": [
+              "[E2]"
+            ]
+          }
+        ],
+        "chain": [
+          "[E1]",
+          "[E2]"
+        ],
+        "confidence": "low",
+        "unknowns": [
+          "The specific reason (issue/PR description) for choosing Google OAuth2 over other providers is not documented in the provided evidence."
+        ]
+      }
+    },
+    {
+      "agent": "critic",
+      "output": {
+        "verdict": "revise",
+        "problems": [
+          {
+            "claim": 0,
+            "problem": "E1 only shows '.oauth2Login(oauth2 -> oauth2' which enables OAuth2 login generically; it does not show Google is configured or used."
+          },
+          {
+            "claim": 1,
+            "problem": "E2 only gives the commit subject 'Int-prep : Authentication' and author/date; it does not show that Google OAuth2 was chosen or why."
+          }
+        ],
+        "need_more": {
+          "file_history": true,
+          "widen_lines": 30,
+          "keywords": [
+            "google",
+            "oauth2",
+            "client-id",
+            "provider"
+          ]
+        }
+      }
+    },
+    {
+      "agent": "writer",
+      "output": {
+        "answer": "The backend enables OAuth2 login generically via Spring Security's oauth2Login() DSL, and a failure handler was added to redirect Google OAuth errors to the frontend instead of Spring's default error page. Google OAuth2 was chosen as the identity provider to support user authentication, with the failure handler implemented to avoid showing Spring's generic 'Invalid credentials' page.",
+        "claims": [
+          {
+            "text": "Spring Security's oauth2Login() DSL enables OAuth2 login generically without specifying a provider in the code snippet shown.",
+            "evidence": [
+              "[E1]"
+            ]
+          },
+          {
+            "text": "Commit 635d46fa3c added a failure handler to redirect failed Google OAuth logins to the frontend, fixing Spring's default /login?error page behavior.",
+            "evidence": [
+              "[E5]",
+              "[E1]"
+            ]
+          },
+          {
+            "text": "Commit 448dedb1e0 introduced authentication changes, but its subject 'Int-prep : Authentication' does not specify Google OAuth2 as the chosen provider.",
+            "evidence": [
+              "[E2]",
+              "[E1]"
+            ]
+          }
+        ],
+        "chain": [
+          "[E1]",
+          "[E5]",
+          "[E2]"
+        ],
+        "confidence": "medium",
+        "unknowns": [
+          ":question: Why Google OAuth2 was selected over other identity providers (the evidence only shows OAuth2 login being enabled, not the provider choice).",
+          ":question: The specific reason or decision maker for choosing Google as the identity provider is not documented in the provided evidence."
+        ]
+      }
+    },
+    {
+      "agent": "critic",
+      "output": {
+        "verdict": "revise",
+        "problems": [
+          {
+            "claim": 0,
+            "problem": "The claim states OAuth2 login is enabled 'without specifying a provider in the code snippet shown', but E1 only shows line 31 ('.oauth2Login(oauth2 -> oauth2') without the full configuration. E3 shows the complete oauth2Login configuration with successHandler and failureHandler but still no explicit provider configuration. The evidence doesn't confirm whether a provider is specified elsewhere (e.g., application.yml) or if Spring Boot auto-configuration defaults to Google."
+          },
+          {
+            "claim": 1,
+            "problem": "The claim states the failure handler was added to 'redirect failed Google OAuth logins to the frontend', but E5's commit message says 'Redirect failed Google OAuth logins back to the frontend with the error code' - this assumes Google is the provider. However, the failure handler in E3 (oauthFailureHandler) is generic OAuth2, not Google-specific. The commit message mentions Google but the code change may be generic."
+          },
+          {
+            "claim": 2,
+            "problem": "The claim states commit 448dedb1e0 'does not specify Google OAuth2 as the chosen provider' - this is a negative claim about what the commit doesn't say. E2 only shows the commit subject 'Int-prep : Authentication' with no details. The evidence doesn't show the commit diff, so we cannot verify what authentication changes were made or if Google was specified there."
+          }
+        ],
+        "need_more": {
+          "file_history": true,
+          "widen_lines": 20,
+          "keywords": [
+            "google",
+            "oauth2",
+            "provider",
+            "application.yml"
+          ]
+        }
+      }
+    }
+  ]
+}

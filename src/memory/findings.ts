@@ -2,21 +2,27 @@
 // remembered with the commits, pull requests and issues that prove it, one
 // memory per repository. Later questions recall it, and a finding about
 // lines that have since changed is superseded rather than trusted.
+import { AsyncLocalStorage } from "node:async_hooks";
 import path from "node:path";
 import type { Draft, EvidenceItem } from "../agent/agents";
 import { HMEM, type MemoryRecord, type QueryResult } from "./hmem";
 
 const memories = new Map<string, HMEM>();
 
+/** Sample runs each get their own memory folder, so one example never recalls another's findings. */
+export const memoryRoot = new AsyncLocalStorage<string>();
+
 export function memoryDir(repo: string): string {
-  return path.join(process.env.CARTOGRAPH_MEMORY_DIR ?? path.join(process.cwd(), ".cartograph", "memory"), repo.replace("/", "__"));
+  const root = memoryRoot.getStore() ?? process.env.CARTOGRAPH_MEMORY_DIR ?? path.join(process.cwd(), ".cartograph", "memory");
+  return path.join(root, repo.replace("/", "__"));
 }
 
 export function memoryFor(repo: string): HMEM {
-  let m = memories.get(repo);
+  const dir = memoryDir(repo);
+  let m = memories.get(dir);
   if (!m) {
-    m = new HMEM({ persistDir: memoryDir(repo), actor: "cartograph" });
-    memories.set(repo, m);
+    m = new HMEM({ persistDir: dir, actor: "cartograph" });
+    memories.set(dir, m);
   }
   return m;
 }

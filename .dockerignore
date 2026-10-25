@@ -1,0 +1,11 @@
+node_modules
+site/node_modules
+site/.next
+site/out
+dist
+.cartograph
+.cartograph-test
+.playground
+logs/*.jsonl
+.env
+.git

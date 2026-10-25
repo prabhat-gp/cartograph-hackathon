@@ -23,6 +23,8 @@ import { appHtml, createCartographServer } from "./mcp";
 import { resolveRepo } from "./repo";
 import { resetSponsorStatus, sponsorStatus } from "./status";
 import { SettingsError, connect, currentSettings, detect, disconnect } from "../meterless/settings";
+import { runWhy } from "../agent/run";
+import { SAMPLE_MODE, type Example, findExample, listExamples, replayExample } from "../agent/sample";
 import { ACCESS_TOKEN, hostGuard, isRemote, localOnly, originGuard, takeVisitorCall, withCaller } from "./security";
 import { findRepo, getRepo } from "./store";
 import { ToolError, appToolImpls, toolImpls } from "./tools";
@@ -99,6 +101,34 @@ export function createApp(opts: { port: number }): Express {
     execFile(path.join(ROOT, "demo", script), [demoRepo], { env: { ...process.env, CARTOGRAPH_URL: `http://localhost:${opts.port}` } }, (err, stdout, stderr) => {
       res.json({ ok: !err, output: `${stdout}${stderr}`.trim() || (err ? err.message : "") });
     });
+  });
+
+  // The explain agents without the UI: JSON in, JSON out. In sample mode the
+  // examples replay with no keys; otherwise the run is live.
+  api.get("/run", (_req: Request, res: Response) => {
+    res.json({ sample_mode: SAMPLE_MODE, examples: listExamples() });
+  });
+  api.post("/run", express.json(), async (req: Request, res: Response) => {
+    const body = (req.body ?? {}) as Partial<Example> & { example?: string };
+    if (SAMPLE_MODE) {
+      const example = findExample(body);
+      if (!example) {
+        res.status(400).json({ error: "SAMPLE_MODE replays the recorded examples only", examples: listExamples().map(({ id, question }) => ({ id, question })) });
+        return;
+      }
+      res.json(await replayExample(example.id));
+      return;
+    }
+    if (!body.repo || !body.question) {
+      res.status(400).json({ error: 'send {"repo": "owner/name", "question": "…", "path"?: "file", "line"?: 12}, or {"example": "<id>"} with SAMPLE_MODE=true' });
+      return;
+    }
+    if (isRemote(req) && !takeVisitorCall(req.ip ?? "unknown", "explain_dependency")) {
+      res.status(429).json({ error: "Too many runs from this address this hour" });
+      return;
+    }
+    const line = body.line === undefined ? undefined : Number(body.line);
+    res.json(await runWhy({ repo: String(body.repo), question: String(body.question), path: body.path ? String(body.path) : undefined, line }));
   });
 
   // Meterless settings change which provider every agent uses, so only someone

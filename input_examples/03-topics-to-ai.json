@@ -1,0 +1,7 @@
+{
+  "id": "03-topics-to-ai",
+  "repo": "siddarth-ba-72/Interview-Prep-Pilot-AI",
+  "question": "Why does Topics and preparation API depend on AI orchestration service (POST /ai/learn/stream, POST /ai/test/generate, POST /ai/test/evaluate)?",
+  "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/AiClient.java",
+  "line": 68
+}
