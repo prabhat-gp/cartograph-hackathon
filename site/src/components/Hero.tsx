@@ -3,7 +3,7 @@
 import { ArrowDown, ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import { APP_URL } from "@/lib/site";
-import { HeroAtlas } from "./HeroAtlas";
+import { HeroXray } from "./HeroXray";
 
 const rise = (delay: number) => ({
   initial: { opacity: 0, y: 18 },
@@ -21,7 +21,7 @@ export function Hero() {
             <span className="size-1.5 animate-pulse rounded-full bg-vermilion" /> Open Agent Hackathon 2026
           </motion.p>
           <motion.h1 {...rise(0.15)} className="mt-6 font-serif text-[3.4rem] leading-[0.94] tracking-[-0.015em] text-balance sm:text-[4.6rem] xl:text-[5.4rem]">
-            Map any codebase.
+            Reverse-engineer any codebase.
             <br />
             Know <em className="text-vermilion">why</em> every line exists.
           </motion.h1>
@@ -40,8 +40,8 @@ export function Hero() {
             </a>
           </motion.div>
         </div>
-        <motion.div initial={{ opacity: 0, y: 30, rotate: 1.5 }} animate={{ opacity: 1, y: 0, rotate: 0 }} transition={{ delay: 0.25, type: "spring", stiffness: 70, damping: 16 }}>
-          <HeroAtlas />
+        <motion.div className="min-w-0" initial={{ opacity: 0, y: 30, rotate: 1.5 }} animate={{ opacity: 1, y: 0, rotate: 0 }} transition={{ delay: 0.25, type: "spring", stiffness: 70, damping: 16 }}>
+          <HeroXray />
         </motion.div>
       </div>
     </header>

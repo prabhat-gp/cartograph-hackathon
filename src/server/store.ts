@@ -2,7 +2,7 @@
 // drift reports and MCP Events subscriptions. Writes are atomic (tmp + rename)
 // and reads are cached in memory, which is plenty for one Cartograph server.
 import { existsSync, readFileSync } from "node:fs";
-import { mkdir, readdir, rename, writeFile } from "node:fs/promises";
+import { mkdir, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -92,12 +92,6 @@ export function loadGraph(key: string, sha?: string): CartographGraph | undefine
   const file = graphFile(key, target);
   if (!existsSync(file) && !cache.has(file)) return undefined;
   return GraphSchema.parse(readJson<unknown>(file, undefined));
-}
-
-export async function listGraphShas(key: string): Promise<string[]> {
-  const dir = path.join(dataDir(), "graphs", key);
-  if (!existsSync(dir)) return [];
-  return (await readdir(dir)).filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -5));
 }
 
 // ---------------------------------------------------------------- drift

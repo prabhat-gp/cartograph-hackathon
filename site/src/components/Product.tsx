@@ -9,7 +9,7 @@ import { Stage, WhenSeen, scrollToStep, usePinnedStep } from "./Pinned";
 
 const steps: { title: string; line: string; frame: () => React.ReactNode }[] = [
   { title: "Paste a repo", line: "Any public GitHub repository.", frame: () => <PasteFrame /> },
-  { title: "Agents survey it", line: "Readers work in parallel; a Verifier checks every quote.", frame: () => <SurveyFrame /> },
+  { title: "Agents take it apart", line: "Readers work in parallel; a Verifier checks every quote.", frame: () => <SurveyFrame /> },
   { title: "A map you can trust", line: "Every arrow cites the line that proves it.", frame: () => <MapFrame mode="draw" /> },
   { title: "Ask why", line: "Click an arrow. Get the commit, PR and issue behind it.", frame: () => <MapFrame mode="why" /> },
   { title: "See what breaks", line: "Pick a part. Everything that depends on it lights up.", frame: () => <MapFrame mode="blast" /> },
@@ -154,7 +154,7 @@ function PasteFrame() {
     <div className="grid h-full place-items-center bg-paper-light px-10">
       <div className="w-full max-w-[460px] text-center">
         <Mark className="mx-auto size-10" />
-        <p className="mt-4 font-serif text-[30px] leading-tight">Map any codebase.</p>
+        <p className="mt-4 font-serif text-[30px] leading-tight">Reverse-engineer any codebase.</p>
         <div className="mt-6 flex items-center gap-2 rounded-[6px] border border-ink bg-paper p-1.5 pl-4 text-left shadow-[3px_3px_0_0_var(--color-ink)]">
           <span className="flex-1 font-mono text-[14px]">
             github.com/<Typed text={repo} delay={300} />
@@ -170,7 +170,7 @@ function PasteFrame() {
         </div>
         <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: pressAt / 1000 + 0.4 }} className="mt-4 font-mono text-[12px] text-ink-soft">
           <span className="mr-2 inline-block size-2 animate-pulse rounded-full bg-vermilion" />
-          99 files found · surveying
+          99 files found · agents at work
         </motion.p>
       </div>
     </div>

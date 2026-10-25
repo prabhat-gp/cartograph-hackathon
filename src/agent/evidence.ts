@@ -154,58 +154,6 @@ export async function searchChanges(q: Query, repo: string, keywords: string[], 
   )) as unknown as Change[];
 }
 
-export interface FileCoverage {
-  path: string;
-  lines: number;
-  blamed_lines: number;
-  explained_lines: number;
-  reviewed_lines: number;
-}
-
-/**
- * How explainable each file is: of its blamed lines, how many trace to a
- * pull request (reviewed) and how many to a PR that states a reason
- * (linked issue or a real description).
- */
-export async function coverage(q: Query, repo: string): Promise<FileCoverage[]> {
-  return numbers<FileCoverage>(await q(
-    `SELECT f.path, f.lines, CAST(SUM(lo.line_end - lo.line_start + 1) AS int) AS blamed_lines,
-            CAST(SUM(CASE WHEN p.id IS NOT NULL AND (p.issue_count > 0 OR length(COALESCE(p.body, '')) >= 120) THEN lo.line_end - lo.line_start + 1 ELSE 0 END) AS int) AS explained_lines,
-            CAST(SUM(CASE WHEN c.pr_id IS NOT NULL THEN lo.line_end - lo.line_start + 1 ELSE 0 END) AS int) AS reviewed_lines
-     FROM ${T("line_origin")} lo
-     JOIN ${T("source_file")} f ON f.id = lo.file_id
-     JOIN ${T("code_change")} c ON c.sha = lo.commit_sha
-     LEFT JOIN ${T("pull_request")} p ON p.id = c.pr_id
-     WHERE f.repo_id = ${lit(repo)}
-     GROUP BY f.path, f.lines ORDER BY f.path`,
-  ), ["lines", "blamed_lines", "explained_lines", "reviewed_lines"]);
-}
-
-export interface LineStatus {
-  line_start: number;
-  line_end: number;
-  commit_sha: string;
-  subject: string;
-  pr_number: number | null;
-  explained: boolean;
-}
-
-/** Blame ranges of one file with whether each traces to a pull request that states a reason. */
-export async function lineStatus(q: Query, fileId: string): Promise<LineStatus[]> {
-  const rows = await q(
-    `SELECT lo.line_start, lo.line_end, lo.commit_sha, c.subject, p.number AS pr_number,
-            CASE WHEN p.id IS NOT NULL AND (p.issue_count > 0 OR length(COALESCE(p.body, '')) >= 120) THEN 1 ELSE 0 END AS explained
-     FROM ${T("line_origin")} lo JOIN ${T("code_change")} c ON c.sha = lo.commit_sha
-     LEFT JOIN ${T("pull_request")} p ON p.id = c.pr_id
-     WHERE lo.file_id = ${lit(fileId)} ORDER BY lo.line_start`,
-  );
-  return numbers<LineStatus>(rows, ["line_start", "line_end", "pr_number"]).map((r) => ({ ...r, explained: Number(r.explained) === 1 }));
-}
-
-export async function repositories(q: Query): Promise<{ id: string; description: string | null; head_sha: string; url: string }[]> {
-  return (await q(`SELECT id, description, head_sha, url FROM ${T("repository")} ORDER BY id`)) as never;
-}
-
 export interface RangeStatus {
   file_id: string;
   line_start: number;

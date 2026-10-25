@@ -1,6 +1,6 @@
 # Cartograph
 
-**Google Maps for your codebase.** Paste a GitHub repo. Cartograph's agents read the code and draw it as a map: the parts of the system and the arrows between them, each arrow cited to the `file:line` that proves it. Click an arrow and ask *why* it exists: the agents follow that line to the commit, the pull request and the issue behind it, and explain the decision in plain English.
+**Reverse-engineer any codebase. Know why every line exists.** Paste a GitHub repo. Cartograph's agents read the code and draw it as a map: the parts of the system and the arrows between them, each arrow cited to the `file:line` that proves it. Click an arrow and ask *why* it exists: the agents follow that line to the commit, the pull request and the issue behind it, and explain the decision in plain English.
 
 Built for the Open Agent Hackathon 2026, Track 02 "The Agent That Can Explain Why".
 
@@ -57,7 +57,7 @@ npm run sponsors          # live status of Meterless, NVIDIA and Zetaris
 
 ## The agents
 
-**Mapping** (`src/server/brain/`): a **Scout** plans which files matter, **Readers** read them in parallel and report parts and dependencies with quoted evidence, a **Cartographer** merges them into one map with flows, and a **Verifier** drops every dependency whose quote isn't in the code at that line. No citation, no arrow. A **Reviewer** re-checks the map on every push (drift), and a **Tracer** answers questions on the map.
+**Mapping** (`src/server/brain/`): a **Scout** plans which files matter, **Readers** read them in parallel and report parts and dependencies with quoted evidence (a Reader whose answer runs out of room splits its files in two and reads both halves), a **Cartographer** merges them into one map with flows, and a **Verifier** drops every dependency whose quote isn't in the code at that line. No citation, no arrow. A **Reviewer** re-checks the map on every push (drift), and a **Tracer** answers questions on the map.
 
 **Explaining** (`src/agent/`): a **Planner** (skipped when the question comes from an arrow, whose line is already known), an **Investigator** that queries the history in Zetaris, a **Writer** that drafts an answer citing evidence ids, and a **Critic** that checks every claim against its evidence and can send the Investigator back for more (one revision). Every step is written to a trace the desk shows under each answer.
 

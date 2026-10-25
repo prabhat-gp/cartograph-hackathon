@@ -636,7 +636,7 @@ type SurveyStage = "scout" | "readers" | "cartographer" | "verifier" | "done";
 const STAGE_COPY: Record<SurveyStage, { step: number; title: string; now: string; next: string }> = {
   scout: {
     step: 1,
-    title: "Scout plans the survey",
+    title: "Scout plans the reading",
     now: "Reading the file tree, package manifests and config to name the parts and split the code into reading groups.",
     next: "Readers start on each group at the same time.",
   },
@@ -658,7 +658,7 @@ const STAGE_COPY: Record<SurveyStage, { step: number; title: string; now: string
     now: "Opening each cited line in the code. A road whose citation doesn't match is taken off the map: no citation, no road.",
     next: "The map opens.",
   },
-  done: { step: 4, title: "Survey complete", now: "The map is ready.", next: "" },
+  done: { step: 4, title: "Map complete", now: "The map is ready.", next: "" },
 };
 
 /** An animated sketch of the survey, in step with the real agents. */
@@ -677,7 +677,7 @@ function SurveyAnimation({ stage, lanes, finished }: { stage: SurveyStage; lanes
   return (
     <div className="rounded-[4px] border border-line-strong bg-surface">
       <div className="flex items-center justify-between border-b border-line px-4 py-2 font-mono text-[10.5px] tracking-[0.2em] text-muted uppercase">
-        <span>How the survey works</span>
+        <span>How the agents work</span>
         <span>Step {copy.step} of 4</span>
       </div>
       <svg viewBox="0 0 360 420" className="block w-full" role="img" aria-label={copy.title}>
@@ -861,9 +861,9 @@ export function Progress({ job }: { job: JobView | null }) {
     <div className="mx-auto min-h-0 w-full max-w-[1180px] overflow-y-auto px-6 py-8">
       <motion.div {...fadeIn} className="flex flex-wrap items-end justify-between gap-4 border-b border-text pb-4">
         <div className="min-w-0">
-          <p className="font-mono text-[10.5px] tracking-[0.2em] text-accent uppercase">Live survey</p>
-          <div className="mt-1 font-serif text-[34px] leading-tight text-text">Surveying {job?.repoName ?? "repository"}</div>
-          <div className="text-[13px] text-muted">{failed ? "The survey stopped. The log below says why." : "A team of agents is reading the code. The map opens when they finish."}</div>
+          <p className="font-mono text-[10.5px] tracking-[0.2em] text-accent uppercase">Agents at work</p>
+          <div className="mt-1 font-serif text-[34px] leading-tight text-text">Reverse-engineering {job?.repoName ?? "repository"}</div>
+          <div className="text-[13px] text-muted">{failed ? "The agents stopped. The log below says why." : "A team of agents is reading the code. The map opens when they finish."}</div>
         </div>
         <div className="text-right">
           <div className="font-serif text-[40px] leading-none text-text tabular-nums">{clock(elapsed)}</div>
@@ -951,6 +951,12 @@ export function Progress({ job }: { job: JobView | null }) {
 
 // ---------------------------------------------------------------- home
 
+/** A pasted GitHub link becomes owner/repo; anything else is left as typed. */
+export function ownerRepo(text: string): string {
+  const m = text.trim().match(/^(?:https?:\/\/|git@)?(?:www\.)?github\.com[/:]([\w.-]+)\/([\w.-]+?)(?:\.git)?(?:[/?#].*)?$/i);
+  return m ? `${m[1]}/${m[2]}` : text;
+}
+
 export function Home(props: {
   repos: RepoSummary[];
   /** The repo whose map is open behind this picker, if any. */
@@ -962,7 +968,7 @@ export function Home(props: {
 }) {
   const { repos, current, onOpen, error } = props;
   // Arriving from the landing page with a repo typed in (/app?map=owner/name).
-  const [value, setValue] = useState(() => new URLSearchParams(location.search).get("map") ?? "");
+  const [value, setValue] = useState(() => ownerRepo(new URLSearchParams(location.search).get("map") ?? ""));
   const [busy, setBusy] = useState(false);
   return (
     <div className="mx-auto w-full max-w-[640px] flex-1 px-6 py-10">
@@ -973,7 +979,7 @@ export function Home(props: {
       )}
       <motion.div {...fadeIn}>
         <p className="m-0 font-mono text-[10.5px] tracking-[0.2em] text-accent uppercase">The desk</p>
-        <h1 className="mt-1 mb-1.5 font-serif text-[36px] leading-tight font-normal text-text">Map a repository</h1>
+        <h1 className="mt-1 mb-1.5 font-serif text-[36px] leading-tight font-normal text-text">Reverse-engineer a repository</h1>
         <p className="m-0 text-[13.5px] text-muted">Any public GitHub repository. Every arrow on the map cites the line of code that proves it.</p>
         <form
           className="mt-6 flex items-center gap-2 rounded-[6px] border border-text bg-surface p-2 pl-4 shadow-[6px_6px_0_0_var(--text)] transition-shadow focus-within:shadow-[6px_6px_0_0_var(--accent)]"
@@ -991,7 +997,7 @@ export function Home(props: {
           <GithubMark size={18} className="shrink-0 text-muted" />
           <input
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => setValue(ownerRepo(e.target.value))}
             placeholder="owner/repo"
             aria-label="GitHub repository: owner/repo or a github.com link"
             spellCheck={false}

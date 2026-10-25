@@ -53,7 +53,8 @@ export function Nav() {
             whileTap={{ scale: 0.97 }}
             className="group flex items-center gap-1.5 rounded-[4px] border border-ink bg-vermilion px-4 py-2 text-sm font-medium text-paper-light shadow-[3px_3px_0_0_var(--color-ink)] transition-colors hover:bg-vermilion-deep"
           >
-            Open the desk <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+            <span className="max-sm:hidden">Open the desk</span>
+            <span className="sm:hidden">Desk</span> <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
           </motion.a>
         </div>
       </div>
