@@ -10,6 +10,7 @@ import { type EdgeVisual, Graph, type NodeVisual } from "./Graph";
 import { ChevronsUpDown, CircleHelp, GitCommitHorizontal, Maximize2, Moon, PanelBottomClose, PanelBottomOpen, Route, ShieldCheck, Sun, X, Zap } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { CartographLogo } from "./icons";
+import { DeskFooter, DeskHeader, GithubMark } from "./chrome";
 import { CoverageLegend, DependencyPanel, type WhyCoverage } from "./why";
 import { Button, IconButton, SeverityBadge, Spinner, cn } from "./ui";
 import { PoweredBy } from "./status";
@@ -588,6 +589,13 @@ export function App({ bridge }: { bridge: Bridge }) {
   const height = inline ? Math.min(host.maxHeight ?? 620, 620) : undefined;
   const mapping = job && job.status === "running" && job.kind === "map";
   const shellStyle = { height: height ?? "100vh", minHeight: 420 };
+  const standalone = bridge.mode === "standalone";
+  const dark = (themePref ?? host.theme) === "dark";
+  const themeButton = standalone && (
+    <IconButton label="Toggle dark mode" onClick={toggleTheme}>
+      {dark ? <Sun size={15} /> : <Moon size={15} />}
+    </IconButton>
+  );
 
   if (!ready) {
     return (
@@ -617,7 +625,9 @@ export function App({ bridge }: { bridge: Bridge }) {
     // The whole window scrolls, so the scrollbar sits at its edge rather than beside the column.
     return (
       <div className="flex flex-col overflow-y-auto bg-bg" style={shellStyle}>
+        <DeskHeader standalone={standalone} actions={<><PoweredBy callTool={(name, args) => bridge.callTool(name, args)} />{themeButton}</>} />
         <Home repos={repos} current={graph ? repoKey : null} onOpen={openRepo} onMap={mapRepo} onBack={home && graph ? () => setHome(false) : undefined} error={error} />
+        <DeskFooter />
       </div>
     );
   }
@@ -625,6 +635,7 @@ export function App({ bridge }: { bridge: Bridge }) {
   if (!graph) {
     return (
       <div className="flex flex-col bg-bg" style={shellStyle}>
+        <DeskHeader standalone={standalone} actions={themeButton} />
         <Progress job={job} />
       </div>
     );
@@ -711,70 +722,61 @@ export function App({ bridge }: { bridge: Bridge }) {
     else if (mode.kind === "drift" || mode.kind === "blast" || (t === "overview" && mode.kind === "trace")) setMode({ kind: "explore" });
   };
   const busy = !!reviewing || (job?.kind === "review" && job.status === "running");
-  const dark = (themePref ?? host.theme) === "dark";
 
   return (
     <div className="flex flex-col overflow-hidden bg-bg" style={shellStyle}>
-      <header className="relative z-30 flex h-[52px] shrink-0 items-center gap-2.5 border-b border-line bg-surface/90 px-3.5 backdrop-blur">
-        <div className="flex min-w-0 items-center gap-2">
-          <CartographLogo size={24} />
-          <span className="font-serif text-[21px] leading-none text-text max-sm:hidden">Cartograph</span>
-          <span className="mx-1 h-4 w-px bg-line max-sm:hidden" />
-          <button
-            onClick={openHome}
-            title="Switch repository, or map another one"
-            className="-mx-1 flex min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-[12.5px] text-muted transition-colors hover:bg-surface-2"
-          >
-            {graph.repo.source === "github" && (
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" className="shrink-0 text-faint" aria-hidden>
-                <path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.4-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z" />
-              </svg>
+      <DeskHeader
+        standalone={standalone}
+        center={
+          <nav className="flex items-center gap-5">
+            {(["overview", "flows", "drift"] as Tab[]).map((t) => (
+              <button key={t} data-tour={`tab-${t}`} onClick={() => switchTab(t)} className={cn("relative flex h-8 items-center gap-1.5 text-[14px] transition-colors", tab === t ? "text-text" : "text-muted hover:text-text")}>
+                <span>{t === "overview" ? "Map" : t === "flows" ? "Flows" : "Drift"}</span>
+                {t === "drift" && unseenDrift > 0 && <span className="grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 font-mono text-[10px] text-white">{unseenDrift}</span>}
+                {tab === t && <motion.span layoutId="cg-tab" className="absolute inset-x-0 -bottom-[13px] h-[2px] bg-accent" transition={{ type: "spring", duration: 0.35, bounce: 0.15 }} />}
+              </button>
+            ))}
+          </nav>
+        }
+        actions={
+          <>
+            <span
+              className="inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-wide text-muted uppercase max-lg:hidden"
+              title={`Every arrow on this map cites the file and line that proves it. ${graph.stats.edgesDropped} more were proposed but left off because their citation didn't match the code.`}
+            >
+              <ShieldCheck size={13} className="text-ok" /> {graph.stats.edgesVerified} arrows · each cited
+            </span>
+            <span className={cn("ml-2 inline-flex items-center gap-1.5 font-mono text-[10.5px] tracking-wide uppercase", busy ? "text-warn" : "text-muted")} title="Cartograph reviews every push to this repo">
+              {busy ? <Spinner size={12} /> : <span className="cg-live-dot size-2 rounded-full bg-ok" />}
+              <span className="max-sm:hidden">{busy ? "Reviewing push…" : "Live"}</span>
+            </span>
+            <PoweredBy callTool={(name, args) => bridge.callTool(name, args)} />
+            <IconButton label="Take the tour" data-tour="replay" onClick={startTour}>
+              <CircleHelp size={15} />
+            </IconButton>
+            {themeButton}
+            {inline && (
+              <IconButton label="Open full screen" onClick={() => void bridge.requestDisplayMode("fullscreen")}>
+                <Maximize2 size={15} />
+              </IconButton>
             )}
-            <span className="truncate font-medium text-text">{graph.repo.name}</span>
-            <ChevronsUpDown size={12} className="shrink-0 text-faint" />
-          </button>
-          <span className="rounded-md bg-surface-2 px-1.5 py-[2px] font-mono text-[11px] text-muted max-md:hidden" title={`Mapped ${new Date(graph.generatedAt).toLocaleString()} (${graph.mode})`}>
-            {shortSha(graph.sha)}
-          </span>
-        </div>
-
-        <nav className="mx-auto flex items-center rounded-[10px] bg-surface-2 p-[3px]">
-          {(["overview", "flows", "drift"] as Tab[]).map((t) => (
-            <button key={t} data-tour={`tab-${t}`} onClick={() => switchTab(t)} className={cn("relative flex h-7 items-center gap-1.5 rounded-[8px] px-3 text-[12.5px] font-medium transition-colors", tab === t ? "text-text" : "text-muted hover:text-text")}>
-              {tab === t && <motion.span layoutId="cg-tab" className="absolute inset-0 rounded-[8px] bg-surface shadow-card" transition={{ type: "spring", duration: 0.35, bounce: 0.15 }} />}
-              <span className="relative">{t === "overview" ? "Map" : t === "flows" ? "Flows" : "Drift"}</span>
-              {t === "drift" && unseenDrift > 0 && <span className="relative grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">{unseenDrift}</span>}
-            </button>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-1.5">
-          <span
-            className="inline-flex items-center gap-1 rounded-full bg-ok/10 px-2.5 py-1 text-[11.5px] font-medium text-ok ring-1 ring-ok/20 ring-inset max-lg:hidden"
-            title={`Every arrow on this map cites the file and line that proves it. ${graph.stats.edgesDropped} more were proposed but left off because their citation didn't match the code.`}
-          >
-            <ShieldCheck size={13} /> {graph.stats.edgesVerified} arrows, each proven in code
-          </span>
-          <span className={cn("ml-1 inline-flex items-center gap-1.5 text-[11.5px] font-medium", busy ? "text-warn" : "text-muted")} title="Cartograph reviews every push to this repo">
-            {busy ? <Spinner size={12} /> : <span className="cg-live-dot size-2 rounded-full bg-ok" />}
-            <span className="max-sm:hidden">{busy ? "Reviewing push…" : "Live"}</span>
-          </span>
-          <PoweredBy callTool={(name, args) => bridge.callTool(name, args)} />
-          <IconButton label="Take the tour" data-tour="replay" onClick={startTour}>
-            <CircleHelp size={15} />
-          </IconButton>
-          {bridge.mode === "standalone" && (
-            <IconButton label="Toggle dark mode" onClick={toggleTheme}>
-              {dark ? <Sun size={15} /> : <Moon size={15} />}
-            </IconButton>
-          )}
-          {inline && (
-            <IconButton label="Open full screen" onClick={() => void bridge.requestDisplayMode("fullscreen")}>
-              <Maximize2 size={15} />
-            </IconButton>
-          )}
-        </div>
-      </header>
+          </>
+        }
+      >
+        <span className="mx-1 h-5 w-px bg-line-strong max-sm:hidden" />
+        <button
+          onClick={openHome}
+          title="Switch repository, or map another one"
+          className="-mx-1 flex min-w-0 items-center gap-1.5 rounded-[4px] px-1.5 py-1 font-mono text-[12.5px] text-muted transition-colors hover:bg-surface-2"
+        >
+          {graph.repo.source === "github" && <GithubMark size={13} className="shrink-0 text-faint" />}
+          <span className="truncate font-medium text-text">{graph.repo.name}</span>
+          <ChevronsUpDown size={12} className="shrink-0 text-faint" />
+        </button>
+        <span className="rounded-[4px] border border-line px-1.5 py-[1px] font-mono text-[10.5px] text-muted max-md:hidden" title={`Mapped ${new Date(graph.generatedAt).toLocaleString()} (${graph.mode})`}>
+          {shortSha(graph.sha)}
+        </span>
+      </DeskHeader>
 
       <div className="flex min-h-0 flex-1 max-md:flex-col">
         <main data-tour="map" className="relative min-h-0 min-w-0 flex-1 bg-canvas">
@@ -831,7 +833,7 @@ export function App({ bridge }: { bridge: Bridge }) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ type: "spring", duration: 0.45, bounce: 0.2 }}
-                className="absolute top-3.5 left-1/2 z-40 flex w-[min(560px,calc(100%-28px))] -translate-x-1/2 items-center gap-3 rounded-2xl border border-line bg-surface px-3.5 py-3 shadow-pop"
+                className="absolute top-3.5 left-1/2 z-40 flex w-[min(560px,calc(100%-28px))] -translate-x-1/2 items-center gap-3 rounded-[6px] border border-line bg-surface px-3.5 py-3 shadow-pop"
                 role="status"
               >
                 <SeverityBadge level={toast.maxSeverity as "critical" | "warning" | "info"} className="shrink-0" />
@@ -868,7 +870,7 @@ export function App({ bridge }: { bridge: Bridge }) {
             </div>
           )}
 
-          <div className="pointer-events-none absolute right-3.5 bottom-3.5 z-20 flex items-center gap-3 rounded-lg border border-line bg-surface/90 px-2.5 py-1.5 text-[11px] text-muted backdrop-blur max-sm:hidden">
+          <div className="pointer-events-none absolute right-3.5 bottom-3.5 z-20 flex items-center gap-3 rounded-[4px] border border-line bg-surface/90 px-2.5 py-1.5 text-[11px] text-muted backdrop-blur max-sm:hidden">
             <span className="flex items-center gap-1.5">
               <span className="h-px w-4 bg-[var(--edge)]" /> depends on
             </span>
@@ -879,7 +881,7 @@ export function App({ bridge }: { bridge: Bridge }) {
 
           <button
             onClick={() => setPanelOpen((o) => !o)}
-            className="absolute bottom-3.5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-line bg-surface/95 px-3 py-1.5 text-[12px] font-medium text-muted shadow-card backdrop-blur transition-colors hover:text-text md:hidden"
+            className="absolute bottom-3.5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 rounded-[4px] border border-line bg-surface/95 px-3 py-1.5 text-[12px] font-medium text-muted shadow-card backdrop-blur transition-colors hover:text-text md:hidden"
           >
             {panelOpen ? <PanelBottomClose size={14} /> : <PanelBottomOpen size={14} />}
             {panelOpen ? "Hide details" : "Show details"}
@@ -896,7 +898,7 @@ export function App({ bridge }: { bridge: Bridge }) {
       </div>
 
       {tourOpen && tourSteps.length > 0 && <Tour steps={tourSteps} onAction={tourAction} onClose={() => setTourOpen(false)} />}
-      {error && <div className="absolute bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-danger px-3 py-2 text-[12.5px] text-white shadow-pop">{error}</div>}
+      {error && <div className="absolute bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-[4px] bg-danger px-3 py-2 text-[12.5px] text-white shadow-pop">{error}</div>}
     </div>
   );
 }

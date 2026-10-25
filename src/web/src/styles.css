@@ -125,7 +125,7 @@ button:disabled {
 .react-flow__controls {
   box-shadow: var(--shadow-card) !important;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 4px;
   overflow: hidden;
 }
 .react-flow__controls-button {
@@ -150,7 +150,7 @@ button:disabled {
 .cg-edge {
   fill: none;
   stroke: var(--edge);
-  stroke-width: 1.25;
+  stroke-width: 1.4;
   transition: stroke 0.3s, stroke-width 0.3s, opacity 0.3s;
 }
 .cg-edge.dim {

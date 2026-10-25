@@ -41,7 +41,7 @@ export async function reviewChanges(input: ReviewInput, opts: BrainOptions = {})
     edgeIds: finding.edgeIds.filter((id) => edgeIds.has(id)),
   })).sort((a, b) => rank[b.severity] - rank[a.severity]);
   opts.onProgress?.({ agent: "reviewer", phase: "done",
-    message: `Reviewer · ${addEdges.length} new dependencies, ${findings.length} findings`,
+    message: `Reviewer · ${addEdges.length} new arrows, ${findings.length} findings`,
     data: { added: addEdges.length, removed: removeEdgeIds.length, findings: findings.length } });
   return { addNodes, addEdges, removeEdgeIds, findings, summary: result.summary, agentStats };
 }

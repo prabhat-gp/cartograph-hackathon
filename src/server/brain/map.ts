@@ -18,7 +18,7 @@ export async function mapRepository(snapshot: RepoSnapshot, opts: BrainOptions =
   let scout;
   try {
     scout = await runAgent("scout", SCOUT_PROMPT, ScoutSchema, scoutInput(snapshot), opts, agentStats);
-    progress?.({ agent: "scout", phase: "done", message: `Scout · found ${scout.stack.join(", ") || "repository components"}`,
+    progress?.({ agent: "scout", phase: "done", message: `Scout · found ${scout.stack.join(", ") || "the repository parts"}`,
       data: { components: scout.components.length, groups: scout.readerGroups.length } });
   } catch (error) {
     opts.signal?.throwIfAborted();
@@ -57,7 +57,7 @@ export async function mapRepository(snapshot: RepoSnapshot, opts: BrainOptions =
     progress?.({ agent: "reader", phase: "start", message: `${label} · ${group.files.length} files` });
     try {
       const output = await read(group, label, true);
-      progress?.({ agent: "reader", phase: "done", message: `${label} · ${output.edges.length} dependencies`,
+      progress?.({ agent: "reader", phase: "done", message: `${label} · ${output.edges.length} arrows`,
         data: { edges: output.edges.length, components: output.newComponents.length } });
       return output;
     } catch (error) {
@@ -70,7 +70,7 @@ export async function mapRepository(snapshot: RepoSnapshot, opts: BrainOptions =
   opts.signal?.throwIfAborted();
   const catalog = mergeComponents([...scout.components, ...outputs.flatMap((output) => output.newComponents)]);
   const merged = mergeReaderEdges(numberReaderEdges(outputs));
-  progress?.({ agent: "cartographer", phase: "start", message: `Cartographer · organizing ${merged.length} dependencies` });
+  progress?.({ agent: "cartographer", phase: "start", message: `Cartographer · organizing ${merged.length} arrows` });
   const result = await runAgent("cartographer", CARTOGRAPHER_PROMPT, CartographerSchema, JSON.stringify({
     repo: snapshot.repo.name, catalog, summary: scout.summary, stack: scout.stack,
     flowHints: scout.flowHints,
@@ -82,7 +82,7 @@ export async function mapRepository(snapshot: RepoSnapshot, opts: BrainOptions =
   const flows = cleanFlows(result.flows.map((flow) => ({
     ...flow, steps: flow.steps.map((step) => ({ ...step, edge: redirect.get(step.edge) ?? step.edge })),
   })), edges);
-  progress?.({ agent: "cartographer", phase: "done", message: `Cartographer · ${nodes.length} components, ${edges.length} dependencies, ${flows.length} flows`,
+  progress?.({ agent: "cartographer", phase: "done", message: `Cartographer · ${nodes.length} parts, ${edges.length} arrows, ${flows.length} flows`,
     data: { nodes: nodes.length, edges: edges.length, flows: flows.length } });
   return { nodes, edges, flows, summary: result.summary, stack: result.stack, agentStats };
 }

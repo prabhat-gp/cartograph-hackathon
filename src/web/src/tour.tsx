@@ -68,7 +68,7 @@ export function buildTourSteps(graph: CartographGraph, driftReviews: number): To
   if (busiest) {
     steps.push({
       target: node(busiest.id),
-      title: "Each box is a part of the code",
+      title: "Each part of the code is a box",
       body: `${busiest.label}${busiest.tech ? ` (${busiest.tech})` : ""} is the most connected part here. Click any box to see its files and what it talks to.`,
       action: { kind: "node", id: busiest.id },
     });
@@ -236,7 +236,7 @@ export function TourOffer({ onStart, onDismiss }: { onStart: () => void; onDismi
   return (
     <div className="absolute top-3.5 right-3.5 z-30 w-[260px] rounded-[4px] border border-text bg-surface p-3.5 shadow-pop max-sm:hidden">
       <p className="m-0 font-serif text-[19px] leading-tight text-text">New to Cartograph?</p>
-      <p className="mt-1 mb-0 text-[12.5px] leading-relaxed text-muted">A one-minute tour of this map: boxes, arrows, why, and what breaks.</p>
+      <p className="mt-1 mb-0 text-[12.5px] leading-relaxed text-muted">A one-minute tour of this map: parts, arrows, why, and what breaks.</p>
       <div className="mt-3 flex justify-end gap-1.5">
         <Button
           size="sm"

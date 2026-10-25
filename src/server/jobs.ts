@@ -156,7 +156,7 @@ export function startMapJob(input: string, opts: StartMapOptions = {}): Job {
 
       const draft = await (await getBrain()).mapRepository(snapshot, { onProgress: log });
 
-      log({ agent: "pipeline", phase: "start", message: `Verifier · checking ${draft.edges.length} cited dependencies against the code…` });
+      log({ agent: "pipeline", phase: "start", message: `Verifier · checking ${draft.edges.length} cited arrows against the code…` });
       const { graph, dropped } = verifyDraft(draft, snapshot, {
         repo,
         sha,
@@ -167,13 +167,13 @@ export function startMapJob(input: string, opts: StartMapOptions = {}): Job {
       log({
         agent: "pipeline",
         phase: "done",
-        message: `Verifier · ${graph.edges.length} dependencies verified, ${dropped.length} dropped${dropReasons(dropped)}`,
+        message: `Verifier · ${graph.edges.length} arrows verified, ${dropped.length} dropped${dropReasons(dropped)}`,
         data: { verified: graph.edges.length, dropped: dropped.length },
       });
 
       await saveGraph(graph);
       await upsertRepo(repo.key, { repo, branch, latestSha: sha, reviewedSha: sha, mappedAt: graph.generatedAt });
-      log({ agent: "pipeline", phase: "done", message: `Mapped ${graph.nodes.length} components, ${graph.edges.length} dependencies, ${graph.flows.length} flows` });
+      log({ agent: "pipeline", phase: "done", message: `Mapped ${graph.nodes.length} parts, ${graph.edges.length} arrows, ${graph.flows.length} flows` });
       finish(job, "done");
     } catch (err) {
       finish(job, "error", err);
@@ -225,7 +225,7 @@ export function startReviewJob(repoKey: string, opts: StartReviewOptions): Job |
 
       // 1. Deterministic: re-verify edges whose evidence lives in changed files.
       const { kept, lost } = reverifyEdges(before.edges, changedPaths, index);
-      if (lost.length) log({ agent: "pipeline", phase: "progress", message: `Verifier · ${lost.length} dependenc${lost.length === 1 ? "y" : "ies"} no longer in the code` });
+      if (lost.length) log({ agent: "pipeline", phase: "progress", message: `Verifier · ${lost.length} arrow${lost.length === 1 ? "" : "s"} no longer in the code` });
 
       // 2. Agent: what did the change add?
       const review = changes.length
@@ -252,7 +252,7 @@ export function startReviewJob(repoKey: string, opts: StartReviewOptions): Job |
       log({
         agent: "pipeline",
         phase: "done",
-        message: `Verifier · ${newEdges.length} new dependenc${newEdges.length === 1 ? "y" : "ies"} verified, ${verifiedNew.dropped.length} dropped`,
+        message: `Verifier · ${newEdges.length} new arrow${newEdges.length === 1 ? "" : "s"} verified, ${verifiedNew.dropped.length} dropped`,
       });
 
       // Unreferenced data/external nodes that lost their last edge go too.
@@ -369,7 +369,7 @@ function summarizeDiff(d: ReturnType<typeof diffGraphs>): string {
   return parts.length ? `${parts.join(", ")}.` : "No architectural change.";
 }
 
-const DROP_WORDS: Record<DroppedEdge["reason"], string> = { "no-evidence": "quote not found in the code", "unknown-node": "component merged away", "self-loop": "points to itself" };
+const DROP_WORDS: Record<DroppedEdge["reason"], string> = { "no-evidence": "quote not found in the code", "unknown-node": "part merged away", "self-loop": "points to itself" };
 
 /** "(12 quote not found in the code, 3 component merged away)" */
 function dropReasons(dropped: DroppedEdge[]): string {

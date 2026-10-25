@@ -24,6 +24,7 @@ import { shortSha } from "../../shared/graph";
 import { type FlowView, blastRadius } from "../../server/graph/analysis";
 import type { JobView, RepoSummary } from "./App";
 import { CartographLogo } from "./icons";
+import { GithubMark } from "./chrome";
 import { kindMeta } from "./kinds";
 import {
   AskButton,
@@ -80,7 +81,7 @@ function Row({ onClick, leading, title, sub, meta, tone = "default", active = fa
     <button
       onClick={onClick}
       className={cn(
-        "group flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-all",
+        "group flex w-full items-center gap-3 rounded-[6px] border px-3 py-2.5 text-left transition-all",
         active ? "border-accent/40 bg-accent-soft/60" : "border-transparent hover:border-line hover:bg-surface-2/70",
         tone === "danger" && "hover:border-danger/30 hover:bg-danger/[0.04]",
       )}
@@ -142,30 +143,23 @@ export function OverviewPanel({ graph, onTrace, onSelect, onAsk }: { graph: Cart
 
       <div className="mt-5 grid grid-cols-3 gap-2">
         {[
-          [graph.nodes.length, "components"],
-          [graph.edges.length, "dependencies"],
+          [graph.nodes.length, "parts"],
+          [graph.edges.length, "arrows"],
           [graph.flows.length, "flows"],
         ].map(([n, l]) => (
           <Card key={l} className="px-3 py-2.5">
             <div className="font-serif text-[34px] leading-none font-normal text-text tabular-nums">{n}</div>
-            <div className="mt-1 text-[11.5px] text-muted">{l}</div>
+            <div className="mt-1.5 font-mono text-[10.5px] tracking-wide text-muted uppercase">{l}</div>
           </Card>
         ))}
       </div>
 
-      <div className="mt-3 flex gap-3 rounded-xl border border-ok/25 bg-ok/[0.06] px-3.5 py-3">
-        <ShieldCheck size={18} className="mt-[1px] shrink-0 text-ok" />
-        <div className="text-[12.5px] leading-relaxed">
-          <div className="font-semibold text-text">Every arrow cites the code</div>
-          <div className="mt-0.5 text-muted">
-            {s.edgesProposed} proposed · <b className="font-semibold text-text">{s.edgesVerified} verified</b> · {s.edgesDropped} dropped at{" "}
-            <span className="font-mono text-[11.5px]">{shortSha(graph.sha)}</span>
-            <br />
-            {s.files} files read · {s.model}
-            {s.durationMs ? ` · ${Math.round(s.durationMs / 1000)}s` : ""}
-          </div>
-        </div>
-      </div>
+      <p className="mt-3 mb-0 font-mono text-[10.5px] leading-relaxed tracking-wide text-muted uppercase" title="Arrows whose quoted line didn't match the code were left off the map.">
+        {s.edgesVerified} of {s.edgesProposed} proposed arrows cited at {shortSha(graph.sha)} · {s.files} files read
+        {s.durationMs ? ` · ${Math.round(s.durationMs / 1000)}s` : ""}
+        <br />
+        {s.model}
+      </p>
 
       <Eyebrow className="mt-6">Flows</Eyebrow>
       <div className="-mx-1.5 flex flex-col">
@@ -174,7 +168,7 @@ export function OverviewPanel({ graph, onTrace, onSelect, onAsk }: { graph: Cart
         ))}
       </div>
 
-      <Eyebrow className="mt-6">Components</Eyebrow>
+      <Eyebrow className="mt-6">Parts</Eyebrow>
       <div className="flex flex-col gap-2.5">
         {byKind.map(([kind, nodes]) => (
           <div key={kind} className="flex items-start gap-3">
@@ -183,7 +177,7 @@ export function OverviewPanel({ graph, onTrace, onSelect, onAsk }: { graph: Cart
             </div>
             <div className="flex flex-wrap gap-1.5">
               {nodes.map((n) => (
-                <button key={n.id} onClick={() => onSelect(n.id)} className="rounded-md border border-line bg-surface px-2 py-[3px] text-[12px] text-text shadow-card transition-colors hover:border-accent/40 hover:text-accent">
+                <button key={n.id} onClick={() => onSelect(n.id)} className="rounded-[4px] border border-line bg-surface px-2 py-[3px] text-[12px] text-text shadow-card transition-colors hover:border-accent/40 hover:text-accent">
                   {n.label}
                 </button>
               ))}
@@ -260,7 +254,7 @@ export function TracePanel(props: { flow: FlowView; step: number; playing: boole
               >
                 {s.index}
               </span>
-              <span className={cn("min-w-0 flex-1 rounded-xl border px-3 py-2.5 transition-all", on ? "border-accent/35 bg-surface shadow-card" : "border-transparent", !on && !done && "opacity-55")}>
+              <span className={cn("min-w-0 flex-1 rounded-[6px] border px-3 py-2.5 transition-all", on ? "border-accent/35 bg-surface shadow-card" : "border-transparent", !on && !done && "opacity-55")}>
                 <span className="block text-[13px] leading-snug font-semibold text-text">
                   {s.from.label}
                   <ArrowRight size={13} className="mx-1 inline -translate-y-px text-accent" />
@@ -335,7 +329,7 @@ export function NodePanel({ graph, nodeId, onClose, onSelect, onWhy, onBlast, on
       {node.files.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-1.5">
           {node.files.slice(0, 8).map((f) => (
-            <span key={f.path} className="rounded-md bg-surface-2 px-1.5 py-[2px] font-mono text-[11px] text-muted">
+            <span key={f.path} className="rounded-[4px] bg-surface-2 px-1.5 py-[2px] font-mono text-[11px] text-muted">
               {f.path}
             </span>
           ))}
@@ -364,13 +358,13 @@ export function BlastPanel({ graph, nodeId, onClose, onAsk, onTrace }: { graph: 
   if (!b) return null;
   return (
     <Panel>
-      <div className="mb-4 flex items-start gap-3 rounded-xl border border-danger/25 bg-danger/[0.05] px-3.5 py-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-danger/12 text-danger">
+      <div className="mb-4 flex items-start gap-3 rounded-[6px] border border-danger/25 bg-danger/[0.05] px-3.5 py-3">
+        <span className="grid size-9 shrink-0 place-items-center rounded-[4px] bg-danger/12 text-danger">
           <Zap size={18} />
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-[15px] font-semibold text-danger">{b.node.label} is down</div>
-          <div className="text-[12px] text-muted">Simulated outage · {b.impacted.length} components affected</div>
+          <div className="text-[12px] text-muted">Simulated outage · {b.impacted.length} parts affected</div>
         </div>
         <IconButton label="Close" onClick={onClose} className="-mt-1 -mr-2">
           <X size={16} />
@@ -387,13 +381,13 @@ export function BlastPanel({ graph, nodeId, onClose, onAsk, onTrace }: { graph: 
           </div>
         </>
       )}
-      {b.impacted.length > 0 && <Eyebrow className="mt-5">Impacted components</Eyebrow>}
+      {b.impacted.length > 0 && <Eyebrow className="mt-5">Parts affected</Eyebrow>}
       <div className="flex flex-col gap-1.5">
         {b.impacted.map((i) => (
-          <div key={i.node.id} className="flex items-center gap-2.5 rounded-lg px-1 py-1">
+          <div key={i.node.id} className="flex items-center gap-2.5 rounded-[4px] px-1 py-1">
             <KindTile kind={i.node.kind} size="sm" />
             <span className="flex-1 truncate text-[13px] font-medium text-text">{i.node.label}</span>
-            <span className={cn("rounded-full px-2 py-[2px] text-[10.5px] font-semibold", i.depth === 1 ? "bg-danger/10 text-danger" : "bg-surface-2 text-muted")}>
+            <span className={cn("rounded-[4px] px-2 py-[2px] text-[10.5px] font-semibold", i.depth === 1 ? "bg-danger/10 text-danger" : "bg-surface-2 text-muted")}>
               {i.depth === 1 ? "direct" : `${i.depth} hops`}
             </span>
           </div>
@@ -426,7 +420,7 @@ export function DriftPanel(props: {
       <PanelHead title="Architecture drift" sub="Every push, reviewed at the architecture level" onClose={props.onClose} />
 
       {props.reviewing && (
-        <div className="mb-3 flex items-center gap-2 rounded-xl border border-warn/30 bg-warn/[0.07] px-3 py-2.5 text-[12.5px] font-medium text-warn">
+        <div className="mb-3 flex items-center gap-2 rounded-[6px] border border-warn/30 bg-warn/[0.07] px-3 py-2.5 text-[12.5px] font-medium text-warn">
           <Spinner /> Reviewing a new push…
         </div>
       )}
@@ -471,7 +465,7 @@ export function DriftPanel(props: {
             </Prose>
 
             {active.findings.map((f) => (
-              <div key={f.id} className={cn("mt-2 rounded-lg border px-3 py-2.5", f.severity === "critical" ? "border-danger/25 bg-danger/[0.04]" : f.severity === "warning" ? "border-warn/25 bg-warn/[0.05]" : "border-info/20 bg-info/[0.04]")}>
+              <div key={f.id} className={cn("mt-2 rounded-[4px] border px-3 py-2.5", f.severity === "critical" ? "border-danger/25 bg-danger/[0.04]" : f.severity === "warning" ? "border-warn/25 bg-warn/[0.05]" : "border-info/20 bg-info/[0.04]")}>
                 <div className="flex items-start gap-2">
                   <SeverityBadge level={f.severity} className="mt-[1px] shrink-0" />
                   <div className="text-[12.5px] leading-snug font-semibold text-text">{f.title}</div>
@@ -482,7 +476,7 @@ export function DriftPanel(props: {
 
             {(active.added.edges.length > 0 || active.removed.edges.length > 0) && (
               <>
-                <Eyebrow className="mt-4">Dependency changes</Eyebrow>
+                <Eyebrow className="mt-4">Arrow changes</Eyebrow>
                 <div className="flex flex-col gap-2.5">
                   {active.added.edges.map((e) => (
                     <div key={e.id}>
@@ -545,7 +539,7 @@ export function DriftPanel(props: {
           <div className="relative">
             <div className="absolute top-2 bottom-2 left-[7px] w-px bg-line" />
             {reports.slice(0, 12).map((r) => (
-              <button key={r.id} onClick={() => props.onSelect(r.id)} className={cn("relative flex w-full items-start gap-3 rounded-lg py-1.5 pr-2 text-left transition-colors", r.id === active?.id ? "" : "opacity-80 hover:opacity-100")}>
+              <button key={r.id} onClick={() => props.onSelect(r.id)} className={cn("relative flex w-full items-start gap-3 rounded-[4px] py-1.5 pr-2 text-left transition-colors", r.id === active?.id ? "" : "opacity-80 hover:opacity-100")}>
                 <span className={cn("relative z-[1] mt-[5px] size-[15px] shrink-0 rounded-full border-[3px] border-surface", severityColor(r.maxSeverity as SeverityLevel), r.id === active?.id && "ring-2 ring-accent/40")} />
                 <span className="min-w-0 flex-1">
                   <span className={cn("block truncate text-[12.5px]", r.id === active?.id ? "font-semibold text-text" : "text-text")}>{r.commits[0]?.message ?? shortSha(r.toSha)}</span>
@@ -622,7 +616,7 @@ function AgentCard(props: { Icon: typeof Compass; name: string; role: string; st
     >
       <div className="flex items-center justify-between gap-3">
         <span className="flex items-center gap-2.5">
-          <span className={cn("grid size-8 place-items-center rounded-[3px]", state === "run" ? "bg-accent text-white" : state === "done" ? "bg-ok/12 text-ok" : "bg-surface-2 text-faint")}>
+          <span className={cn("grid size-8 place-items-center rounded-[4px]", state === "run" ? "bg-accent text-white" : state === "done" ? "bg-ok/12 text-ok" : "bg-surface-2 text-faint")}>
             <Icon size={16} />
           </span>
           <span>
@@ -643,19 +637,19 @@ const STAGE_COPY: Record<SurveyStage, { step: number; title: string; now: string
   scout: {
     step: 1,
     title: "Scout plans the survey",
-    now: "Reading the file tree, package manifests and config to name the components and split the code into reading groups.",
+    now: "Reading the file tree, package manifests and config to name the parts and split the code into reading groups.",
     next: "Readers start on each group at the same time.",
   },
   readers: {
     step: 2,
     title: "Readers read the code",
-    now: "Each Reader takes one group of files, finds the calls between components (HTTP, SQL, queues, SDKs) and cites the exact line for each.",
+    now: "Each Reader takes one group of files, finds the calls between parts (HTTP, SQL, queues, SDKs) and cites the exact line for each.",
     next: "The Cartographer joins their findings into one map.",
   },
   cartographer: {
     step: 3,
     title: "Cartographer draws the map",
-    now: "Merging duplicate findings, naming the components and tracing the routes a request takes through the system.",
+    now: "Merging duplicate findings, naming the parts and tracing the routes a request takes through the system.",
     next: "The Verifier checks every citation.",
   },
   verifier: {
@@ -884,7 +878,7 @@ export function Progress({ job }: { job: JobView | null }) {
       <div className="min-w-0">
       <div className="relative space-y-3">
         <AgentCard
-          Icon={Compass} name="Scout" role="Reads the tree and manifests, names the components, divides the work" state={scout}
+          Icon={Compass} name="Scout" role="Reads the tree and manifests, names the parts, divides the work" state={scout}
           detail={(scoutDone ?? last((l) => l.agent === "scout"))?.message.replace(/^Scout · /, "")}
         />
 
@@ -903,7 +897,7 @@ export function Progress({ job }: { job: JobView | null }) {
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {readers.map((r) => (
                 <motion.div key={r.name} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                  className={cn("rounded-[3px] border bg-surface px-3 py-2.5", r.state === "run" ? "border-accent/60" : r.state === "err" ? "border-danger/50" : "border-line")}>
+                  className={cn("rounded-[4px] border bg-surface px-3 py-2.5", r.state === "run" ? "border-accent/60" : r.state === "err" ? "border-danger/50" : "border-line")}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="truncate font-mono text-[11.5px] font-medium text-text">{r.name}</span>
                     {r.state === "run" ? <Spinner size={12} className="text-accent" /> : r.state === "done" ? <CircleCheck size={13} className="text-ok" /> : <span className="text-[11px] text-danger">failed</span>}
@@ -971,20 +965,18 @@ export function Home(props: {
   const [value, setValue] = useState(() => new URLSearchParams(location.search).get("map") ?? "");
   const [busy, setBusy] = useState(false);
   return (
-    <div className="mx-auto w-full max-w-[640px] px-6 py-10">
+    <div className="mx-auto w-full max-w-[640px] flex-1 px-6 py-10">
       {props.onBack && (
         <Button variant="ghost" size="sm" onClick={props.onBack} className="-mt-5 mb-5 -ml-2.5">
           <ArrowLeft size={14} /> Back to the map
         </Button>
       )}
       <motion.div {...fadeIn}>
-        <CartographLogo size={44} />
-        <h1 className="mt-4 mb-1.5 font-serif text-[44px] leading-[1.02] font-normal text-text">Map any codebase. Know <em className="text-accent">why</em> every line exists.</h1>
-        <p className="m-0 max-w-[520px] text-[14px] leading-relaxed text-muted">
-          Paste a GitHub repo. Cartograph's agents read the code and draw its architecture, and every dependency is cited from a real line of code.
-        </p>
+        <p className="m-0 font-mono text-[10.5px] tracking-[0.2em] text-accent uppercase">The desk</p>
+        <h1 className="mt-1 mb-1.5 font-serif text-[36px] leading-tight font-normal text-text">Map a repository</h1>
+        <p className="m-0 text-[13.5px] text-muted">Any public GitHub repository. Every arrow on the map cites the line of code that proves it.</p>
         <form
-          className="mt-6 flex gap-2 rounded-2xl border border-line bg-surface p-1.5 shadow-card focus-within:border-accent/50 focus-within:ring-4 focus-within:ring-accent/10"
+          className="mt-6 flex items-center gap-2 rounded-[6px] border border-text bg-surface p-2 pl-4 shadow-[6px_6px_0_0_var(--text)] transition-shadow focus-within:shadow-[6px_6px_0_0_var(--accent)]"
           onSubmit={async (e) => {
             e.preventDefault();
             if (!value.trim() || busy) return;
@@ -996,64 +988,46 @@ export function Home(props: {
             }
           }}
         >
-          <span className="grid w-9 place-items-center text-faint">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-              <path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.4-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z" />
-            </svg>
-          </span>
+          <GithubMark size={18} className="shrink-0 text-muted" />
           <input
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="github.com/owner/repo"
+            placeholder="owner/repo"
+            aria-label="GitHub repository: owner/repo or a github.com link"
             spellCheck={false}
-            className="min-w-0 flex-1 bg-transparent text-[14px] text-text outline-none placeholder:text-faint"
+            autoComplete="off"
+            className="min-w-0 flex-1 bg-transparent py-2 font-mono text-[14.5px] text-text outline-none placeholder:text-faint"
           />
           <Button type="submit" variant="primary" disabled={!value.trim() || busy}>
             {busy ? <Spinner size={13} /> : null}
-            Map repository
+            Map it
             {busy ? null : <ArrowRight size={14} />}
           </Button>
         </form>
-        {error && <div className="mt-3 rounded-lg bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{error}</div>}
-
-        <div className="mt-6 grid grid-cols-3 gap-2">
-          {[
-            [ShieldCheck, "Cited, not guessed", "Every arrow links to file:line"],
-            [Play, "Watch requests flow", "Hop by hop through real code"],
-            [GitCommitHorizontal, "Drift on every push", "Reviewed in about a minute"],
-          ].map(([Icon, t, d]) => {
-            const I = Icon as typeof ShieldCheck;
-            return (
-              <div key={t as string} className="rounded-xl border border-line bg-surface-2/50 px-3 py-2.5">
-                <I size={15} className="text-accent" />
-                <div className="mt-1.5 text-[12.5px] font-semibold text-text">{t as string}</div>
-                <div className="text-[11.5px] text-muted">{d as string}</div>
-              </div>
-            );
-          })}
-        </div>
+        <p className="mt-4 mb-0 font-mono text-[10.5px] tracking-wide text-faint uppercase">owner/repo or a github.com link · a map in a few minutes</p>
+        {error && <div className="mt-3 rounded-[4px] border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{error}</div>}
       </motion.div>
 
       {repos.length > 0 && (
         <motion.div {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.08 }} className="mt-8">
-          <Eyebrow>Mapped repositories</Eyebrow>
+          <Eyebrow>Mapped repositories · open one</Eyebrow>
           <div className="flex flex-col gap-2">
             {repos.map((r) => (
-              <button key={r.key} onClick={() => onOpen(r.key)} className="group flex items-center gap-3 rounded-xl border border-line bg-surface px-3.5 py-3 text-left shadow-card transition-all hover:-translate-y-px hover:border-accent/40 hover:shadow-pop">
+              <button key={r.key} onClick={() => onOpen(r.key)} className="group flex items-center gap-3 rounded-[6px] border border-line-strong bg-surface px-3.5 py-3 text-left shadow-card transition-all hover:-translate-y-px hover:border-text hover:shadow-pop">
                 <CartographLogo size={30} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13.5px] font-semibold text-text">{r.name}</span>
-                  <span className="block text-[11.5px] text-muted">
-                    {r.mapping && !r.sha ? "First map in progress" : `${r.components} components · ${r.dependencies} dependencies`}
+                  <span className="block truncate font-mono text-[13.5px] font-medium text-text">{r.name}</span>
+                  <span className="block font-mono text-[10.5px] tracking-wide text-muted uppercase">
+                    {r.mapping && !r.sha ? "First map in progress" : `${r.components} parts · ${r.dependencies} arrows`}
                     {r.sha ? <span className="font-mono"> · {shortSha(r.sha)}</span> : null}
                   </span>
                 </span>
                 {r.mapping ? (
-                  <span className="flex items-center gap-1.5 text-[11.5px] font-medium text-accent">
+                  <span className="flex items-center gap-1.5 font-mono text-[10.5px] tracking-wide text-accent uppercase">
                     <Spinner size={12} /> mapping
                   </span>
                 ) : r.key === current ? (
-                  <span className="rounded-full bg-accent-soft px-2 py-[2px] text-[10.5px] font-semibold text-accent">Open</span>
+                  <span className="rounded-[4px] bg-accent-soft px-2 py-[2px] font-mono text-[10.5px] tracking-wide text-accent uppercase">Open</span>
                 ) : (
                   <ArrowRight size={15} className="text-faint transition-transform group-hover:translate-x-0.5 group-hover:text-accent" />
                 )}

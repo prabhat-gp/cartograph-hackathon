@@ -28,12 +28,12 @@ export function Hero() {
           <motion.div {...rise(0.3)} className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
             <motion.a
               href={APP_URL}
-              whileHover={{ x: 1, y: 1, boxShadow: "3px 3px 0 0 var(--color-ink)" }}
-              whileTap={{ x: 4, y: 4, boxShadow: "0px 0px 0 0 var(--color-ink)" }}
-              initial={{ boxShadow: "4px 4px 0 0 var(--color-ink)" }}
-              className="group flex items-center gap-2 rounded-[4px] bg-vermilion px-7 py-4 text-lg font-medium text-paper-light"
+              whileHover={{ x: 1, y: 1, boxShadow: "2px 2px 0 0 var(--color-ink)" }}
+              whileTap={{ x: 3, y: 3, boxShadow: "0px 0px 0 0 var(--color-ink)" }}
+              initial={{ boxShadow: "3px 3px 0 0 var(--color-ink)" }}
+              className="group flex items-center gap-2 rounded-[4px] border border-ink bg-vermilion px-7 py-4 text-lg font-medium text-paper-light"
             >
-              Map a repo <ArrowRight className="size-5 transition-transform group-hover:translate-x-1" />
+              Map it <ArrowRight className="size-5 transition-transform group-hover:translate-x-1" />
             </motion.a>
             <a href="#product" className="group flex items-center gap-2 font-medium text-ink-soft transition-colors hover:text-ink">
               See it work <ArrowDown className="size-4 transition-transform group-hover:translate-y-0.5" />
