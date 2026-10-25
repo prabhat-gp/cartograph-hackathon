@@ -15,7 +15,7 @@ import { getBrain } from "./brain-select";
 import { runtimeLabel } from "../config";
 import type { ProgressEvent } from "./brain/types";
 import { diffGraphs, isEmptyDiff, maxSeverity, ruleFindings } from "./graph/analysis";
-import { FileIndex, cleanNodes, remapFlows, reverifyEdges, verifyDraft, verifyEdges } from "./graph/verify";
+import { type DroppedEdge, FileIndex, cleanNodes, remapFlows, reverifyEdges, verifyDraft, verifyEdges } from "./graph/verify";
 import { diffCommits, listCommits, resolveRepo, snapshotRepo, syncRepo } from "./repo";
 import { takeMapBudget } from "./security";
 import { appendDrift, getRepo, loadGraph, saveGraph, upsertRepo } from "./store";
@@ -167,7 +167,7 @@ export function startMapJob(input: string, opts: StartMapOptions = {}): Job {
       log({
         agent: "pipeline",
         phase: "done",
-        message: `Verifier · ${graph.edges.length} dependencies verified, ${dropped.length} dropped (evidence not found in code)`,
+        message: `Verifier · ${graph.edges.length} dependencies verified, ${dropped.length} dropped${dropReasons(dropped)}`,
         data: { verified: graph.edges.length, dropped: dropped.length },
       });
 
@@ -367,4 +367,13 @@ function summarizeDiff(d: ReturnType<typeof diffGraphs>): string {
   if (d.removedEdges.length) parts.push(`${d.removedEdges.length} removed dependenc${d.removedEdges.length === 1 ? "y" : "ies"}`);
   if (d.removedNodes.length) parts.push(`${d.removedNodes.length} removed component${d.removedNodes.length === 1 ? "" : "s"}`);
   return parts.length ? `${parts.join(", ")}.` : "No architectural change.";
+}
+
+const DROP_WORDS: Record<DroppedEdge["reason"], string> = { "no-evidence": "quote not found in the code", "unknown-node": "component merged away", "self-loop": "points to itself" };
+
+/** "(12 quote not found in the code, 3 component merged away)" */
+function dropReasons(dropped: DroppedEdge[]): string {
+  const counts = new Map<DroppedEdge["reason"], number>();
+  for (const d of dropped) counts.set(d.reason, (counts.get(d.reason) ?? 0) + 1);
+  return counts.size ? ` (${[...counts].map(([reason, n]) => `${n} ${DROP_WORDS[reason]}`).join(", ")})` : "";
 }

@@ -1,0 +1,153 @@
+{
+  "run_id": "9cf9ad3d",
+  "agents": [
+    {
+      "name": "Planner",
+      "role": "Turns the question into a target (file, lines or topic) and search terms"
+    },
+    {
+      "name": "Investigator",
+      "role": "Queries the provenance USL in Zetaris and gathers evidence"
+    },
+    {
+      "name": "Writer",
+      "role": "Drafts the answer and the evidence chain, citing every claim"
+    },
+    {
+      "name": "Critic",
+      "role": "Checks each claim against the evidence and sends the work back when it falls short"
+    },
+    {
+      "name": "Memory",
+      "role": "Meterless H-MEM: recalls verified findings, sets aside stale ones, remembers approved claims with provenance"
+    }
+  ],
+  "trace_id": "trace-9cf9ad3d",
+  "log_file": "logs/trace-9cf9ad3d.jsonl",
+  "execution_time_seconds": 37.6,
+  "status": "success",
+  "output": {
+    "answer": "The Topic service's AiClient was designed to orchestrate AI interactions for topic learning and testing, calling /ai/learn/stream, /ai/test/generate, and /ai/test/evaluate to support the create-and-learn feature and mock interview flow. The dependency was introduced when the AiClient class was implemented to route requests to these three endpoints, as shown in its method signatures and the commit that added the learn topic functionality. The AiClient was created to centralize AI calls for topic-related features, enabling streamed learning and test generation/evaluation within the backend.",
+    "claims": [
+      {
+        "text": "AiClient.java lines 58-78 define three AI endpoints: /ai/learn/stream, /ai/test/generate, and /ai/test/evaluate, showing the service depends on all three endpoints.",
+        "evidence": [
+          "E3"
+        ]
+      },
+      {
+        "text": "Commit fb749709b6 'create and learn topic' introduced the AiClient and the /ai/learn/stream endpoint call.",
+        "evidence": [
+          "E2"
+        ]
+      },
+      {
+        "text": "The AiClient was created to centralize AI calls for topic-related features, enabling streamed learning and test generation/evaluation within the backend.",
+        "evidence": [
+          "E3",
+          "E2"
+        ]
+      }
+    ],
+    "chain": [
+      {
+        "id": "E3",
+        "kind": "code",
+        "ref": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/AiClient.java:58-78",
+        "title": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/AiClient.java lines 58-78",
+        "text": "58|      * {@code experienceLevel} is the user's onboarding answer, or null if they have none. */\n59|     public Flux<String> streamLearn(String topicName, String mode, List<ChatMessagePayload> messages,\n60|                                     String experienceLevel) {\n61|         Map<String, Object> body = new HashMap<>();\n62|         body.put(\"topicName\", topicName);\n63|         body.put(\"mode\", mode);\n64|         body.put(\"messages\", messages);\n65|         body.put(\"experienceLevel\", experienceLevel);\n66| \n67|         return aiWebClient.post()\n68|                 .uri(\"/ai/learn/stream\")\n69|                 .contentType(MediaType.APPLICATION_JSON)\n70|                 .accept(MediaType.TEXT_EVENT_STREAM)\n71|                 .bodyValue(body)\n72|                 .retrieve()\n73|                 .onStatus(status -> !status.is2xxSuccessful(),\n74|                         response -> response.bodyToMono(String.class)\n75|                                 .defaultIfEmpty(\"\")\n76|                                 .map(errorBody -> {\n77|                                     String message = \"AI Service returned \" + response.statusCode();\n78|                                     if (!errorBody.isEmpty()) {",
+        "url": null
+      },
+      {
+        "id": "E2",
+        "kind": "commit",
+        "ref": "fb749709b6",
+        "title": "create and learn topic",
+        "text": "siddarth-ba-72, 2026-07-23\ncreate and learn topic",
+        "url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/commit/fb749709b696de2d61e9bc0275ba2b3a637b25a9"
+      }
+    ],
+    "confidence": "low",
+    "unknowns": [
+      "The specific reason why all three endpoints were needed together; no issue or PR description explains the design rationale for including /ai/test/generate and /ai/test/evaluate alongside /ai/learn/stream.",
+      "The Critic did not approve every claim within the revision limit."
+    ],
+    "evidence": [
+      {
+        "id": "E1",
+        "kind": "code",
+        "ref": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/AiClient.java:68-68",
+        "title": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/AiClient.java lines 68-68",
+        "text": "68|                 .uri(\"/ai/learn/stream\")",
+        "url": null
+      },
+      {
+        "id": "E2",
+        "kind": "commit",
+        "ref": "fb749709b6",
+        "title": "create and learn topic",
+        "text": "siddarth-ba-72, 2026-07-23\ncreate and learn topic",
+        "url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/commit/fb749709b696de2d61e9bc0275ba2b3a637b25a9"
+      },
+      {
+        "id": "E3",
+        "kind": "code",
+        "ref": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/AiClient.java:58-78",
+        "title": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/AiClient.java lines 58-78",
+        "text": "58|      * {@code experienceLevel} is the user's onboarding answer, or null if they have none. */\n59|     public Flux<String> streamLearn(String topicName, String mode, List<ChatMessagePayload> messages,\n60|                                     String experienceLevel) {\n61|         Map<String, Object> body = new HashMap<>();\n62|         body.put(\"topicName\", topicName);\n63|         body.put(\"mode\", mode);\n64|         body.put(\"messages\", messages);\n65|         body.put(\"experienceLevel\", experienceLevel);\n66| \n67|         return aiWebClient.post()\n68|                 .uri(\"/ai/learn/stream\")\n69|                 .contentType(MediaType.APPLICATION_JSON)\n70|                 .accept(MediaType.TEXT_EVENT_STREAM)\n71|                 .bodyValue(body)\n72|                 .retrieve()\n73|                 .onStatus(status -> !status.is2xxSuccessful(),\n74|                         response -> response.bodyToMono(String.class)\n75|                                 .defaultIfEmpty(\"\")\n76|                                 .map(errorBody -> {\n77|                                     String message = \"AI Service returned \" + response.statusCode();\n78|                                     if (!errorBody.isEmpty()) {",
+        "url": null
+      },
+      {
+        "id": "E4",
+        "kind": "commit",
+        "ref": "267d19f8d0",
+        "title": "feat: implement onboarding questionnaire and user profile updates",
+        "text": "siddarth-ba-72, 2026-10-06\nfeat: implement onboarding questionnaire and user profile updates\n- Added OnboardingPage for new users to provide their preferred domain and experience level.\n- Integrated profile update functionality to save onboarding answers and reissue access tokens.\n- Updated user model to include preferred domain and experience level.\n- Enhanced JWT generation to include experience level as a claim.\n- Modified backend services to handle experience level in various contexts (tests, interviews, chat sessions).\n- Added ExperienceLevel enum to standardize experience level values.\n- Updated frontend API to manage user profiles and onboarding data.",
+        "url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/commit/267d19f8d09af6e21113f039277e5263d1cea987"
+      },
+      {
+        "id": "E5",
+        "kind": "commit",
+        "ref": "1ce4b4e875",
+        "title": "Better error handlig",
+        "text": "siddarth-ba-72, 2026-09-20\nBetter error handlig",
+        "url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/commit/1ce4b4e8751c650d49d35e96264aa3322b38c5c0"
+      },
+      {
+        "id": "E6",
+        "kind": "commit",
+        "ref": "f300a47e11",
+        "title": "Topic service unit tests",
+        "text": "siddarth-ba-72, 2026-09-20\nTopic service unit tests",
+        "url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/commit/f300a47e111d12a68c2f31e7898882a5fe356144"
+      },
+      {
+        "id": "E7",
+        "kind": "commit",
+        "ref": "f7b9e91478",
+        "title": "Mock interview",
+        "text": "siddarth-ba-72, 2026-09-19\nMock interview",
+        "url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/commit/f7b9e914789e3aab5fe518411f565f8e662d05e7"
+      },
+      {
+        "id": "E8",
+        "kind": "commit",
+        "ref": "8d7ab9b528",
+        "title": "Backend structure refactpr",
+        "text": "siddarth-ba-72, 2026-08-01\nBackend structure refactpr",
+        "url": "https://github.com/siddarth-ba-72/Interview-Prep-Pilot-AI/commit/8d7ab9b5280cc4e5e821486ce5f1c601cc897dac"
+      }
+    ],
+    "rounds": 1,
+    "approved": false,
+    "plan": {
+      "intent": "line",
+      "path": "preppilot-backend/topic-service/src/main/java/com/preppilot/topicservice/service/AiClient.java",
+      "line_start": 68,
+      "line_end": 68,
+      "keywords": [],
+      "sub_questions": []
+    },
+    "memory_ids": []
+  }
+}

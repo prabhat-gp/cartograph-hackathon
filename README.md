@@ -17,6 +17,26 @@ Built for the Open Agent Hackathon 2026, Track 02 "The Agent That Can Explain Wh
 | **Why-coverage** | Which arrows have a stated reason, and which were never reviewed? |
 | **Tour** | A one-minute walk through the desk, built from whichever map is open |
 
+## Try it in one minute, no keys
+
+```sh
+docker build -t cartograph .
+docker run -p 8787:8787 -e SAMPLE_MODE=true cartograph
+curl -s localhost:8787/run                                    # the three examples
+curl -s -X POST localhost:8787/run -H 'content-type: application/json' -d '{"example": "02-google-oauth"}'
+```
+
+Without Docker: `npm install && npm run sample` replays all three and checks each answer against the live one.
+
+`SAMPLE_MODE=true` runs the real explain agents (Planner → Investigator → Writer ↔ Critic, plus H-MEM) on recorded data: what Zetaris returned for each query and what each model answered when the example ran live (`samples/`). The agent logic, citation checks and the Critic's revision loop all run again; only the network calls are replayed.
+
+| | |
+|---|---|
+| `input_examples/` | three real questions, each about an arrow on the PrepPilot map |
+| `output_examples/` | the live answers: one approved with high confidence, two the Critic sent back and still didn't approve |
+| `logs/trace-*.jsonl` | the live runs' traces: every agent, handoff, critique and retry |
+| `POST /run` | `{"repo", "question", "path"?, "line"?}` runs live; `{"example": "<id>"}` replays in sample mode |
+
 ## Run it
 
 ```sh
@@ -44,7 +64,7 @@ npm run sponsors          # live status of Meterless, NVIDIA and Zetaris
 ## Sponsor technology
 
 ### NVIDIA Nemotron: every agent
-Two tiers: `nemotron-3-ultra-550b-a55b` for planning, merging, reviewing and critique; `nemotron-3.5-lightning-30b-a3b` for reading files, tracing and writing answers. NVIDIA's strict JSON-schema mode runs away into whitespace, so the client (`src/llm/client.ts`) asks for a JSON object, validates it with zod, salvages partial output, and gives the model one repair turn with the exact error. Calls that hang in the provider's queue are cut short and retried.
+Three tiers: `nemotron-3.5-lightning-30b-a3b` reads files, traces and writes answers; the Scout, Cartographer and Reviewer ask `nemotron-3.5-super-vl-120b-a12b` and `nemotron-3-ultra-550b-a55b` at once and keep the first valid answer; Ultra judges answers as the Critic. NVIDIA's strict JSON-schema mode runs away into whitespace, so the client (`src/llm/client.ts`) asks for a JSON object, validates it with zod, salvages partial output, and gives the model one repair turn with the exact error. Calls that hang in the provider's queue are cut short and retried.
 
 ### Meterless
 - **Build: the H-MEM engine** (`src/memory/hmem.ts`) in a working feature. Every answer the Critic approves is remembered with its sources (`src/memory/findings.ts`). The next question about the same code starts from those findings, findings about lines that have since changed are set aside as stale, and the Helpful / Not helpful / Wrong buttons under each answer feed H-MEM's trust ledger. `npm run hmem:conformance` passes the Meterless conformance suite (`third_party/meterless-hmem-conformance`).
@@ -75,7 +95,7 @@ In public mode (`CARTOGRAPH_PUBLIC=1`) visitors may only map public GitHub repos
 
 ## Limitations
 
-- A map takes about 2–6 minutes on NVIDIA's free tier, and a first "why" on a repo adds 20–60 s while its history is loaded.
+- A map usually takes 3–5 minutes on NVIDIA's free tier, longer for big repositories; the survey screen shows a live estimate once the Scout has sized the work. A first "why" on a repo adds 20–60 s while its history is loaded.
 - "Why" answers are only as good as the history: a line committed without a pull request can be traced to its commit but rarely to a reason, and the answer says so.
 - Very large repositories are mapped from the files the Scout picks, not every file.
 

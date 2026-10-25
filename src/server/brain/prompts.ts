@@ -14,9 +14,11 @@ ids. Group handlers by resource (orders-api), not individual endpoints or files.
 Include all evidenced databases, caches, queues, storage and third-party services;
 include a browser client when a frontend exists. Component paths are implementation
 files/directories; use [] for infrastructure or external systems without local code.
-Plan 2–6 reader groups with a clear focus, exact available file paths, and at most
-60,000 estimated tokens each. Use the supplied file token inventory to cover every
-architecturally relevant file. Avoid duplicated assignments. Provide 3–6 important
+Plan 4–12 reader groups with a clear focus and at most 20,000 estimated tokens each.
+In files, name a folder (ending in /) when the whole folder belongs to the group, and
+list exact available file paths only for files outside such folders. Use the supplied
+file token inventory to cover every architecturally relevant file. Avoid duplicated
+assignments. Provide 3–6 important
 user journeys as flowHints. Do not fabricate components to meet a target count.`;
 
 export const READER_PROMPT = `${grounding}
@@ -31,7 +33,10 @@ the number and '| ' prefix. Never combine lines, paraphrase or cite unseen files
 Use short specific labels such as POST /api/orders, INSERT INTO orders,
 enqueue order.created, or razorpay.orders.create. from/to must be catalog or
 newComponents ids. Record endpoints, tables, queue names and other useful concrete
-facts in componentNotes. Return empty arrays when there is no evidence.`;
+facts in componentNotes. Return empty arrays when there is no evidence.
+Keep the answer short: report each distinct dependency once (at most 30 edges),
+cite at most 2 lines per edge, keep labels under 8 words and at most 4 notes per
+component.`;
 
 export const CARTOGRAPHER_PROMPT = `${grounding}
 Synthesize the catalog, the dependencies (already merged, ids e1, e2, …) and notes.

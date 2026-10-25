@@ -18,6 +18,8 @@
     "usage": "tsx scripts/usage.ts",
     "sponsors": "tsx --env-file-if-exists=.env scripts/sponsors.ts",
     "ingest": "tsx --env-file-if-exists=.env scripts/ingest.ts",
+    "examples:record": "tsx --env-file-if-exists=.env scripts/record-examples.ts",
+    "sample": "SAMPLE_MODE=true tsx scripts/sample.ts",
     "zetaris:setup": "tsx --env-file-if-exists=.env scripts/zetaris-setup.ts",
     "why": "tsx --env-file-if-exists=.env scripts/why.ts",
     "hmem:conformance": "HMEM_IMPL=$PWD/src/memory/hmem.ts tsx third_party/meterless-hmem-conformance/runner.ts",

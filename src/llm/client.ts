@@ -3,6 +3,7 @@
 // tends to run away (pages of whitespace until max_tokens), so we ask for a
 // JSON object, put the schema in the prompt, validate with zod, and give the
 // model one repair turn with the exact validation error.
+import { AsyncLocalStorage } from "node:async_hooks";
 import { z } from "zod";
 import { fallbackProvider, modelFor, providerConfig, type ProviderConfig, type Tier } from "../config";
 import { METERLESS_APP, METERLESS_TIMEOUT_MS } from "../meterless/runtime";
@@ -47,8 +48,24 @@ interface ChatResponse {
   usage?: { prompt_tokens?: number; completion_tokens?: number };
 }
 
+/**
+ * Sample mode: record what the models answered during a live run, or replay
+ * those answers with no provider at all. A replayed answer is validated
+ * against the agent's schema exactly like a live one.
+ */
+export interface ModelTap {
+  replay?: (agent: string) => unknown;
+  record?: (agent: string, output: unknown) => void;
+}
+export const modelTap = new AsyncLocalStorage<ModelTap>();
+
 export class ModelOutputError extends Error {
   override name = "ModelOutputError";
+}
+
+/** The answer hit max_tokens: asking again with the same input only truncates again. */
+export class OutputTooLongError extends ModelOutputError {
+  override name = "OutputTooLongError";
 }
 
 /** A 4xx other than 429 (bad model id, bad key) won't succeed on retry. */
@@ -147,6 +164,12 @@ export function extractJson(text: string): unknown {
 const RATE_LIMIT_WAITS = [2_000, 4_000, 8_000];
 
 export async function callJson<S extends z.ZodType>(call: JsonCall<S>, deps: ClientDeps = {}): Promise<z.infer<S>> {
+  const tap = modelTap.getStore();
+  if (tap?.replay) {
+    const parsed = salvage(call.schema, tap.replay(call.agent));
+    if (!parsed.success) throw new ModelOutputError(`recorded ${call.agent} answer no longer matches the schema: ${z.prettifyError(parsed.error)}`);
+    return parsed.data;
+  }
   const primary = deps.provider ?? providerConfig();
   const fallback = deps.fallback === undefined ? fallbackProvider(primary) : deps.fallback ?? undefined;
   const budget = deps.budget ?? budgetFromEnv();
@@ -213,16 +236,18 @@ export async function callJson<S extends z.ZodType>(call: JsonCall<S>, deps: Cli
       outputTokens = data.usage?.completion_tokens ?? 0;
       const choice = data.choices?.[0];
       text = choice?.message?.content ?? "";
-      if (choice?.finish_reason === "length") throw new ModelOutputError("output hit max_tokens before the JSON finished");
+      if (choice?.finish_reason === "length") throw new OutputTooLongError("output hit max_tokens before the JSON finished");
       const parsed = salvage(call.schema, extractJson(text));
       if (!parsed.success) throw new ModelOutputError(`JSON did not match the schema: ${z.prettifyError(parsed.error)}`);
       log(true);
+      tap?.record?.(call.agent, parsed.data);
       return parsed.data;
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") throw error;
       lastError = error instanceof Error ? error.message : String(error);
       log(false, lastError);
       if (error instanceof ProviderRejectedError) break;
+      if (error instanceof OutputTooLongError) throw error;
       // Only a runtime we can't reach falls back; a runtime that answered keeps its answer.
       if (error instanceof TransportError && fallback && provider !== fallback) {
         provider = fallback;

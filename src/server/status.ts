@@ -43,7 +43,7 @@ export function checkSponsors(env: NodeJS.ProcessEnv = process.env): Promise<Spo
       const base = env.NVIDIA_BASE_URL ?? "https://integrate.api.nvidia.com/v1";
       const res = await fetch(`${base}/models`, { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(10_000) });
       if (!res.ok) return { status: "fail", detail: `GET /models answered ${res.status}` };
-      const models = `${modelFor("nvidia", "deep", env)} (deep) and ${modelFor("nvidia", "fast", env)} (fast)`;
+      const models = `${modelFor("nvidia", "mid", env)} (plans and draws), ${modelFor("nvidia", "fast", env)} (reads) and ${modelFor("nvidia", "deep", env)} (judges)`;
       return providerConfig(env).name === "meterless"
         ? { status: "ok", detail: `Nightshift serves Nemotron; ${models} directly whenever Nightshift can't be reached` }
         : { status: "ok", detail: models };

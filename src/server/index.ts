@@ -7,6 +7,7 @@ import { onDrift, startReviewJob } from "./jobs";
 import { listRepos } from "./store";
 import { ACCESS_TOKEN, PUBLIC_MODE } from "./security";
 import { loadMeterlessSettings } from "../meterless/settings";
+import { SAMPLE_MODE } from "../agent/sample";
 
 const PORT = Number(process.env.PORT ?? 8787);
 const publicUrl = () => process.env.PUBLIC_URL?.replace(/\/+$/, "");
@@ -31,8 +32,7 @@ createApp({ port: PORT }).listen(PORT, () => {
     }
   }
   console.log(`Cartograph on http://localhost:${PORT}  (MCP: /mcp, UI: /app)`);
-  if (!ACCESS_TOKEN && !PUBLIC_MODE) console.warn("⚠ CARTOGRAPH_ACCESS_TOKEN is not set: remote access is disabled (the tunnel will 404 everything)");
-  if (process.env.CARTOGRAPH_BRAIN !== "fixture") {
-    console.log(`Agents run on ${runtimeLabel()}`);
-  }
+  if (!ACCESS_TOKEN && !PUBLIC_MODE && !SAMPLE_MODE) console.warn("⚠ CARTOGRAPH_ACCESS_TOKEN is not set: remote access is disabled (the tunnel will 404 everything)");
+  if (SAMPLE_MODE) console.log("SAMPLE_MODE: POST /run replays the recorded examples with no keys (GET /run lists them)");
+  else if (process.env.CARTOGRAPH_BRAIN !== "fixture") console.log(`Agents run on ${runtimeLabel()}`);
 });

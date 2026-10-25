@@ -1,0 +1,7 @@
+{
+  "id": "02-google-oauth",
+  "repo": "siddarth-ba-72/Interview-Prep-Pilot-AI",
+  "question": "Why does User and identity API depend on Google identity provider (Google OAuth2 login)?",
+  "path": "preppilot-backend/user-service/src/main/java/com/preppilot/userservice/config/SecurityConfig.java",
+  "line": 31
+}

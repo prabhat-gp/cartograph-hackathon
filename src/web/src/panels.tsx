@@ -797,8 +797,34 @@ function SurveyAnimation({ stage, lanes, finished }: { stage: SurveyStage; lanes
   );
 }
 
-/** Typical full map on Nemotron (measured 22 Oct): the target the clock is shown against. */
-const TARGET_SECONDS = 180;
+// Rough stage times on NVIDIA's free tier (Oct 2026). Repos differ a lot, so the
+// survey never promises a fixed time: it estimates once the Scout has sized the
+// work, and re-estimates as each stage finishes.
+const READER_SECONDS = 90;
+const CARTOGRAPHER_SECONDS = 120;
+const VERIFIER_SECONDS = 10;
+
+/** Seconds still to go, or undefined while the Scout is still sizing the job. */
+function secondsLeft(stage: SurveyStage, readers: ReaderCard[], cartStartedAt: number | undefined, now: number): number | undefined {
+  if (stage === "scout") return undefined;
+  if (stage === "done") return 0;
+  if (stage === "verifier") return VERIFIER_SECONDS;
+  if (stage === "cartographer") {
+    const t = cartStartedAt ? (now - cartStartedAt) / 1000 : 0;
+    return Math.max(0, CARTOGRAPHER_SECONDS - t) + VERIFIER_SECONDS;
+  }
+  const running = readers.filter((r) => r.state === "run");
+  const slowest = Math.max(0, ...running.map((r) => READER_SECONDS - (r.seconds ?? 0)));
+  const queued = (readers[0]?.total ?? 0) > readers.length ? READER_SECONDS : 0;
+  return slowest + queued + CARTOGRAPHER_SECONDS + VERIFIER_SECONDS;
+}
+
+function leftLabel(left: number | undefined): string {
+  if (left === undefined) return "estimating · usually 3–5 min";
+  if (left <= 0) return "finishing up · taking a little longer";
+  if (left <= 60) return "under a minute left";
+  return `about ${Math.ceil(left / 60)} min left`;
+}
 
 export function Progress({ job }: { job: JobView | null }) {
   const [now, setNow] = useState(Date.now());
@@ -832,6 +858,10 @@ export function Progress({ job }: { job: JobView | null }) {
         : cartographer !== "todo" ? "cartographer"
           : readers.length ? "readers"
             : "scout";
+  const cartStart = last((l) => l.agent === "cartographer" && l.phase === "start");
+  const left = job?.status === "done" ? 0 : secondsLeft(stage, readers, cartStart ? Date.parse(cartStart.at) : undefined, now);
+  // While the Scout sizes the job the bar creeps; after that it tracks the estimate.
+  const progress = left === undefined ? Math.min(15, elapsed / 4) : Math.min(100, (elapsed / (elapsed + left)) * 100);
 
   return (
     <div className="mx-auto min-h-0 w-full max-w-[1180px] overflow-y-auto px-6 py-8">
@@ -843,9 +873,9 @@ export function Progress({ job }: { job: JobView | null }) {
         </div>
         <div className="text-right">
           <div className="font-serif text-[40px] leading-none text-text tabular-nums">{clock(elapsed)}</div>
-          <div className="mt-1 font-mono text-[10.5px] tracking-wide text-muted uppercase">usually about {clock(TARGET_SECONDS)}</div>
+          <div className="mt-1 font-mono text-[10.5px] tracking-wide text-muted uppercase">{failed ? "stopped" : leftLabel(left)}</div>
           <div className="mt-2 h-1.5 w-40 border border-text">
-            <span className={cn("block h-full transition-all", elapsed > TARGET_SECONDS ? "bg-warn" : "bg-accent")} style={{ width: `${Math.min(100, (elapsed / TARGET_SECONDS) * 100)}%` }} />
+            <span className="block h-full bg-accent transition-all" style={{ width: `${progress}%` }} />
           </div>
         </div>
       </motion.div>
