@@ -57,12 +57,25 @@ describe("reader planning", () => {
       expect(group.files.reduce((sum, path) => sum + files.find((file) => file.path === path)!.tokens, 0)).toBeLessThanOrEqual(60);
     }
   });
-  it("splits oversized groups, never schedules over six groups, and reports omissions", () => {
-    const files = Array.from({ length: 10 }, (_, i) => file(`src/service${i}.ts`, 60_000));
+  it("splits oversized groups, never schedules over fourteen readers, and reports omissions", () => {
+    const files = Array.from({ length: 20 }, (_, i) => file(`src/service${i}.ts`, 20_000));
     const result = budgetGroups([{ name: "src", focus: "Services", files: files.map((file) => file.path) }], files);
-    expect(result.groups.length).toBeLessThanOrEqual(6);
-    expect(result.groups.flatMap((group) => group.files)).toHaveLength(5);
-    expect(result.skipped).toBe(5);
+    expect(result.groups.length).toBe(14);
+    expect(result.groups.flatMap((group) => group.files)).toHaveLength(14);
+    expect(result.skipped).toBe(6);
+  });
+  it("assigns every file under a folder the Scout names, deepest folder first", () => {
+    const files = [file("src/api/orders.ts"), file("src/api/admin/users.ts"), file("src/db.ts"), file("web/app.tsx")];
+    const result = budgetGroups([
+      { name: "api", focus: "API", files: ["src/api/"] },
+      { name: "admin", focus: "Admin", files: ["src/api/admin"] },
+      { name: "data", focus: "Data", files: ["src/db.ts"] },
+    ], files);
+    const groupOf = (path: string) => result.groups.find((g) => g.files.includes(path))?.name;
+    expect(groupOf("src/api/orders.ts")).toBe("api");
+    expect(groupOf("src/api/admin/users.ts")).toBe("admin");
+    expect(groupOf("src/db.ts")).toBe("data");
+    expect(groupOf("web/app.tsx")).toBeDefined();
   });
   it("renders original line numbers and whitespace", () => {
     expect(renderFiles([file("a.ts")])).toBe("=== a.ts ===\n1| first\n2|   second");

@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { callJson, extractJson, ModelOutputError, salvage } from "../src/llm/client";
+import { callJson, extractJson, ModelOutputError, OutputTooLongError, salvage } from "../src/llm/client";
 import { readUsage } from "../src/llm/usage";
 
 const schema = z.object({ module: z.string(), confidence: z.enum(["low", "medium", "high"]) });
@@ -64,9 +64,10 @@ describe("callJson", () => {
     expect(readUsage(d.usagePath).map((r) => r.ok)).toEqual([false, true]);
   });
 
-  it("treats a max_tokens cut-off as a failed answer", async () => {
+  it("fails fast on a max_tokens cut-off, so the caller can split the work", async () => {
     const f = fakeFetch([{ content: '{"module": "x"\n \n \n', finish: "length" }, { content: '{"module":"x","confidence":"medium"}' }]);
-    await expect(callJson(call, deps(f.fn).deps)).resolves.toMatchObject({ confidence: "medium" });
+    await expect(callJson(call, deps(f.fn).deps)).rejects.toThrow(OutputTooLongError);
+    expect(f.bodies).toHaveLength(1);
   });
 
   it("gives up after two bad answers", async () => {

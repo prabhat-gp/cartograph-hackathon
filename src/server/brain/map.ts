@@ -2,7 +2,8 @@ import type { AgentRunStat } from "../../shared/graph";
 import type { RepoSnapshot } from "../repo";
 import { CARTOGRAPHER_PROMPT, READER_PROMPT, SCOUT_PROMPT } from "./prompts";
 import { runAgent } from "./run";
-import { CartographerSchema, ReaderSchema, ScoutSchema, type ReaderOutput } from "./schemas";
+import { OutputTooLongError } from "../../llm/client";
+import { CartographerSchema, ReaderSchema, ScoutSchema, type ReaderGroup, type ReaderOutput } from "./schemas";
 import type { BrainOptions, DraftGraph } from "./types";
 import {
   budgetGroups, cleanFlows, concurrentMap, fallbackGroups, mergeComponents,
@@ -30,14 +31,32 @@ export async function mapRepository(snapshot: RepoSnapshot, opts: BrainOptions =
     message: `Readers · ${groups.length} groups, ${snapshot.files.length - skipped} files${skipped ? `, ${skipped} skipped for budget` : ""}`,
     data: { groups: groups.length, skipped } });
   const files = new Map(snapshot.files.map((file) => [file.path, file]));
-  const outputs = await concurrentMap(groups, 4, async (group, index): Promise<ReaderOutput> => {
-    opts.signal?.throwIfAborted();
-    const label = `Reader ${index + 1}/${groups.length} · ${group.name}`;
-    progress?.({ agent: "reader", phase: "start", message: `${label} · ${group.files.length} files` });
+  const read = async (group: ReaderGroup, label: string, split: boolean): Promise<ReaderOutput> => {
     // Each reader sees the same original catalog; discoveries are merged after all finish.
     const input = `${JSON.stringify({ repo: snapshot.repo.name, catalog: scout.components, focus: group.focus })}\n\n${renderFiles(group.files.map((path) => files.get(path)!))}`;
     try {
-      const output = await runAgent("reader", READER_PROMPT, ReaderSchema, input, opts, agentStats, `reader:${group.name}`);
+      return await runAgent("reader", READER_PROMPT, ReaderSchema, input, opts, agentStats, `reader:${group.name}`);
+    } catch (error) {
+      // Too much to report in one answer: read each half at once instead of retrying the whole.
+      if (split && error instanceof OutputTooLongError && group.files.length > 1) {
+        progress?.({ agent: "reader", phase: "progress", message: `${label} · too much for one answer; splitting in two` });
+        const half = Math.ceil(group.files.length / 2);
+        const parts = await Promise.all([
+          read({ ...group, name: `${group.name} (a)`, files: group.files.slice(0, half) }, label, false),
+          read({ ...group, name: `${group.name} (b)`, files: group.files.slice(half) }, label, false),
+        ]);
+        return { edges: parts.flatMap((p) => p.edges), newComponents: parts.flatMap((p) => p.newComponents), componentNotes: parts.flatMap((p) => p.componentNotes) };
+      }
+      throw error;
+    }
+  };
+  // Every reader at once: the slowest group sets the pace, not the sum of two waves.
+  const outputs = await concurrentMap(groups, groups.length, async (group, index): Promise<ReaderOutput> => {
+    opts.signal?.throwIfAborted();
+    const label = `Reader ${index + 1}/${groups.length} · ${group.name}`;
+    progress?.({ agent: "reader", phase: "start", message: `${label} · ${group.files.length} files` });
+    try {
+      const output = await read(group, label, true);
       progress?.({ agent: "reader", phase: "done", message: `${label} · ${output.edges.length} dependencies`,
         data: { edges: output.edges.length, components: output.newComponents.length } });
       return output;

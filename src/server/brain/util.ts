@@ -2,8 +2,10 @@ import type { CartographEdge, CartographFlow, CartographGraph, CartographNode, E
 import { numberLines, type ChangedFile, type RepoFile, type RepoSnapshot } from "../repo";
 import type { Component, ReaderGroup, ReaderOutput, StructuredNode } from "./schemas";
 
-export const READER_GROUP_TOKENS = 60_000;
-export const READER_TOTAL_TOKENS = 350_000;
+export const READER_GROUP_TOKENS = 20_000;
+export const READER_TOTAL_TOKENS = 300_000;
+/** Every reader runs at once, so the slowest group sets the pace: many small groups beat a few big ones. */
+export const MAX_READERS = 14;
 
 /** Deterministic fallback: group by top-level directory, merging small roots. */
 export function fallbackGroups(files: RepoFile[]): ReaderGroup[] {
@@ -39,10 +41,15 @@ export function budgetGroups(
 ): { groups: ReaderGroup[]; skipped: number } {
   const available = new Map(files.map((file) => [file.path, file]));
   const assignments = new Map<string, ReaderGroup>();
-  for (const group of proposed) {
-    for (const path of group.files) {
-      if (available.has(path) && !assignments.has(path)) assignments.set(path, group);
-    }
+  // Exact files first, then folders (the Scout may name "src/api/"), deepest folder first.
+  const entries = proposed.flatMap((group) => group.files.map((entry) => ({ entry: entry.replace(/^\.?\/+/, ""), group })));
+  for (const { entry, group } of entries) {
+    if (available.has(entry) && !assignments.has(entry)) assignments.set(entry, group);
+  }
+  const folders = entries.filter(({ entry }) => !available.has(entry)).sort((a, b) => b.entry.length - a.entry.length);
+  for (const { entry, group } of folders) {
+    const prefix = entry.endsWith("/") ? entry : `${entry}/`;
+    for (const path of available.keys()) if (path.startsWith(prefix) && !assignments.has(path)) assignments.set(path, group);
   }
   for (const group of fallbackGroups(files)) {
     for (const path of group.files) if (!assignments.has(path)) assignments.set(path, group);
@@ -57,7 +64,7 @@ export function budgetGroups(
     if (tokens > groupLimit || total + tokens > totalLimit) { skipped++; continue; }
     const source = assignments.get(file.path)!;
     let bin = bins.find((entry) => entry.source === source && entry.tokens + tokens <= groupLimit);
-    if (!bin && bins.length < 6) {
+    if (!bin && bins.length < MAX_READERS) {
       const part = bins.filter((entry) => entry.source === source).length + 1;
       bin = { source, tokens: 0, group: {
         name: part === 1 ? source.name : `${source.name}-${part}`,
@@ -65,7 +72,7 @@ export function budgetGroups(
       } };
       bins.push(bin);
     }
-    // At six groups, use spare capacity rather than dropping relevant files.
+    // At the reader limit, use spare capacity rather than dropping relevant files.
     bin ??= bins.find((entry) => entry.tokens + tokens <= groupLimit);
     if (!bin) { skipped++; continue; }
     bin.group.files.push(file.path);

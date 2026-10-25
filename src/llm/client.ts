@@ -63,6 +63,11 @@ export class ModelOutputError extends Error {
   override name = "ModelOutputError";
 }
 
+/** The answer hit max_tokens: asking again with the same input only truncates again. */
+export class OutputTooLongError extends ModelOutputError {
+  override name = "OutputTooLongError";
+}
+
 /** A 4xx other than 429 (bad model id, bad key) won't succeed on retry. */
 class ProviderRejectedError extends Error {
   override name = "ProviderRejectedError";
@@ -231,7 +236,7 @@ export async function callJson<S extends z.ZodType>(call: JsonCall<S>, deps: Cli
       outputTokens = data.usage?.completion_tokens ?? 0;
       const choice = data.choices?.[0];
       text = choice?.message?.content ?? "";
-      if (choice?.finish_reason === "length") throw new ModelOutputError("output hit max_tokens before the JSON finished");
+      if (choice?.finish_reason === "length") throw new OutputTooLongError("output hit max_tokens before the JSON finished");
       const parsed = salvage(call.schema, extractJson(text));
       if (!parsed.success) throw new ModelOutputError(`JSON did not match the schema: ${z.prettifyError(parsed.error)}`);
       log(true);
@@ -242,6 +247,7 @@ export async function callJson<S extends z.ZodType>(call: JsonCall<S>, deps: Cli
       lastError = error instanceof Error ? error.message : String(error);
       log(false, lastError);
       if (error instanceof ProviderRejectedError) break;
+      if (error instanceof OutputTooLongError) throw error;
       // Only a runtime we can't reach falls back; a runtime that answered keeps its answer.
       if (error instanceof TransportError && fallback && provider !== fallback) {
         provider = fallback;

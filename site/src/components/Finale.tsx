@@ -62,7 +62,7 @@ export function Finale() {
             Map it <ArrowRight className="size-4" />
           </motion.button>
         </motion.form>
-        <p className="mt-5 font-mono text-[11.5px] text-ink-soft">Any public GitHub repository · a map in about three minutes</p>
+        <p className="mt-5 font-mono text-[11.5px] text-ink-soft">Any public GitHub repository · a map in a few minutes</p>
       </div>
 
       <footer className="relative border-t border-ink">

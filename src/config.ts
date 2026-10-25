@@ -5,7 +5,8 @@ import { DEFAULT_BASE_URL, normalizeBaseUrl } from "./meterless/runtime";
 
 export type ProviderName = "meterless" | "nvidia";
 /** Agents ask for a tier; each provider maps it to a model. */
-export type Tier = "fast" | "deep";
+/** fast: bulk reading · mid: planning and drawing the map · deep: judging answers. */
+export type Tier = "fast" | "mid" | "deep";
 
 export interface ProviderConfig {
   name: ProviderName;
@@ -14,8 +15,8 @@ export interface ProviderConfig {
 }
 
 const MODELS: Record<ProviderName, Record<Tier, string>> = {
-  meterless: { fast: "meterless/fast", deep: "meterless/deep" },
-  nvidia: { fast: "nvidia/nemotron-3.5-lightning-30b-a3b", deep: "nvidia/nemotron-3-ultra-550b-a55b" },
+  meterless: { fast: "meterless/fast", mid: "meterless/auto", deep: "meterless/deep" },
+  nvidia: { fast: "nvidia/nemotron-3.5-lightning-30b-a3b", mid: "nvidia/nemotron-3.5-super-vl-120b-a12b", deep: "nvidia/nemotron-3-ultra-550b-a55b" },
 };
 
 export function modelFor(provider: ProviderName, tier: Tier, env: NodeJS.ProcessEnv = process.env): string {
@@ -51,7 +52,7 @@ export function runtimeLabel(env: NodeJS.ProcessEnv = process.env): string {
   try {
     const p = providerConfig(env);
     const via = p.name === "meterless" ? "Meterless Nightshift" : "NVIDIA";
-    return `${modelFor(p.name, "deep", env)} + ${modelFor(p.name, "fast", env)} via ${via}`;
+    return `${modelFor(p.name, "mid", env)} + ${modelFor(p.name, "fast", env)} + ${modelFor(p.name, "deep", env)} via ${via}`;
   } catch (error) {
     return `no model provider (${error instanceof Error ? error.message : error})`;
   }
