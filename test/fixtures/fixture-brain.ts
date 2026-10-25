@@ -140,11 +140,11 @@ export const fixtureBrain: Brain = {
       [{ agent: "reader", phase: "start", message: "Reader 1/3 · storefront · 9 files" }, 150],
       [{ agent: "reader", phase: "start", message: "Reader 2/3 · api · 15 files" }, 150],
       [{ agent: "reader", phase: "start", message: "Reader 3/3 · worker · 4 files" }, 900],
-      [{ agent: "reader", phase: "done", message: "Reader 3/3 · worker · 5 dependencies" }, 500],
-      [{ agent: "reader", phase: "done", message: "Reader 1/3 · storefront · 6 dependencies" }, 600],
-      [{ agent: "reader", phase: "done", message: "Reader 2/3 · api · 17 dependencies" }, 300],
-      [{ agent: "cartographer", phase: "start", message: "Cartographer · organizing 28 dependencies" }, 1100],
-      [{ agent: "cartographer", phase: "done", message: "Cartographer · 17 components, 27 dependencies, 4 flows" }, 200],
+      [{ agent: "reader", phase: "done", message: "Reader 3/3 · worker · 5 arrows" }, 500],
+      [{ agent: "reader", phase: "done", message: "Reader 1/3 · storefront · 6 arrows" }, 600],
+      [{ agent: "reader", phase: "done", message: "Reader 2/3 · api · 17 arrows" }, 300],
+      [{ agent: "cartographer", phase: "start", message: "Cartographer · organizing 28 arrows" }, 1100],
+      [{ agent: "cartographer", phase: "done", message: "Cartographer · 17 parts, 27 arrows, 4 flows" }, 200],
     ];
     if (snapshot.repo.name !== "chai-commerce" && !snapshot.repo.name.endsWith("/chai-commerce")) {
       throw new Error("The fixture brain only knows chai-commerce. Unset CARTOGRAPH_BRAIN to use the real agents.");

@@ -62,10 +62,10 @@ interface CartographEdgeData extends Record<string, unknown> {
 }
 
 const NODE_VISUAL: Record<NodeVisual, string> = {
-  base: "border-line",
+  base: "border-text",
   dim: "border-line opacity-[0.32] saturate-[0.4]",
   selected: "border-accent ring-4 ring-accent/15 shadow-pop",
-  path: "border-accent/45",
+  path: "border-accent",
   active: "border-accent ring-4 ring-accent/20 shadow-pop -translate-y-0.5",
   dead: "border-danger bg-danger/[0.05] cg-ring-pulse",
   impacted: "border-danger/50 bg-danger/[0.035]",
@@ -89,7 +89,7 @@ const ComponentNode = memo(function ComponentNode({ data }: NodeProps<Node<Carto
     <div
       title={node.summary}
       className={cn(
-        "group relative flex h-16 w-[232px] items-center gap-3 rounded-[4px] border bg-surface px-3 shadow-card transition-all duration-300 hover:shadow-pop",
+        "group relative flex h-16 w-[232px] items-center gap-3 rounded-[6px] border bg-surface px-3 shadow-card transition-all duration-300 hover:shadow-pop",
         NODE_VISUAL[visual],
       )}
     >
@@ -97,17 +97,17 @@ const ComponentNode = memo(function ComponentNode({ data }: NodeProps<Node<Carto
       <Handle id="b" type="source" position={Position.Bottom} />
       <Handle id="ts" type="source" position={Position.Top} />
       <Handle id="bt" type="target" position={Position.Bottom} />
-      <span className={cn("grid size-9 shrink-0 place-items-center rounded-[3px]", visual === "dead" ? "bg-danger/12 text-danger" : k.tile)}>
+      <span className={cn("grid size-9 shrink-0 place-items-center rounded-[4px]", visual === "dead" ? "bg-danger/12 text-danger" : k.tile)}>
         <k.Icon size={18} strokeWidth={1.8} />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="line-clamp-2 text-[13px] leading-[1.2] font-semibold tracking-[-0.01em] text-text">{node.label}</div>
-        <div className="mt-0.5 truncate text-[11.5px] leading-tight text-muted">{node.tech || k.label}</div>
+        <div className="line-clamp-2 text-[14px] leading-[1.2] font-medium tracking-[-0.01em] text-text">{node.label}</div>
+        <div className="mt-1 truncate font-mono text-[11px] leading-tight text-muted">{node.tech || k.label}</div>
       </div>
       {badge && (
         <span
           className={cn(
-            "absolute -top-2.5 right-3 rounded-full px-2 py-[2px] text-[10px] leading-none font-bold tracking-wide shadow-card",
+            "absolute -top-2.5 right-3 rounded-[4px] px-2 py-[3px] font-mono text-[10px] leading-none font-medium tracking-wide uppercase shadow-card",
             BADGE_VISUAL[visual] ?? "bg-accent text-white",
           )}
         >
@@ -144,12 +144,12 @@ const DependencyEdge = memo(function DependencyEdge(props: EdgeProps<Edge<Cartog
         <EdgeLabelRenderer>
           <div
             className={cn(
-              "pointer-events-none absolute z-20 flex max-w-[260px] items-center gap-1.5 rounded-full border bg-surface/95 px-2 py-[3px] text-[11px] whitespace-nowrap shadow-card backdrop-blur",
+              "pointer-events-none absolute z-20 flex max-w-[260px] items-center gap-1.5 rounded-[4px] border bg-surface/95 px-2 py-[3px] text-[11px] whitespace-nowrap shadow-card backdrop-blur",
               visual === "flagged" ? "border-danger/40 text-danger" : visual === "added" ? "border-ok/40 text-text" : "border-line text-text",
             )}
             style={{ transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)` }}
           >
-            <span className="rounded bg-surface-3 px-1 font-mono text-[9px] font-semibold uppercase tracking-wide text-muted">{edge.kind}</span>
+            <span className="rounded-[4px] bg-surface-3 px-1 font-mono text-[10px] font-medium uppercase tracking-wide text-muted">{edge.kind}</span>
             <span className="truncate">{edge.label}</span>
           </div>
         </EdgeLabelRenderer>

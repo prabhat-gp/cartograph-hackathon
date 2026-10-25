@@ -173,7 +173,7 @@ function NightshiftSettings({ onChange }: { onChange: () => void }) {
           )}
         </div>
       ) : (
-        <form onSubmit={submit} className="grid gap-2 rounded-[3px] border border-line bg-surface-2 p-2.5">
+        <form onSubmit={submit} className="grid gap-2 rounded-[4px] border border-line bg-surface-2 p-2.5">
           <label className="grid gap-1 text-[11px] text-muted">
             Connect link or base URL
             <input
@@ -182,13 +182,13 @@ function NightshiftSettings({ onChange }: { onChange: () => void }) {
               placeholder={settings.baseUrl}
               spellCheck={false}
               autoComplete="off"
-              className="h-8 rounded-[3px] border border-line bg-surface px-2 font-mono text-[11.5px] text-text outline-none placeholder:text-faint focus:border-text"
+              className="h-8 rounded-[4px] border border-line bg-surface px-2 font-mono text-[11.5px] text-text outline-none placeholder:text-faint focus:border-text"
             />
           </label>
           {!address.includes("/connect") && (
             <label className="grid gap-1 text-[11px] text-muted">
               Access token{settings.token ? ` (saved: ${settings.token})` : ""}
-              <span className="flex h-8 items-center rounded-[3px] border border-line bg-surface focus-within:border-text">
+              <span className="flex h-8 items-center rounded-[4px] border border-line bg-surface focus-within:border-text">
                 <input
                   type={reveal ? "text" : "password"}
                   value={token}

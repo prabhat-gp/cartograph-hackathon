@@ -57,12 +57,12 @@ export function Finale() {
             type="submit"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.96 }}
-            className="flex items-center gap-1.5 rounded-[4px] bg-vermilion px-5 py-3 font-medium text-paper-light"
+            className="flex items-center gap-1.5 rounded-[4px] border border-ink bg-vermilion px-5 py-3 font-medium text-paper-light shadow-[3px_3px_0_0_var(--color-ink)]"
           >
             Map it <ArrowRight className="size-4" />
           </motion.button>
         </motion.form>
-        <p className="mt-5 font-mono text-[11.5px] text-ink-soft">Any public GitHub repository · a map in a few minutes</p>
+        <p className="mt-5 font-mono text-[11.5px] text-ink-soft">owner/repo or a github.com link · a map in a few minutes</p>
       </div>
 
       <footer className="relative border-t border-ink">

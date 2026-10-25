@@ -107,7 +107,7 @@ export function DependencyPanel(props: {
       <div className="mb-4 flex gap-2">
         {[from, to].map((n) =>
           n ? (
-            <button key={n.id} onClick={() => props.onSelectNode(n.id)} className="flex min-w-0 flex-1 items-center gap-2 rounded-[3px] border border-line bg-surface px-2.5 py-2 text-left hover:border-accent/50">
+            <button key={n.id} onClick={() => props.onSelectNode(n.id)} className="flex min-w-0 flex-1 items-center gap-2 rounded-[4px] border border-line bg-surface px-2.5 py-2 text-left hover:border-accent/50">
               <KindTile kind={n.kind} size="sm" />
               <span className="truncate text-[12.5px] font-medium text-text">{n.label}</span>
             </button>
@@ -116,7 +116,7 @@ export function DependencyPanel(props: {
       </div>
 
       {props.coverage && (
-        <div className="mb-4 flex items-start gap-2.5 rounded-[3px] border border-line bg-surface-2/60 px-3 py-2.5">
+        <div className="mb-4 flex items-start gap-2.5 rounded-[4px] border border-line bg-surface-2/60 px-3 py-2.5">
           <span className={cn("mt-1 size-2.5 shrink-0 rounded-full", COVERAGE_COPY[props.coverage.status].tone)} />
           <div className="text-[12.5px] leading-snug">
             <span className="font-medium text-text">{COVERAGE_COPY[props.coverage.status].label}.</span>{" "}
@@ -227,19 +227,19 @@ function WhyCard({ repo, edgeId, callTool }: { repo: string; edgeId: string; cal
         <p className="font-mono text-[10.5px] tracking-[0.18em] text-muted uppercase">Why it exists</p>
         <p className="mt-2 font-serif text-[20px] leading-snug text-text">{o.answer}</p>
         <div className="mt-3 flex flex-wrap gap-1.5 font-mono text-[10.5px] uppercase">
-          <span className={cn("rounded-[3px] border px-1.5 py-0.5", o.confidence === "high" ? "border-ok/50 text-ok" : o.confidence === "medium" ? "border-warn/50 text-warn" : "border-danger/50 text-danger")}>
+          <span className={cn("rounded-[4px] border px-1.5 py-0.5", o.confidence === "high" ? "border-ok/50 text-ok" : o.confidence === "medium" ? "border-warn/50 text-warn" : "border-danger/50 text-danger")}>
             {o.confidence} confidence
           </span>
-          <span className={cn("flex items-center gap-1 rounded-[3px] border px-1.5 py-0.5", o.approved ? "border-ok/50 text-ok" : "border-line text-muted")}>
+          <span className={cn("flex items-center gap-1 rounded-[4px] border px-1.5 py-0.5", o.approved ? "border-ok/50 text-ok" : "border-line text-muted")}>
             {o.approved ? <ShieldCheck size={11} /> : null} {o.approved ? "Critic approved" : "not fully approved"}
           </span>
-          {o.rounds > 0 && <span className="rounded-[3px] border border-line px-1.5 py-0.5 text-muted">{o.rounds} revision{o.rounds === 1 ? "" : "s"}</span>}
+          {o.rounds > 0 && <span className="rounded-[4px] border border-line px-1.5 py-0.5 text-muted">{o.rounds} revision{o.rounds === 1 ? "" : "s"}</span>}
           {recalled > 0 && (
-            <span className="flex items-center gap-1 rounded-[3px] border border-accent/40 px-1.5 py-0.5 text-accent">
+            <span className="flex items-center gap-1 rounded-[4px] border border-accent/40 px-1.5 py-0.5 text-accent">
               <Brain size={11} /> {recalled} recalled from memory
             </span>
           )}
-          <span className="rounded-[3px] border border-line px-1.5 py-0.5 text-muted">{r.cached ? `saved answer · first took ${r.execution_time_seconds}s` : `${r.execution_time_seconds}s`}</span>
+          <span className="rounded-[4px] border border-line px-1.5 py-0.5 text-muted">{r.cached ? `saved answer · first took ${r.execution_time_seconds}s` : `${r.execution_time_seconds}s`}</span>
         </div>
       </div>
 
@@ -290,7 +290,7 @@ function WhyCard({ repo, edgeId, callTool }: { repo: string; edgeId: string; cal
           </p>
         ))}
         {o.unknowns.length > 0 && (
-          <div className="mt-3 rounded-[3px] bg-surface-2/70 px-3 py-2">
+          <div className="mt-3 rounded-[4px] bg-surface-2/70 px-3 py-2">
             <p className="font-mono text-[10px] tracking-[0.16em] text-muted uppercase">Not in the evidence</p>
             {o.unknowns.map((u) => (
               <p key={u} className="mt-1 text-[12px] leading-snug text-muted">{u}</p>
@@ -344,32 +344,32 @@ export function CoverageLegend(props: { on: boolean; loading: boolean; error: st
   const traced = data ? total - data.counts.unknown : 0;
   const pct = data && traced ? Math.round((data.counts.explained / traced) * 100) : null;
   return (
-    <div className="absolute top-3 left-3 z-10 w-[268px] rounded-[4px] border border-line-strong bg-surface/95 shadow-card backdrop-blur-sm">
+    <div className="absolute top-3 left-3 z-10 w-[284px] rounded-[6px] border border-text bg-surface/95 shadow-card backdrop-blur-sm">
       <button onClick={props.onToggle} className="flex w-full items-center justify-between gap-2 px-3.5 py-2.5 text-left">
         <span>
           <span className="block font-mono text-[10.5px] tracking-[0.16em] text-text uppercase">Why-coverage</span>
-          <span className="block text-[11.5px] text-muted">{props.on ? "Arrows coloured by their stated reason" : "Which arrows have a stated reason?"}</span>
+          <span className="block text-[12.5px] text-muted">{props.on ? "Arrows coloured by their stated reason" : "Which arrows have a stated reason?"}</span>
         </span>
-        <span className={cn("grid size-8 place-items-center rounded-[3px] border", props.on ? "border-accent bg-accent text-white" : "border-line text-muted")}>
+        <span className={cn("grid size-8 place-items-center rounded-[4px] border", props.on ? "border-accent bg-accent text-white" : "border-line text-muted")}>
           {props.on ? <Eye size={15} /> : <EyeOff size={15} />}
         </span>
       </button>
       {props.on && (
         <div className="border-t border-line px-3.5 py-3">
           {props.loading ? (
-            <p className="flex items-center gap-2 text-[12px] text-muted"><Spinner size={12} /> Reading the history behind every arrow…</p>
+            <p className="flex items-center gap-2 text-[12.5px] text-muted"><Spinner size={12} /> Reading the history behind every arrow…</p>
           ) : props.error ? (
-            <p className="text-[12px] leading-snug text-danger">{props.error}</p>
+            <p className="text-[12.5px] leading-snug text-danger">{props.error}</p>
           ) : data ? (
             <>
               {pct !== null && (
                 <p className="mb-2 font-serif text-[30px] leading-none text-text">
-                  {pct}%<span className="ml-1.5 font-sans text-[11.5px] text-muted">of traced arrows have a stated reason</span>
+                  {pct}%<span className="ml-1.5 font-sans text-[12.5px] text-muted">of traced arrows have a stated reason</span>
                 </p>
               )}
               <ul className="space-y-1">
                 {(["explained", "reviewed", "unreviewed", "unknown"] as CoverageStatus[]).map((s) => (
-                  <li key={s} className="flex items-center justify-between text-[12px]">
+                  <li key={s} className="flex items-center justify-between text-[13px]">
                     <span className="flex items-center gap-2 text-text">
                       <span className={cn("h-1 w-5 rounded-full", COVERAGE_COPY[s].tone)} /> {COVERAGE_COPY[s].label}
                     </span>
@@ -377,8 +377,8 @@ export function CoverageLegend(props: { on: boolean; loading: boolean; error: st
                   </li>
                 ))}
               </ul>
-              {!data.github && <p className="mt-2 text-[11px] leading-snug text-muted">Local repository: commits only, no pull requests to read.</p>}
-              <p className="mt-2 text-[11px] leading-snug text-faint">Click any arrow to ask why it exists.</p>
+              {!data.github && <p className="mt-2 text-[12px] leading-snug text-muted">Local repository: commits only, no pull requests to read.</p>}
+              <p className="mt-2 text-[12px] leading-snug text-faint">Click any arrow to ask why it exists.</p>
             </>
           ) : null}
         </div>

@@ -9,7 +9,7 @@ const mono = IBM_Plex_Mono({ variable: "--font-plex-mono", subsets: ["latin"], w
 export const metadata: Metadata = {
   title: "Cartograph · Map any codebase, know why every line exists",
   description:
-    "Cartograph's agents map a repository's architecture with every dependency cited from the code, then trace each one to the commit, pull request and issue behind it.",
+    "Cartograph's agents map a repository's architecture with every arrow cited from the code, then trace each one to the commit, pull request and issue behind it.",
   icons: { icon: "/mark.svg" },
 };
 
