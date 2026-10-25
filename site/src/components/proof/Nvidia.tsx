@@ -9,11 +9,11 @@ const GREEN = "var(--color-forest-light)";
 
 // Which model each agent runs on (src/config.ts, src/agent/agents.ts, src/server/brain/run.ts).
 const crew = [
-  { name: "Scout", model: "Ultra", job: "plans the survey" },
+  { name: "Scout", model: "Super / Ultra", job: "plans the reading" },
   { name: "Readers", model: "Lightning", job: "read files in parallel" },
-  { name: "Cartographer", model: "Ultra", job: "joins the map" },
+  { name: "Cartographer", model: "Super / Ultra", job: "joins the map" },
   { name: "Verifier", model: "code", job: "checks every quote" },
-  { name: "Reviewer", model: "Ultra", job: "reviews each push" },
+  { name: "Reviewer", model: "Super / Ultra", job: "reviews each push" },
   { name: "Tracer", model: "Lightning", job: "answers on the map" },
   { name: "Writer", model: "Lightning", job: "drafts the why" },
   { name: "Critic", model: "Ultra", job: "checks every claim" },

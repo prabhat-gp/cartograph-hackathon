@@ -94,7 +94,7 @@ export function HeroAtlas() {
         <span className="flex items-center gap-2">
           <span className="size-2 rounded-full bg-forest" /> expressjs/express
         </span>
-        <span>{picked ? "explaining 1 arrow" : phase === "survey" ? "surveying…" : "6 parts · 5 arrows"}</span>
+        <span>{picked ? "explaining 1 arrow" : phase === "survey" ? "reverse-engineering…" : "6 parts · 5 arrows"}</span>
       </div>
 
       <div className="survey-grid relative overflow-hidden rounded-b-[6px]">

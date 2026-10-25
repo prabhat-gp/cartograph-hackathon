@@ -7,7 +7,7 @@ const body = Instrument_Sans({ variable: "--font-body", subsets: ["latin"] });
 const mono = IBM_Plex_Mono({ variable: "--font-plex-mono", subsets: ["latin"], weight: ["400", "500"] });
 
 export const metadata: Metadata = {
-  title: "Cartograph · Map any codebase, know why every line exists",
+  title: "Cartograph · Reverse-engineer any codebase, know why every line exists",
   description:
     "Cartograph's agents map a repository's architecture with every arrow cited from the code, then trace each one to the commit, pull request and issue behind it.",
   icons: { icon: "/mark.svg" },
