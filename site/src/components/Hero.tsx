@@ -3,7 +3,7 @@
 import { ArrowDown, ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import { APP_URL } from "@/lib/site";
-import { HeroAtlas } from "./HeroAtlas";
+import { HeroXray } from "./HeroXray";
 
 const rise = (delay: number) => ({
   initial: { opacity: 0, y: 18 },
@@ -41,7 +41,7 @@ export function Hero() {
           </motion.div>
         </div>
         <motion.div className="min-w-0" initial={{ opacity: 0, y: 30, rotate: 1.5 }} animate={{ opacity: 1, y: 0, rotate: 0 }} transition={{ delay: 0.25, type: "spring", stiffness: 70, damping: 16 }}>
-          <HeroAtlas />
+          <HeroXray />
         </motion.div>
       </div>
     </header>

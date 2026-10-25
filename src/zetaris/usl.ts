@@ -2,7 +2,7 @@
 // registered in Zetaris as a JDBC datasource, modelled as one USL with keys
 // and relationships, and checked with data-quality rules. Every statement
 // here is idempotent so setup can be re-run after each ingest.
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 
 export const NAMESPACE = "lightning.metastore.cartograph";
@@ -62,8 +62,4 @@ export function dqRules(): DqRule[] {
       const [name, table, expression] = line.split("|").map((s) => s.trim());
       return { name, table, expression };
     });
-}
-
-export function sqlFiles(): string[] {
-  return readdirSync(path.join(SQL_DIR, "activate")).filter((f) => f.endsWith(".sql"));
 }

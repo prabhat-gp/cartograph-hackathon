@@ -8,15 +8,43 @@ export const REPO_URL = "https://github.com/prabhat-gp/cartograph-hackathon";
 export const CODE = (path: string) => `${REPO_URL}/${/\.[a-z]+$/.test(path) ? "blob" : "tree"}/main/${path}`;
 export const AUTHOR_URL = "https://prabhatgp.me";
 
-/** A real answer from the explain agents on expressjs/express, 22 Oct 2026. */
-export const WHY_RUN = {
-  chain: [
-    { kind: "Code", ref: "lib/response.js:849", url: "https://github.com/expressjs/express/blob/master/lib/response.js#L849" },
-    { kind: "Commit", ref: "9a3f7ff", url: "https://github.com/expressjs/express/commit/9a3f7ff412" },
-    { kind: "Pull request", ref: "#5167", url: "https://github.com/expressjs/express/pull/5167" },
-    { kind: "Issue", ref: "#5058", url: "https://github.com/expressjs/express/issues/5058" },
+/**
+ * The hero loop: real PrepPilot code, the arrows Cartograph drew from it, and the
+ * explain agents' approved answer for llm.py:26 (output_examples/01-gemini-provider.json).
+ */
+export const HERO_RUN = {
+  repo: "siddarth-ba-72/Interview-Prep-Pilot-AI",
+  file: "ai-service/app/llm.py",
+  firstLine: 23,
+  code: [
+    "def get_client() -> AsyncOpenAI:",
+    "    global _client",
+    "    if _client is None:",
+    '        if settings.llm_provider == "gemini":',
+    "            _client = AsyncOpenAI(",
+    '                api_key=_required(settings.gemini_api_key, ...),',
+    "                base_url=settings.gemini_base_url,",
+    "                timeout=settings.llm_timeout_seconds,",
+    "            )",
+    "        else:",
+    "            _client = AsyncOpenAI(",
+    '                api_key=_required(settings.openai_api_key, ...),',
+    "                timeout=settings.llm_timeout_seconds,",
+    "            )",
+    "    return _client",
   ],
-  seconds: 18.5,
+  /** Lines the Readers cited, and the part each call points to. */
+  hits: [
+    { line: 26, to: "Gemini" },
+    { line: 34, to: "OpenAI" },
+  ],
+  chain: [
+    { kind: "Code", ref: "llm.py:26", title: 'if settings.llm_provider == "gemini":' },
+    { kind: "Commit", ref: "02d4c5a", title: "Add support for Gemini LLM provider and update configuration handling" },
+    { kind: "Pull request", ref: "#6", title: "LLM Config" },
+  ],
+  answer: "Gemini was added to expand the model options, behind one config switch: settings.llm_provider.",
+  seconds: 11.7,
 };
 
 /** Share of blamed express lines whose pull request states a reason (the states_a_reason condition), 22 Oct 2026. */

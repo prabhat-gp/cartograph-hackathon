@@ -33,7 +33,7 @@
       }
     },
     "nvidia": {
-      "role": "Nemotron models behind every agent: nemotron-3.5-lightning-30b for bulk reading, nemotron-3-ultra-550b for reasoning and answers",
+      "role": "Nemotron models behind every agent: nemotron-3.5-lightning-30b reads files and writes answers; the Scout, Cartographer and Reviewer ask nemotron-3.5-super-120b and nemotron-3-ultra-550b at once and keep the first valid answer; Ultra is the Critic",
       "status": "working",
       "code": [
         "src/config.ts",
