@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The fix: live stock comes from the API (which already returns `available`).
 set -euo pipefail
-REPO="${1:-$HOME/Desktop/dev-day/chai-commerce}"
+REPO="${1:-$HOME/chai-commerce}"
 cd "$REPO"
 if [ ! -f web/lib/db.ts ]; then echo "Nothing to fix: the bad commit isn't there."; exit 1; fi
 git rm -q web/lib/db.ts web/app/cart/stock.ts
