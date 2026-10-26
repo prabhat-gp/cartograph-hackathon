@@ -21,8 +21,8 @@
         "evidence": "npm run hmem:conformance passes the vendored Meterless conformance suite; test/hmem.test.ts; the Remembered panel under every answer in the desk"
       },
       "power": {
-        "role": "Primary AI provider: every agent call goes to Meterless Runtime (Nightshift) over its OpenAI-compatible API, with NVIDIA direct as a fallback only when the runtime is unreachable",
-        "status": "working",
+        "role": "Primary AI provider when connected: agent calls go to Meterless Runtime (Nightshift) over its OpenAI-compatible API; NVIDIA is called directly when the runtime isn't running. The hosted demo runs on x86 Linux, where Nightshift has no build, so it uses NVIDIA directly.",
+        "status": "integrated and tested against mocks; not running on the hosted demo",
         "code": [
           "src/meterless/runtime.ts",
           "src/config.ts",
@@ -60,7 +60,7 @@
   "preExisting": [
     {
       "component": "Cartograph map pipeline, MCP server and map UI",
-      "from": "github.com/prabhat-gp/dev-day (commit 054e60a, before 22 Oct 2026)",
+      "from": "my own earlier Cartograph prototype, github.com/prabhat-gp/dev-day (commit 054e60a, before 22 Oct 2026)",
       "paths": [
         "src/server/",
         "src/shared/",
@@ -76,5 +76,5 @@
       "note": "Imported as the starting point; hackathon work extends it"
     }
   ],
-  "runWithoutKeys": "npm install && npm test (every integration is tested against mocks)"
+  "runWithoutKeys": "npm install && npm test (every integration is tested against mocks); SAMPLE_MODE=true npm start replays the three recorded examples with no keys"
 }
