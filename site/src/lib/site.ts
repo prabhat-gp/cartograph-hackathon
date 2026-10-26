@@ -36,15 +36,14 @@ export const HERO_RUN = {
   /** Lines the Readers cited, and the part each call points to. */
   hits: [
     { line: 26, to: "Gemini" },
-    { line: 34, to: "OpenAI" },
   ],
   chain: [
     { kind: "Code", ref: "llm.py:26", title: 'if settings.llm_provider == "gemini":' },
     { kind: "Commit", ref: "02d4c5a", title: "Add support for Gemini LLM provider and update configuration handling" },
     { kind: "Pull request", ref: "#6", title: "LLM Config" },
   ],
-  answer: "Gemini was added to expand the model options, behind one config switch: settings.llm_provider.",
-  seconds: 11.7,
+  answer: "Gemini was added as a new LLM provider. The code checks settings.llm_provider and routes to Gemini when it is set.",
+  seconds: 9.2,
 };
 
 /** Share of blamed express lines whose pull request states a reason (the states_a_reason condition), 22 Oct 2026. */

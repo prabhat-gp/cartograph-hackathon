@@ -23,10 +23,10 @@ const { file, firstLine, code, hits } = HERO_RUN;
 const W = 138;
 const H = 46;
 const nodes = [
-  { id: "gateway", x: 180, y: 52, label: "API gateway", sub: "spring cloud gateway" },
-  { id: "ai", x: 180, y: 182, label: "AI orchestration", sub: "ai-service · fastapi" },
-  { id: "gemini", x: 96, y: 330, label: "Gemini", sub: "model provider" },
-  { id: "openai", x: 264, y: 330, label: "OpenAI", sub: "model provider" },
+  { id: "gateway", x: 180, y: 52, label: "Gateway", sub: "spring cloud gateway" },
+  { id: "ai", x: 180, y: 182, label: "AI service", sub: "ai-service · fastapi" },
+  { id: "gemini", x: 96, y: 330, label: "Gemini API", sub: "model provider" },
+  { id: "openai", x: 264, y: 330, label: "OpenAI API", sub: "model provider" },
 ];
 const at = (id: string) => nodes.find((n) => n.id === id)!;
 const curve = (a: string, b: string) => {
@@ -37,9 +37,9 @@ const curve = (a: string, b: string) => {
   return `M${p.x} ${y1} C ${p.x} ${y1 + 50}, ${q.x} ${y2 - 50}, ${q.x} ${y2}`;
 };
 const edges = [
-  { id: "gw-ai", from: "gateway", to: "ai", cite: "application.yml:45", tx: 186, ty: 122 },
+  { id: "gw-ai", from: "gateway", to: "ai", cite: "application-dev.yml:5", tx: 186, ty: 122 },
   { id: "ai-gemini", from: "ai", to: "gemini", cite: "llm.py:26", tx: 34, ty: 262 },
-  { id: "ai-openai", from: "ai", to: "openai", cite: "llm.py:34", tx: 250, ty: 262 },
+  { id: "ai-openai", from: "ai", to: "openai", cite: "llm.py:107", tx: 250, ty: 262 },
 ];
 const PICK = { x: 128, y: 262 };
 
