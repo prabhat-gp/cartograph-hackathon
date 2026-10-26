@@ -2,7 +2,7 @@
 # Stage demo: a plausible feature commit that quietly breaks the layering.
 # The storefront starts querying Postgres directly instead of going through the API.
 set -euo pipefail
-REPO="${1:-$HOME/Desktop/dev-day/chai-commerce}"
+REPO="${1:-$HOME/chai-commerce}"
 cd "$REPO"
 if [ -f web/lib/db.ts ]; then echo "The bad commit is already pushed. Push the fix first."; exit 1; fi
 
