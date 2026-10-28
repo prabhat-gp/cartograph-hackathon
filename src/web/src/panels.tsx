@@ -962,11 +962,13 @@ export function Home(props: {
   /** The repo whose map is open behind this picker, if any. */
   current?: string | null;
   onOpen: (key: string) => void;
+  /** Pointer or focus on a repo card: start fetching its map before the click. */
+  onPeek?: (key: string) => void;
   onMap: (repo: string) => Promise<void>;
   onBack?: () => void;
   error: string | null;
 }) {
-  const { repos, current, onOpen, error } = props;
+  const { repos, current, onOpen, onPeek, error } = props;
   // Arriving from the landing page with a repo typed in (/app?map=owner/name).
   const [value, setValue] = useState(() => ownerRepo(new URLSearchParams(location.search).get("map") ?? ""));
   const [busy, setBusy] = useState(false);
@@ -1019,7 +1021,7 @@ export function Home(props: {
           <Eyebrow>Mapped repositories · open one</Eyebrow>
           <div className="flex flex-col gap-2">
             {repos.map((r) => (
-              <button key={r.key} onClick={() => onOpen(r.key)} className="group flex items-center gap-3 rounded-[6px] border border-line-strong bg-surface px-3.5 py-3 text-left shadow-card transition-all hover:-translate-y-px hover:border-text hover:shadow-pop">
+              <button key={r.key} onClick={() => onOpen(r.key)} onPointerEnter={() => onPeek?.(r.key)} onFocus={() => onPeek?.(r.key)} className="group flex items-center gap-3 rounded-[6px] border border-line-strong bg-surface px-3.5 py-3 text-left shadow-card transition-all hover:-translate-y-px hover:border-text hover:shadow-pop">
                 <CartographLogo size={30} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-mono text-[13.5px] font-medium text-text">{r.name}</span>
