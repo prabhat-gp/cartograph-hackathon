@@ -23,14 +23,29 @@ export function layoutGraph(nodes: CartographNode[], edges: CartographEdge[]): M
   g.setDefaultEdgeLabel(() => ({}));
 
   for (const n of nodes) g.setNode(n.id, { width: NODE_W, height: NODE_H });
+  // One layout edge per pair, in the direction first seen. Every edge is still
+  // drawn; this only places nodes. Opposite edges between a pair (an sdk call
+  // one way, a flipped webhook the other) make dagre throw "Not possible to
+  // find intersection inside of the rectangle".
   const ids = new Set(nodes.map((n) => n.id));
+  const pairs = new Map<string, { from: string; to: string; weight: number }>();
   for (const e of edges) {
-    if (!ids.has(e.from) || !ids.has(e.to)) continue;
+    if (!ids.has(e.from) || !ids.has(e.to) || e.from === e.to) continue;
     const flip = e.kind === "consume" || e.kind === "webhook";
-    g.setEdge(flip ? e.to : e.from, flip ? e.from : e.to, { weight: e.kind === "call" ? 2 : 1, minlen: 1 }, e.id);
+    const [from, to] = flip ? [e.to, e.from] : [e.from, e.to];
+    const key = [from, to].sort().join("\0");
+    const weight = e.kind === "call" ? 2 : 1;
+    const seen = pairs.get(key);
+    if (seen) seen.weight += weight;
+    else pairs.set(key, { from, to, weight });
   }
+  for (const { from, to, weight } of pairs.values()) g.setEdge(from, to, { weight, minlen: 1 });
 
-  dagre.layout(g);
+  try {
+    dagre.layout(g);
+  } catch {
+    return gridLayout(nodes);
+  }
 
   // Dagre reserves horizontal room for edges that skip ranks, which spreads a
   // 15-node map across ~2000px. Keep its order within each rank, but re-space
@@ -50,5 +65,13 @@ export function layoutGraph(nodes: CartographNode[], edges: CartographEdge[]): M
     const width = row.length * NODE_W + (row.length - 1) * GAP_X;
     row.forEach((n, i) => out.set(n.id, { x: -width / 2 + i * step, y: y - NODE_H / 2 }));
   }
+  return out;
+}
+
+/** Last resort if dagre still fails: a plain grid, so a map always opens. */
+function gridLayout(nodes: CartographNode[]): Map<string, Positioned> {
+  const cols = Math.ceil(Math.sqrt(nodes.length));
+  const out = new Map<string, Positioned>();
+  nodes.forEach((n, i) => out.set(n.id, { x: (i % cols) * (NODE_W + GAP_X), y: Math.floor(i / cols) * (NODE_H + 58) }));
   return out;
 }
