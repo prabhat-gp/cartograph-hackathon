@@ -3,6 +3,7 @@ import { clsx } from "clsx";
 import { CircleCheck, FileCode2, Info, LoaderCircle, OctagonAlert, Sparkles, TriangleAlert } from "lucide-react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import type { Evidence, NodeKind } from "../../shared/graph";
+import { isStandalone } from "./bridge";
 import { kindMeta } from "./kinds";
 
 export const cn = clsx;
@@ -128,6 +129,8 @@ export function Spinner({ size = 14, className }: { size?: number; className?: s
 
 /** "Ask" call-to-action used at the bottom of panels. */
 export function AskButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+  // Asking hands the question to the assistant in an MCP host's chat; a browser tab has none.
+  if (isStandalone()) return null;
   return (
     <button
       onClick={onClick}

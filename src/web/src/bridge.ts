@@ -168,7 +168,9 @@ class StandaloneBridge implements Bridge {
   }
 }
 
+/** A browser tab (/app), not an MCP host's iframe: there is no assistant chat to ask. */
+export const isStandalone = () => !!window.__CARTOGRAPH_STANDALONE__ || window.parent === window;
+
 export function createBridge(): Bridge {
-  const standalone = window.__CARTOGRAPH_STANDALONE__ || window.parent === window;
-  return standalone ? new StandaloneBridge() : new HostBridge();
+  return isStandalone() ? new StandaloneBridge() : new HostBridge();
 }
