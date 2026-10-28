@@ -11,6 +11,9 @@ export const NODE_W = 232;
 export const NODE_H = 64;
 /** Horizontal gap between components in the same rank. */
 const GAP_X = 36;
+/** Widest a rank may get before it wraps, and the height of each extra line. */
+const MAX_ROW = 6;
+const LINE_H = NODE_H + 40;
 
 export interface Positioned {
   x: number;
@@ -58,12 +61,21 @@ export function layoutGraph(nodes: CartographNode[], edges: CartographEdge[]): M
     if (!ranks.has(y)) ranks.set(y, []);
     ranks.get(y)!.push({ id: n.id, x: p.x });
   }
+  // A rank wider than MAX_ROW (often parts with no arrows, which all land on
+  // top) wraps onto extra lines, pushing the ranks below it down.
   const out = new Map<string, Positioned>();
   const step = NODE_W + GAP_X;
-  for (const [y, row] of ranks) {
+  let shift = 0;
+  for (const [y, row] of [...ranks].sort((a, b) => a[0] - b[0])) {
     row.sort((a, b) => a.x - b.x);
-    const width = row.length * NODE_W + (row.length - 1) * GAP_X;
-    row.forEach((n, i) => out.set(n.id, { x: -width / 2 + i * step, y: y - NODE_H / 2 }));
+    const lines = Math.ceil(row.length / MAX_ROW);
+    const perLine = Math.ceil(row.length / lines);
+    for (let l = 0; l < lines; l++) {
+      const line = row.slice(l * perLine, (l + 1) * perLine);
+      const width = line.length * NODE_W + (line.length - 1) * GAP_X;
+      line.forEach((n, i) => out.set(n.id, { x: -width / 2 + i * step, y: y + shift + l * LINE_H - NODE_H / 2 }));
+    }
+    shift += (lines - 1) * LINE_H;
   }
   return out;
 }

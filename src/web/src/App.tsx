@@ -89,12 +89,22 @@ export function App({ bridge }: { bridge: Bridge }) {
   const [tourOpen, setTourOpen] = useState(false);
   const [tourOffered, setTourOffered] = useState(() => tourDone());
 
+  // Maps already fetched (or prefetched on hover), by repo: reopening one is instant.
+  const graphCache = useRef(new Map<string, CartographGraph>());
+  const prefetching = useRef(new Set<string>());
+  // The repo on screen now, so a slow answer for a repo you've left is dropped.
+  const repoKeyRef = useRef<string | null>(null);
+  repoKeyRef.current = repoKey;
+  // A picked repo whose map is on its way: show "Opening…", not the picker.
+  const [opening, setOpening] = useState(false);
+
   // ------------------------------------------------------------ data loading
   const loadGraph = useCallback(
     async (key: string) => {
       const r = await bridge
         .callTool<{ graph: CartographGraph | null; mapping: string | null }>("cartograph_graph", { repo: key })
         .catch((e) => ({ structuredContent: { graph: null, mapping: null }, isError: true, text: String((e as Error)?.message ?? e) }));
+      if (repoKeyRef.current !== key) return null;
       if (r.isError) {
         setLoadError(r.text ?? "the request was refused");
         return null;
@@ -106,6 +116,26 @@ export function App({ bridge }: { bridge: Bridge }) {
     },
     [bridge],
   );
+
+  const prefetchGraph = useCallback(
+    (key: string) => {
+      if (graphCache.current.has(key) || prefetching.current.has(key)) return;
+      prefetching.current.add(key);
+      void bridge
+        .callTool<{ graph: CartographGraph | null }>("cartograph_graph", { repo: key })
+        .then((r) => {
+          const g = r.structuredContent.graph;
+          if (!r.isError && g) graphCache.current.set(key, g);
+        })
+        .catch(() => undefined)
+        .finally(() => prefetching.current.delete(key));
+    },
+    [bridge],
+  );
+
+  useEffect(() => {
+    if (graph) graphCache.current.set(graph.repo.key, graph);
+  }, [graph]);
 
   const loadRepos = useCallback(async () => {
     const r = await bridge.callTool<{ repos: RepoSummary[] }>("cartograph_repos", {});
@@ -241,9 +271,13 @@ export function App({ bridge }: { bridge: Bridge }) {
   useEffect(() => {
     if (!repoKey) return;
     let stale = false;
-    // Switched repos: never keep drawing the previous repo's map.
-    setGraph((g) => (g && g.repo.key !== repoKey ? null : g));
-    void loadGraph(repoKey);
+    // Switched repos: never keep drawing the previous repo's map. Draw the
+    // cached one at once if we have it, and refresh it in the background.
+    setGraph((g) => (g && g.repo.key === repoKey ? g : graphCache.current.get(repoKey) ?? null));
+    setOpening(true);
+    void loadGraph(repoKey).finally(() => {
+      if (!stale) setOpening(false);
+    });
     void bridge
       .callTool<{ reports: DriftReport[] }>("cartograph_changes", { repo: repoKey })
       .then((r) => {
@@ -621,12 +655,12 @@ export function App({ bridge }: { bridge: Bridge }) {
     );
   }
 
-  if (home || !repoKey || (!graph && !mapping && !jobId)) {
+  if (home || !repoKey || (!graph && !mapping && !jobId && !opening)) {
     // The whole window scrolls, so the scrollbar sits at its edge rather than beside the column.
     return (
       <div className="flex flex-col overflow-y-auto bg-bg" style={shellStyle}>
         <DeskHeader standalone={standalone} actions={<><PoweredBy callTool={(name, args) => bridge.callTool(name, args)} />{themeButton}</>} />
-        <Home repos={repos} current={graph ? repoKey : null} onOpen={openRepo} onMap={mapRepo} onBack={home && graph ? () => setHome(false) : undefined} error={error} />
+        <Home repos={repos} current={graph ? repoKey : null} onOpen={openRepo} onPeek={prefetchGraph} onMap={mapRepo} onBack={home && graph ? () => setHome(false) : undefined} error={error} />
         <DeskFooter />
       </div>
     );
@@ -636,7 +670,15 @@ export function App({ bridge }: { bridge: Bridge }) {
     return (
       <div className="flex flex-col bg-bg" style={shellStyle}>
         <DeskHeader standalone={standalone} actions={themeButton} />
-        <Progress job={job} />
+        {jobId || job ? (
+          <Progress job={job} />
+        ) : (
+          <div className="grid flex-1 place-items-center text-muted">
+            <span className="flex items-center gap-2 text-[13px]">
+              <Spinner /> Opening the map…
+            </span>
+          </div>
+        )}
       </div>
     );
   }
