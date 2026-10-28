@@ -46,7 +46,8 @@ export function layoutGraph(nodes: CartographNode[], edges: CartographEdge[]): M
 
   try {
     dagre.layout(g);
-  } catch {
+  } catch (err) {
+    console.warn("Cartograph: layout failed, falling back to a grid", err);
     return gridLayout(nodes);
   }
 
@@ -62,13 +63,22 @@ export function layoutGraph(nodes: CartographNode[], edges: CartographEdge[]): M
     ranks.get(y)!.push({ id: n.id, x: p.x });
   }
   // A rank wider than MAX_ROW (often parts with no arrows, which all land on
-  // top) wraps onto extra lines, pushing the ranks below it down.
+  // top) wraps onto extra lines, pushing the ranks below it down. Its nodes
+  // are ordered so arrows don't cut through a wrapped line: arrows in from
+  // above on the top line, unlinked parts in the middle, arrows out below on
+  // the bottom line.
+  const side = (id: string) => {
+    const up = (g.predecessors(id) ?? []).length > 0;
+    const down = (g.successors(id) ?? []).length > 0;
+    return up && !down ? 0 : !up && !down ? 1 : up ? 2 : 3;
+  };
   const out = new Map<string, Positioned>();
   const step = NODE_W + GAP_X;
   let shift = 0;
   for (const [y, row] of [...ranks].sort((a, b) => a[0] - b[0])) {
     row.sort((a, b) => a.x - b.x);
     const lines = Math.ceil(row.length / MAX_ROW);
+    if (lines > 1) row.sort((a, b) => side(a.id) - side(b.id) || a.x - b.x);
     const perLine = Math.ceil(row.length / lines);
     for (let l = 0; l < lines; l++) {
       const line = row.slice(l * perLine, (l + 1) * perLine);
@@ -80,10 +90,11 @@ export function layoutGraph(nodes: CartographNode[], edges: CartographEdge[]): M
   return out;
 }
 
-/** Last resort if dagre still fails: a plain grid, so a map always opens. */
+/** Last resort if dagre still fails: a plain grid, centred like the layout above, so a map always opens. */
 function gridLayout(nodes: CartographNode[]): Map<string, Positioned> {
-  const cols = Math.ceil(Math.sqrt(nodes.length));
+  const cols = Math.min(MAX_ROW, Math.ceil(Math.sqrt(nodes.length)));
+  const width = cols * NODE_W + (cols - 1) * GAP_X;
   const out = new Map<string, Positioned>();
-  nodes.forEach((n, i) => out.set(n.id, { x: (i % cols) * (NODE_W + GAP_X), y: Math.floor(i / cols) * (NODE_H + 58) }));
+  nodes.forEach((n, i) => out.set(n.id, { x: -width / 2 + (i % cols) * (NODE_W + GAP_X), y: Math.floor(i / cols) * LINE_H }));
   return out;
 }
