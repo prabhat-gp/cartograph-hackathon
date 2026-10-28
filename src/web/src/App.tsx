@@ -44,6 +44,7 @@ type Mode =
   | { kind: "drift"; reportId: string | null };
 
 type Tab = "overview" | "flows" | "drift";
+type GraphResult = ToolResult<{ graph: CartographGraph | null; mapping: string | null }>;
 
 const STEP_MS = 1500;
 
@@ -91,7 +92,8 @@ export function App({ bridge }: { bridge: Bridge }) {
 
   // Maps already fetched (or prefetched on hover), by repo: reopening one is instant.
   const graphCache = useRef(new Map<string, CartographGraph>());
-  const prefetching = useRef(new Set<string>());
+  // One request per repo at a time: a hover prefetch and the click share it.
+  const inflight = useRef(new Map<string, Promise<GraphResult>>());
   // The repo on screen now, so a slow answer for a repo you've left is dropped.
   const repoKeyRef = useRef<string | null>(null);
   repoKeyRef.current = repoKey;
@@ -99,38 +101,53 @@ export function App({ bridge }: { bridge: Bridge }) {
   const [opening, setOpening] = useState(false);
 
   // ------------------------------------------------------------ data loading
+  const fetchGraph = useCallback(
+    (key: string): Promise<GraphResult> => {
+      const running = inflight.current.get(key);
+      if (running) return running;
+      const p = bridge
+        .callTool<{ graph: CartographGraph | null; mapping: string | null }>("cartograph_graph", { repo: key })
+        .catch((e) => ({ structuredContent: { graph: null, mapping: null }, isError: true, text: String((e as Error)?.message ?? e) }))
+        .then((r) => {
+          const g = r.structuredContent.graph;
+          if (!r.isError) {
+            if (g) graphCache.current.set(key, g);
+            else graphCache.current.delete(key);
+          }
+          return r as GraphResult;
+        })
+        .finally(() => inflight.current.delete(key));
+      inflight.current.set(key, p);
+      return p;
+    },
+    [bridge],
+  );
+
   const loadGraph = useCallback(
     async (key: string) => {
-      const r = await bridge
-        .callTool<{ graph: CartographGraph | null; mapping: string | null }>("cartograph_graph", { repo: key })
-        .catch((e) => ({ structuredContent: { graph: null, mapping: null }, isError: true, text: String((e as Error)?.message ?? e) }));
+      const r = await fetchGraph(key);
       if (repoKeyRef.current !== key) return null;
       if (r.isError) {
         setLoadError(r.text ?? "the request was refused");
         return null;
       }
       setLoadError(null);
-      if (r.structuredContent.graph) setGraph(r.structuredContent.graph);
-      if (r.structuredContent.mapping) setJobId(r.structuredContent.mapping);
-      return r.structuredContent.graph;
+      const { graph: g, mapping } = r.structuredContent;
+      // No map on the server any more (and none being made): drop a cached one.
+      if (g || !mapping) setGraph(g);
+      if (mapping) setJobId(mapping);
+      return g;
     },
-    [bridge],
+    [fetchGraph],
   );
 
+  // In a browser only: inside an MCP host every prefetch would be a visible tool call.
   const prefetchGraph = useCallback(
     (key: string) => {
-      if (graphCache.current.has(key) || prefetching.current.has(key)) return;
-      prefetching.current.add(key);
-      void bridge
-        .callTool<{ graph: CartographGraph | null }>("cartograph_graph", { repo: key })
-        .then((r) => {
-          const g = r.structuredContent.graph;
-          if (!r.isError && g) graphCache.current.set(key, g);
-        })
-        .catch(() => undefined)
-        .finally(() => prefetching.current.delete(key));
+      if (bridge.mode !== "standalone" || graphCache.current.has(key)) return;
+      void fetchGraph(key);
     },
-    [bridge],
+    [bridge.mode, fetchGraph],
   );
 
   useEffect(() => {
@@ -274,8 +291,16 @@ export function App({ bridge }: { bridge: Bridge }) {
     // Switched repos: never keep drawing the previous repo's map. Draw the
     // cached one at once if we have it, and refresh it in the background.
     setGraph((g) => (g && g.repo.key === repoKey ? g : graphCache.current.get(repoKey) ?? null));
+    setLoadError(null);
     setOpening(true);
+    // A request that never comes back must not leave a spinner with no way out.
+    const giveUp = setTimeout(() => {
+      if (stale) return;
+      setOpening(false);
+      setLoadError((e) => e ?? "no answer after 20 seconds");
+    }, 20000);
     void loadGraph(repoKey).finally(() => {
+      clearTimeout(giveUp);
       if (!stale) setOpening(false);
     });
     void bridge
@@ -289,6 +314,7 @@ export function App({ bridge }: { bridge: Bridge }) {
       .catch(() => undefined);
     return () => {
       stale = true;
+      clearTimeout(giveUp);
     };
   }, [repoKey, bridge, loadGraph]);
 
@@ -296,8 +322,16 @@ export function App({ bridge }: { bridge: Bridge }) {
   useEffect(() => {
     if (!jobId) return;
     let stop = false;
+    let misses = 0;
     const tick = async () => {
-      const r = await bridge.callTool<{ job: JobView | null }>("cartograph_job", { jobId });
+      // A dropped request (flaky network) waits for the next tick; ~20 s of them gives up.
+      const r = await bridge.callTool<{ job: JobView | null }>("cartograph_job", { jobId }).catch(() => null);
+      if (stop) return;
+      if (!r || r.isError) {
+        if (++misses >= 25) setJobId(null);
+        return;
+      }
+      misses = 0;
       const j = r.structuredContent.job;
       if (stop) return;
       setJob(j);
@@ -641,15 +675,25 @@ export function App({ bridge }: { bridge: Bridge }) {
     );
   }
 
-  if (repoKey && !graph && loadError && !mapping && !jobId) {
+  if (repoKey && !graph && loadError && !mapping && !jobId && !opening) {
     return (
       <div className="flex flex-col bg-bg" style={shellStyle}>
         <div className="mx-auto w-full max-w-[560px] px-6 py-10">
           <CartographLogo size={40} />
           <h1 className="mt-4 mb-2 font-serif text-[30px] font-normal text-text">Couldn't load the map</h1>
           <p className="m-0 text-[13.5px] leading-relaxed text-muted">
-            The host refused Cartograph's request ({loadError}). If Cartograph was just updated, <b className="text-text">refresh its tools</b> in your MCP client, then ask again.
+            {standalone ? (
+              <>The server didn't send this map ({loadError}). Check your connection and try again.</>
+            ) : (
+              <>
+                The host refused Cartograph's request ({loadError}). If Cartograph was just updated, <b className="text-text">refresh its tools</b> in your MCP client, then ask again.
+              </>
+            )}
           </p>
+          <div className="mt-5 flex gap-2">
+            <Button onClick={() => void loadGraph(repoKey)}>Try again</Button>
+            <Button variant="ghost" onClick={openHome}>All maps</Button>
+          </div>
         </div>
       </div>
     );

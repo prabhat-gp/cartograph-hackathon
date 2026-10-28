@@ -969,6 +969,14 @@ export function Home(props: {
   error: string | null;
 }) {
   const { repos, current, onOpen, onPeek, error } = props;
+  // Prefetch only once the pointer rests on a card, not on every card it crosses.
+  const peekTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const peek = (key: string) => {
+    clearTimeout(peekTimer.current);
+    peekTimer.current = setTimeout(() => onPeek?.(key), 150);
+  };
+  const unpeek = () => clearTimeout(peekTimer.current);
+  useEffect(() => unpeek, []);
   // Arriving from the landing page with a repo typed in (/app?map=owner/name).
   const [value, setValue] = useState(() => ownerRepo(new URLSearchParams(location.search).get("map") ?? ""));
   const [busy, setBusy] = useState(false);
@@ -1021,7 +1029,7 @@ export function Home(props: {
           <Eyebrow>Mapped repositories · open one</Eyebrow>
           <div className="flex flex-col gap-2">
             {repos.map((r) => (
-              <button key={r.key} onClick={() => onOpen(r.key)} onPointerEnter={() => onPeek?.(r.key)} onFocus={() => onPeek?.(r.key)} className="group flex items-center gap-3 rounded-[6px] border border-line-strong bg-surface px-3.5 py-3 text-left shadow-card transition-all hover:-translate-y-px hover:border-text hover:shadow-pop">
+              <button key={r.key} onClick={() => onOpen(r.key)} onPointerEnter={() => peek(r.key)} onPointerLeave={unpeek} onFocus={() => peek(r.key)} onBlur={unpeek} className="group flex items-center gap-3 rounded-[6px] border border-line-strong bg-surface px-3.5 py-3 text-left shadow-card transition-all hover:-translate-y-px hover:border-text hover:shadow-pop">
                 <CartographLogo size={30} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-mono text-[13.5px] font-medium text-text">{r.name}</span>
