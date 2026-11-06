@@ -25,7 +25,7 @@ import { resetSponsorStatus, sponsorStatus } from "./status";
 import { SettingsError, connect, currentSettings, detect, disconnect } from "../meterless/settings";
 import { runWhy } from "../agent/run";
 import { SAMPLE_MODE, type Example, findExample, listExamples, replayExample } from "../agent/sample";
-import { ACCESS_TOKEN, hostGuard, isRemote, localOnly, originGuard, takeVisitorCall, withCaller } from "./security";
+import { ACCESS_TOKEN, hostGuard, isRemote, localOnly, originGuard, takeVisitorCall, visitorOf, withCaller } from "./security";
 import { findRepo, getRepo } from "./store";
 import { ToolError, appToolImpls, toolImpls } from "./tools";
 
@@ -78,7 +78,7 @@ export function createApp(opts: { port: number }): Express {
       res.status(404).json({ error: `unknown tool ${name}` });
       return;
     }
-    if (isRemote(req) && !takeVisitorCall(req.ip ?? "unknown", name)) {
+    if (isRemote(req) && !takeVisitorCall(visitorOf(req), name)) {
       res.status(429).json({ error: "You've reached this demo's hourly limit for that action. Saved maps and answers still work; try again later." });
       return;
     }
@@ -123,7 +123,7 @@ export function createApp(opts: { port: number }): Express {
       res.status(400).json({ error: 'send {"repo": "owner/name", "question": "…", "path"?: "file", "line"?: 12}, or {"example": "<id>"} with SAMPLE_MODE=true' });
       return;
     }
-    if (isRemote(req) && !takeVisitorCall(req.ip ?? "unknown", "explain_dependency")) {
+    if (isRemote(req) && !takeVisitorCall(visitorOf(req), "explain_dependency")) {
       res.status(429).json({ error: "Too many runs from this address this hour" });
       return;
     }

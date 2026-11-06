@@ -190,6 +190,19 @@ export async function assertPublicRepo(name: string, doFetch: typeof fetch = fet
 const HOURLY_LIMITS: Record<string, number> = { map_repo: 3, check_drift: 6, explain_dependency: 20, trace_flow: 20, why_coverage: 20 };
 const calls = new Map<string, number[]>();
 
+/**
+ * Who the hourly limits count against. Normally the connecting address (from
+ * Caddy's X-Forwarded-For); behind the workers.dev mirror every visitor shares
+ * Cloudflare's address, so the mirror passes the real one, signed with a secret
+ * only it and this server know. Without the secret the header is ignored.
+ */
+export function visitorOf(req: Request): string {
+  const secret = process.env.CARTOGRAPH_MIRROR_SECRET?.trim();
+  const ip = req.header("x-cartograph-client-ip")?.trim();
+  if (secret && ip && req.header("x-cartograph-mirror") === secret && isIP(ip)) return ip;
+  return req.ip ?? "unknown";
+}
+
 /** Counts one call; false when this visitor is over the hour's limit for this tool. */
 export function takeVisitorCall(visitor: string, tool: string, now = Date.now()): boolean {
   const limit = HOURLY_LIMITS[tool];
