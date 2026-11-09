@@ -70,7 +70,7 @@ const KIND_LABEL: Record<EvidenceItem["kind"], string> = {
 const STAGES = [
   { after: 0, text: "Reading the repository's history (first time only)…" },
   { after: 4, text: "Planner is targeting the cited line…" },
-  { after: 9, text: "Investigator is following line → commit → pull request → issue in Zetaris…" },
+  { after: 9, text: "Investigator is following line → commit → pull request → issue…" },
   { after: 18, text: "Writer is drafting the answer; the Critic checks every claim against the evidence…" },
   { after: 45, text: "The Critic sent the work back for more evidence; revising…" },
 ];
