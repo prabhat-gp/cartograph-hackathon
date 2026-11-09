@@ -1,8 +1,8 @@
-// A mirror of Cartograph on workers.dev, for networks that can't resolve
-// cartograph.duckdns.org (ISPs and company filters that block dynamic-DNS
-// names, or that fail reaching DuckDNS's name servers). Every request is passed
-// through to the real server unchanged and the response streamed back.
-const ORIGIN = "https://cartograph.duckdns.org";
+// Cartograph's public address, https://cartograph-app.pages.dev: a Cloudflare
+// Pages project whose _worker.js is this file. Every request is passed through
+// to the Oracle server unchanged and the response streamed back, so the site
+// gets a plain name that resolves on every network.
+const ORIGIN = "https://130-210-10-23.sslip.io";
 
 export default {
   async fetch(request, env) {
