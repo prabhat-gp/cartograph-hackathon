@@ -49,7 +49,7 @@ export function checkSponsors(env: NodeJS.ProcessEnv = process.env): Promise<Spo
         : { status: "ok", detail: models };
     }),
     check("Zetaris", "History as a Unified Semantic Layer", async () => {
-      if (!env.ZETARIS_API_KEY && !env.ZETARIS_PASSWORD) return { status: "todo", detail: "Set ZETARIS_API_KEY or ZETARIS_USERNAME/PASSWORD" };
+      if (!env.ZETARIS_API_KEY && !env.ZETARIS_PASSWORD) return { status: "todo", detail: "Not connected: Find out why reads the same history straight from Postgres" };
       const one = await runSql("SELECT 1 AS one", { config: zetarisConfig(env) });
       return String(one.rows[0]?.[0]) === "1"
         ? { status: "ok", detail: "Answering SQL over the provenance USL: lines, commits, pull requests, issues, discussion" }
