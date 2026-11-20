@@ -157,6 +157,31 @@ export async function syncRepo(
   return { dir, sha, branch };
 }
 
+export interface TreeEntry {
+  path: string;
+  object: string;
+  size: number;
+}
+
+/** Every file in the tree at `sha`, with its blob id and size. */
+export async function listTree(dir: string, sha: string): Promise<TreeEntry[]> {
+  return (await git(dir, ["ls-tree", "-r", "-l", "--full-tree", sha]))
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => {
+      const [meta, p] = line.split("\t");
+      const parts = meta.trim().split(/\s+/);
+      return { path: p, object: parts[2], size: Number(parts[3]) || 0, type: parts[1] };
+    })
+    .filter((e) => e.type === "blob")
+    .map(({ path: p, object, size }) => ({ path: p, object, size }));
+}
+
+/** File contents for tree entries, read from git objects (undefined when missing). */
+export function readEntries(dir: string, entries: TreeEntry[]): Promise<(string | undefined)[]> {
+  return readBlobs(dir, entries.map((e) => e.object));
+}
+
 /** Read the analysable source files at `sha` straight from git objects. */
 export async function snapshotRepo(
   repo: RepoRef,

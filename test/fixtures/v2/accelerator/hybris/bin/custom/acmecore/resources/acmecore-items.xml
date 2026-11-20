@@ -1,0 +1,17 @@
+<items xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<relations>
+		<relation code="Voucher2Order" localized="false">
+			<sourceElement type="Voucher" qualifier="voucher" cardinality="one"/>
+			<targetElement type="Order" qualifier="orders" cardinality="many"/>
+		</relation>
+	</relations>
+	<itemtypes>
+		<itemtype code="Voucher" autocreate="true" generate="true">
+			<deployment table="vouchers" typecode="25001"/>
+			<attributes>
+				<attribute qualifier="code" type="java.lang.String"/>
+				<attribute qualifier="redeemed" type="java.lang.Boolean"/>
+			</attributes>
+		</itemtype>
+	</itemtypes>
+</items>

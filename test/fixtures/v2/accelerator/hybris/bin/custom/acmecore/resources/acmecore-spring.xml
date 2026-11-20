@@ -1,0 +1,10 @@
+<beans xmlns="http://www.springframework.org/schema/beans">
+	<alias name="defaultVoucherService" alias="voucherService"/>
+	<bean id="defaultVoucherService" class="com.acme.core.voucher.DefaultVoucherService">
+		<property name="voucherDao" ref="voucherDao"/>
+	</bean>
+	<bean id="voucherDao" class="com.acme.core.voucher.DefaultVoucherDao"/>
+	<bean id="cartCleanupJob" class="com.acme.core.jobs.CartCleanupJob" parent="abstractJobPerformable"/>
+	<bean id="orderConfirmationEventListener" class="com.acme.core.event.OrderConfirmationEventListener" parent="abstractAcceleratorSiteEventListener"/>
+	<bean id="sendOrderConfirmationEmail" class="com.acme.core.actions.SendOrderConfirmationEmailAction"/>
+</beans>

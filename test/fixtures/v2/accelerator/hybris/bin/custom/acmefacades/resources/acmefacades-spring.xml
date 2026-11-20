@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans">
+	<bean id="defaultCartFacade" class="com.acme.facades.cart.DefaultCartFacade">
+		<property name="cartConverter" ref="cartConverter"/>
+	</bean>
+	<!-- the project override wins through the alias -->
+	<alias name="acmeCartFacade" alias="cartFacade"/>
+	<bean id="acmeCartFacade" class="com.acme.facades.cart.AcmeCartFacade" parent="defaultCartFacade"/>
+
+	<alias name="defaultVoucherFacade" alias="voucherFacade"/>
+	<bean id="defaultVoucherFacade" class="com.acme.facades.voucher.DefaultVoucherFacade">
+		<property name="voucherService" ref="voucherService"/>
+	</bean>
+
+	<bean id="productCarouselFacade" class="com.acme.facades.cart.DefaultProductCarouselFacade"/>
+
+	<bean id="cartConverter" parent="abstractPopulatingConverter">
+		<property name="targetClass" value="de.hybris.platform.commercefacades.order.data.CartData"/>
+	</bean>
+	<bean id="acmeCartPopulator" class="com.acme.facades.populators.AcmeCartPopulator"/>
+	<bean parent="modifyPopulatorList">
+		<property name="list" ref="cartConverter"/>
+		<property name="add" ref="acmeCartPopulator"/>
+	</bean>
+</beans>

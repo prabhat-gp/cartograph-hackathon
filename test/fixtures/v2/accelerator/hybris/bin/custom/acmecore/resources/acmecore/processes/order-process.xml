@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<process xmlns="http://www.hybris.de/xsd/processdefinition" start="sendEmail" name="order-process" processClass="de.hybris.platform.orderprocessing.model.OrderProcessModel">
+	<action id="sendEmail" bean="sendOrderConfirmationEmail">
+		<transition name="OK" to="success"/>
+	</action>
+	<end id="success" state="SUCCEEDED">Order placed.</end>
+</process>
