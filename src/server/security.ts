@@ -187,7 +187,7 @@ export async function assertPublicRepo(name: string, doFetch: typeof fetch = fet
 // ---------------------------------------------------------------- per-visitor limits
 
 /** Calls per visitor per hour for the tools that spend model credits. */
-const HOURLY_LIMITS: Record<string, number> = { map_repo: 3, check_drift: 6, explain_dependency: 20, trace_flow: 20, why_coverage: 20 };
+const HOURLY_LIMITS: Record<string, number> = { map_repo: 3, check_drift: 6, explain_dependency: 20, trace_flow: 20, why_coverage: 20, v2_scan: 4, v2_analyze: 3, v2_stories: 15 };
 const calls = new Map<string, number[]>();
 
 /**
