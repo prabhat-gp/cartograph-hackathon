@@ -77,6 +77,20 @@ export async function writeStories(input: WriteInput, opts: RunOptions = {}): Pr
 
   // ------------------------------------------------------------ checks (code, not a model)
   const elements = refEl();
+  // Refs are for the model only: in text, "Foo (x12)" becomes "Foo" and a bare x12 its element's name.
+  const storyTitles = new Map(drafts.map((d) => [d.ref, d.title]));
+  const clean = (t: string) => t
+    .replace(/\s*\((?:refs?:?\s*)?[xe]\d+(?:\s*,\s*[xe]\d+)*\)/g, "")
+    .replace(/\b(?:story\s+)?(s\d+)\b/gi, (m, r: string) => (storyTitles.has(r.toLowerCase()) ? `"${storyTitles.get(r.toLowerCase())}"` : m))
+    .replace(/\b(x\d+)\b/g, (m) => byId.get(elements.get(m) ?? "")?.name ?? m)
+    .replace(/\b(e\d+)\b/g, (m) => project.entries[refEntry.get(m) ?? ""]?.title ?? m);
+  for (const d of drafts) {
+    d.title = clean(d.title);
+    d.userStory = clean(d.userStory);
+    d.technical = clean(d.technical);
+    d.acceptance = d.acceptance.map(clean);
+  }
+  epicDescription = clean(epicDescription);
   const storyIds = new Map<string, string>();
   const stories: Story[] = drafts.map((d) => {
     const id = newId("s");

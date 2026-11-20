@@ -178,7 +178,7 @@ describe("stories", () => {
     const rows = csv.trim().split("\r\n");
     expect(rows[0]).toBe("Issue Id,Parent Id,Issue Type,Summary,Description,Labels,Story Points");
     expect(rows[1]).toMatch(/^1,,Epic,Cart epic,/);
-    expect(csv).toMatch(/\r\n2,1,Story,Story for e1,"As a shopper/);
+    expect(csv).toMatch(/\r\n2,1,Story,Story for Do e\d+,"As a shopper/); // refs in text become names
     expect(csv).toContain("CartPageController.java:");
     const md = exportBacklog(p, inv, "md");
     expect(md).toContain("## Epic: Cart epic");

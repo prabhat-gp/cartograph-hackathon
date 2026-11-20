@@ -5,22 +5,23 @@ import { z } from "zod";
 
 export const SCOUT_PROMPT = `You are the Scout for Cartograph V2, which breaks an application into functionality and then into Jira-style epics and stories.
 You get a deterministic inventory summary of one repository: its stack, element counts, module or extension names, top packages or folders, and a list of entry points (endpoints, routes, cronjobs, business processes, event listeners).
-Your job:
-1. summary: two sentences on what this application does for its users, in business terms.
+Your job, in this order:
+1. domains: 4 to 16 business domains that together cover every entry point, e.g. "Cart & checkout", "Customer account", "Product catalog", "Order management", "Content & CMS", "Back-office jobs". Name domains after what the business does, not after technical layers. Each needs a short kebab-case id, a name and a description of at most 20 words.
 2. actors: who uses it (e.g. "Shopper", "B2B buyer", "Back-office agent", "Scheduler").
-3. domains: 4 to 16 business domains that together cover every entry point, e.g. "Cart & checkout", "Customer account", "Product catalog", "Order management", "Content & CMS", "Back-office jobs". Name domains after what the business does, not after technical layers. Each needs a short kebab-case id, a name and a one-sentence description.
+3. summary: what this application does for its users, in business terms: one line, at most 40 words, written once.
 Base everything on the names and paths you see. Do not invent features the inventory gives no sign of.`;
 
+// Domains first: if an answer is cut off, the part that matters most is already in.
 export const ScoutSchema = z.object({
-  summary: z.string(),
-  actors: z.array(z.string()),
   domains: z.array(z.object({ id: z.string(), name: z.string(), description: z.string() })),
+  actors: z.array(z.string()),
+  summary: z.string(),
 });
 
 export const READER_PROMPT = `You are a Reader for Cartograph V2. You get the business domains of an application and a batch of entry points. Each entry point comes with its slice: the chain of code it reaches (controller → facade → service → DAO, page → template → components, component → hook → API → backend endpoint), with kinds, names, files and facts such as HTTP paths, views, CMS slots and model attributes, plus the first lines of the entry point's own code.
 For EVERY entry point in the batch (use its ref exactly, e.g. "e7"), write:
 - title: what the user or system can do, as a short verb phrase in business language ("Apply a voucher to the cart", "Show the order confirmation page", "Purge abandoned carts nightly"). Not the method name.
-- summary: one or two sentences on what happens, naming the important steps from the slice.
+- summary: one or two sentences (at most 50 words) on what happens, naming the important steps from the slice.
 - actor: who triggers it (one of the actors given, or "System").
 - domain: the id of the domain it belongs to (one of the ids given).
 Never skip an entry point and never add one that wasn't given.`;
@@ -60,7 +61,7 @@ Write:
   - ref: "s1", "s2", …
   - title: imperative and specific.
   - userStory: "As a <actor>, I want <goal>, so that <benefit>."
-  - technical: what to build or change, naming the existing code by its name and ref (e.g. "DefaultVoucherFacade (x12)"), the endpoints and pages involved, data and validation, and in migrate mode which API or component on the target stack replaces it.
+  - technical: what to build or change, naming the existing code by its class and method names (put refs only in elements, never in the text), the endpoints and pages involved, data and validation, and in migrate mode which API or component on the target stack replaces it.
   - acceptance: 3 to 6 testable acceptance criteria.
   - elements: the refs of the code elements this story touches (only refs you were given).
   - entries: the entry point refs (e1, e2…) this story covers.
