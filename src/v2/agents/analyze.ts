@@ -209,7 +209,9 @@ export async function analyze(inv: Inventory, project: Project, excerpts: Map<st
   }).join("\n")}`).join("\n");
   try {
     const out = await runV2Agent("reviewer", "reviewer", REVIEWER_PROMPT, ReviewerSchema, tree.slice(0, 60_000), run);
-    for (const n of out.notes.slice(0, 12)) notes.push({ id: newId("n"), featureId: n.feature ? fRefs.get(n.feature)?.id : undefined, severity: n.severity, message: n.message, by: "agent" });
+    // Refs like "f3" mean nothing to a reader: name the feature instead.
+    const named = (t: string) => t.replace(/\s*\((?:from\s+)?(f\d+)(?:\s+split)?\)/gi, "").replace(/\b(f\d+)\b/g, (m) => (fRefs.has(m) ? `"${fRefs.get(m)!.name}"` : m));
+    for (const n of out.notes.slice(0, 12)) notes.push({ id: newId("n"), featureId: n.feature ? fRefs.get(n.feature)?.id : undefined, severity: n.severity, message: named(n.message), by: "agent" });
     progress(`Reviewer · ${notes.length} notes`);
   } catch (error) {
     opts.signal?.throwIfAborted();

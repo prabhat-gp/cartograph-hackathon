@@ -115,7 +115,7 @@ export type PendingRef =
   | { type: "java-cms-page"; from: string; expr: string; file: string; line: number }
   | { type: "java-process"; from: string; args: string[]; file: string; line: number }
   | { type: "bean-class"; from: string; className: string; file: string; line: number }
-  | { type: "bean-ref"; from: string; bean: string; kind: LinkKind; file: string; line: number }
+  | { type: "bean-ref"; from: string; bean: string; kind: LinkKind; file: string; line: number; property?: string }
   | { type: "bean-alias"; alias: string; bean: string; file: string; line: number }
   | { type: "jsp-include"; from: string; target: string; file: string; line: number }
   | { type: "jsp-tag"; from: string; tagdir: string; tag: string; file: string; line: number }

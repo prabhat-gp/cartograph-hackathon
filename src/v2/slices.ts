@@ -70,12 +70,17 @@ export function unreached(inv: Inventory, slices: Map<string, Slice>): Inventory
   for (const id of slices.keys()) reached.add(id);
   const behaviour = new Set(["method", "component", "hook", "function", "jsp-page", "cms-page", "business-process", "cronjob"]);
   const byId = new Map(inv.elements.map((e) => [e.id, e]));
+  // Interfaces are often classified by layer (VoucherFacade is a "facade"); something implementing them gives them away.
+  const implemented = new Set(inv.links.filter((l) => l.kind === "implements").map((l) => l.to));
+  // The framework calls these classes' methods (populate, convert, perform, onEvent…), so no link points at them.
+  const frameworkCalled = new Set(["populator", "converter", "job", "process-action", "event-listener", "cms-controller", "interceptor"]);
   return inv.elements.filter((e) => {
     if (!behaviour.has(e.kind) || reached.has(e.id)) return false;
     if (e.kind === "method") {
       const owner = e.parent ? byId.get(e.parent) : undefined;
       // Getters, setters and model or interface methods aren't behaviour on their own.
-      if (!owner || ["model", "interface", "config"].includes(owner.kind) || /\.(get|set|is)[A-Z]\w*$/.test(e.name) || e.meta?.ctor) return false;
+      if (!owner || ["model", "interface", "config"].includes(owner.kind) || implemented.has(owner.id) || /\.(get|set|is)[A-Z]\w*$/.test(e.name) || e.meta?.ctor) return false;
+      if (frameworkCalled.has(owner.kind) && reached.has(owner.id)) return false;
     }
     return true;
   });

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { buildInventory } from "../src/v2/inventory";
 import { humanize, maskTs } from "../src/v2/inventory/lex";
 import type { Inventory } from "../src/v2/inventory/types";
+import { allSlices, unreached } from "../src/v2/slices";
 
 const FIXTURES = path.join(__dirname, "fixtures", "v2");
 
@@ -93,6 +94,12 @@ describe("SAP Commerce Accelerator inventory", () => {
   it("lists code it can't read as unread, and leaves test code out", () => {
     expect(inv.files.filter((f) => f.status === "unread").map((f) => f.path)).toEqual(["hybris/bin/custom/acmecore/resources/acmecore/email/orderConfirmation.vm"]);
     expect(inv.files.some((f) => f.path.includes("testsrc"))).toBe(false);
+  });
+
+  it("doesn't call interface declarations or framework-called methods unreached", () => {
+    const names = unreached(inv, allSlices(inv)).map((e) => e.name);
+    expect(names).not.toContain("VoucherFacade.applyVoucher");
+    expect(names).not.toContain("AcmeCartPopulator.populate");
   });
 });
 

@@ -95,12 +95,12 @@ export function parseXml(file: SourceFile): ParsedFile & { xmlKind: XmlKind } {
         const mod = modifier();
         if (mod && tag.attrs.name === "list" && tag.attrs.ref) mod.list = tag.attrs.ref;
         else if (mod && tag.attrs.name === "add" && tag.attrs.ref) mod.add.push(tag.attrs.ref);
-        else if (tag.attrs.ref && owner()) pending.push({ type: "bean-ref", from: `bean:${owner()}`, bean: tag.attrs.ref, kind: refKind(tag.attrs.name), ...at(tag.line) });
+        else if (tag.attrs.ref && owner()) pending.push({ type: "bean-ref", from: `bean:${owner()}`, bean: tag.attrs.ref, kind: refKind(tag.attrs.name), property: tag.attrs.name, ...at(tag.line) });
       } else if (local === "ref" && tag.attrs.bean) {
         const mod = modifier();
         const prop = property();
         if (mod && prop === "add") mod.add.push(tag.attrs.bean);
-        else if (owner()) pending.push({ type: "bean-ref", from: `bean:${owner()}`, bean: tag.attrs.bean, kind: refKind(prop), ...at(tag.line) });
+        else if (owner()) pending.push({ type: "bean-ref", from: `bean:${owner()}`, bean: tag.attrs.bean, kind: refKind(prop), property: prop, ...at(tag.line) });
       } else if (local === "entry") {
         for (const k of ["key-ref", "value-ref"]) if (tag.attrs[k] && owner()) pending.push({ type: "bean-ref", from: `bean:${owner()}`, bean: tag.attrs[k], kind: "injects", ...at(tag.line) });
       }

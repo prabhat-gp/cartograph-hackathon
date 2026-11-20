@@ -13,11 +13,43 @@ export function GithubMark({ size = 14, className }: { size?: number; className?
   );
 }
 
+/** V1 (the architecture map) or V2 (functionality → backlog). Browser tab only. */
+export type Version = "v1" | "v2";
+
+export function switchVersion(to: Version): void {
+  try {
+    localStorage.setItem("cartograph.version", to);
+  } catch {
+    /* private window */
+  }
+  const url = new URL(location.href);
+  url.search = to === "v2" ? "?v=2" : "?v=1";
+  location.assign(url.toString());
+}
+
+export function VersionSwitch({ current }: { current: Version }) {
+  return (
+    <div role="group" aria-label="Cartograph version" className="flex h-7 items-center rounded-[4px] border border-line-strong bg-surface p-0.5 font-mono text-[10.5px] font-medium tracking-wide">
+      {(["v1", "v2"] as const).map((v) => (
+        <button
+          key={v}
+          aria-pressed={current === v}
+          title={v === "v1" ? "V1 · architecture map" : "V2 · functionality and backlog"}
+          onClick={() => current !== v && switchVersion(v)}
+          className={current === v ? "h-full rounded-[3px] bg-text px-2 text-bg" : "h-full rounded-[3px] px-2 text-muted hover:text-text"}
+        >
+          {v.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /**
  * In a browser the mark goes back to the landing page (one level up from /app,
  * secret prefix or not); inside a chat host there is no landing page to go to.
  */
-export function DeskHeader({ standalone, children, center, actions }: { standalone: boolean; children?: ReactNode; center?: ReactNode; actions?: ReactNode }) {
+export function DeskHeader({ standalone, children, center, actions, version = "v1" }: { standalone: boolean; children?: ReactNode; center?: ReactNode; actions?: ReactNode; version?: Version }) {
   const brand = (
     <>
       <CartographLogo size={28} />
@@ -34,6 +66,7 @@ export function DeskHeader({ standalone, children, center, actions }: { standalo
         ) : (
           <span className="flex items-center gap-2.5">{brand}</span>
         )}
+        {standalone && <VersionSwitch current={version} />}
         {children}
       </div>
       {center ? <div className="mx-auto">{center}</div> : <div className="flex-1" />}

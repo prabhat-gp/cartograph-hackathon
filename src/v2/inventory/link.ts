@@ -379,10 +379,20 @@ export function linkInventory(input: LinkInput): { elements: InventoryElement[];
       }
       case "bean-ref": {
         const target = resolveBean(p.bean);
-        if (target && byId.has(`bean:${target}`)) link(p.from, `bean:${target}`, p.kind, p.file, p.line);
+        let to: string | undefined;
+        if (target && byId.has(`bean:${target}`)) to = `bean:${target}`;
         else {
           const t = target ? classOfBean(target) : undefined;
-          if (t) link(p.from, t.id, p.kind, p.file, p.line);
+          if (t) to = t.id;
+        }
+        if (!to) break;
+        link(p.from, to, p.kind, p.file, p.line);
+        // Accelerator convention: the class reads an injected property through its getter
+        // (getCartConverter() returns the cartConverter bean), so the getter uses that bean.
+        if (p.property && p.kind === "injects" && /^[a-z]\w*$/.test(p.property)) {
+          const owner = classOfBean(p.from.slice("bean:".length));
+          const getter = owner && `${owner.id}#get${p.property[0].toUpperCase()}${p.property.slice(1)}`;
+          if (getter && byId.has(getter)) link(getter, to, "uses", p.file, p.line);
         }
         break;
       }
