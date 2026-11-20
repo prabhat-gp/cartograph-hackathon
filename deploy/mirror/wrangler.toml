@@ -1,0 +1,6 @@
+# npx wrangler deploy (from this folder) publishes the mirror at
+# https://cartograph.<your-subdomain>.workers.dev
+name = "cartograph"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = true

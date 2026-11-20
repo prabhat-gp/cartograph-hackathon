@@ -2,7 +2,7 @@
 // that powers the standalone UI and tests.
 import { readFileSync } from "node:fs";
 import { type CartographFlow, type CartographGraph, type DriftReport, shortSha } from "../shared/graph";
-import { rangesForFiles, zetarisQuery } from "../agent/evidence";
+import { historyQuery, rangesForFiles } from "../agent/evidence";
 import { runWhy } from "../agent/run";
 import { memoryFor } from "../memory/findings";
 import { FEEDBACK_DELTAS, type FeedbackKind } from "../memory/hmem";
@@ -368,7 +368,7 @@ const RANK: Record<Coverage, number> = { explained: 3, reviewed: 2, unreviewed: 
  */
 async function bestCitation(edge: CartographGraph["edges"][number], history: string) {
   const fileId = (p: string) => `${history}:${p}`;
-  const ranges = await rangesForFiles(zetarisQuery, [...new Set(edge.evidence.map((ev) => fileId(ev.path)))]).catch(() => []);
+  const ranges = await rangesForFiles(historyQuery, [...new Set(edge.evidence.map((ev) => fileId(ev.path)))]).catch(() => []);
   let best = { cite: edge.evidence[0], rank: -1 };
   for (const ev of edge.evidence) {
     const r = ranges.find((x) => x.file_id === fileId(ev.path) && x.line_start <= ev.line && ev.line <= x.line_end);
@@ -387,7 +387,7 @@ export async function whyCoverage(args: { repo?: string }) {
   const graph = mappedGraph(args.repo);
   const target = await ensureHistory(graph);
   const fileId = (p: string) => `${target.id}:${p}`;
-  const ranges = await rangesForFiles(zetarisQuery, [...new Set(graph.edges.flatMap((e) => e.evidence.map((ev) => fileId(ev.path))))]);
+  const ranges = await rangesForFiles(historyQuery, [...new Set(graph.edges.flatMap((e) => e.evidence.map((ev) => fileId(ev.path))))]);
   const edges: Record<string, { status: Coverage; pr: number | null; subject: string | null }> = {};
   for (const e of graph.edges) {
     let best: { status: Coverage; pr: number | null; subject: string | null } = { status: "unknown", pr: null, subject: null };

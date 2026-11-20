@@ -1,0 +1,26 @@
+# CMS content for the acme site
+$contentCV=catalogVersion(CatalogVersion.catalog(Catalog.id[default=acmeContentCatalog]),CatalogVersion.version[default=Staged])[default=$contentCatalog:Staged]
+
+INSERT_UPDATE PageTemplate;$contentCV[unique=true];uid[unique=true];name;frontendTemplateName;restrictedPageTypes(code);active[default=true]
+;;CartPageTemplate;Cart Page Template;cart/cartPage;ContentPage
+
+INSERT_UPDATE ContentPage;$contentCV[unique=true];uid[unique=true];name;masterTemplate(uid,$contentCV);label;defaultPage[default='true']
+;;cartPage;Cart Page;CartPageTemplate;cart
+
+INSERT_UPDATE ProductCarouselComponent;$contentCV[unique=true];uid[unique=true];name;title
+;;CartCarousel;Cart Carousel;"You may also like; really"
+
+INSERT_UPDATE ContentSlot;$contentCV[unique=true];uid[unique=true];name;cmsComponents(uid,$contentCV)
+;;TopContentSlot-cartPage;Top Content Slot for Cart Page;CartCarousel
+
+INSERT_UPDATE ContentSlotForPage;$contentCV[unique=true];uid[unique=true];position[unique=true];page(uid,$contentCV)[unique=true];contentSlot(uid,$contentCV)[unique=true]
+;;TopContent-cartPage;TopContent;cartPage;TopContentSlot-cartPage
+
+INSERT_UPDATE ServicelayerJob;code[unique=true];springId
+;cartCleanupJob;cartCleanupJob
+
+INSERT_UPDATE CronJob;code[unique=true];job(code);sessionLanguage(isocode)
+;cartCleanupCronJob;cartCleanupJob;en
+
+INSERT_UPDATE Trigger;cronJob(code)[unique=true];cronExpression
+;cartCleanupCronJob;0 0 3 * * ?

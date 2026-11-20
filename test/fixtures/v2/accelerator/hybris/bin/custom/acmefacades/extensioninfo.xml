@@ -1,0 +1,5 @@
+<extensioninfo>
+  <extension name="acmefacades">
+    <requires-extension name="acmecore"/>
+  </extension>
+</extensioninfo>

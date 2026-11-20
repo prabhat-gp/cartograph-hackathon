@@ -6,6 +6,7 @@
 //   /                 the landing page (site/, exported by `npm run build:site`)
 //   /app              the Cartograph UI in a browser (standalone mode)
 //   /api/tools/:name  REST access to the tools (standalone UI, scripts, tests)
+//   /api/v2/…         V2: inventory, feature tree and backlog (src/v2/api.ts)
 //   /hooks/local      review a local repo (called from a git post-commit hook)
 //   /webhooks/github  GitHub push webhooks (public, but HMAC-signed)
 import { createMcpHandler } from "@modelcontextprotocol/server";
@@ -25,9 +26,10 @@ import { resetSponsorStatus, sponsorStatus } from "./status";
 import { SettingsError, connect, currentSettings, detect, disconnect } from "../meterless/settings";
 import { runWhy } from "../agent/run";
 import { SAMPLE_MODE, type Example, findExample, listExamples, replayExample } from "../agent/sample";
-import { ACCESS_TOKEN, hostGuard, isRemote, localOnly, originGuard, takeVisitorCall, withCaller } from "./security";
+import { ACCESS_TOKEN, hostGuard, isRemote, localOnly, originGuard, takeVisitorCall, visitorOf, withCaller } from "./security";
 import { findRepo, getRepo } from "./store";
 import { ToolError, appToolImpls, toolImpls } from "./tools";
+import { v2Router } from "../v2/api";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -78,7 +80,7 @@ export function createApp(opts: { port: number }): Express {
       res.status(404).json({ error: `unknown tool ${name}` });
       return;
     }
-    if (isRemote(req) && !takeVisitorCall(req.ip ?? "unknown", name)) {
+    if (isRemote(req) && !takeVisitorCall(visitorOf(req), name)) {
       res.status(429).json({ error: "You've reached this demo's hourly limit for that action. Saved maps and answers still work; try again later." });
       return;
     }
@@ -90,6 +92,9 @@ export function createApp(opts: { port: number }): Express {
       res.status(err instanceof ToolError ? 400 : 500).json({ error: (err as Error).message });
     }
   });
+
+  // V2: inventory, feature tree, completeness gate and backlog (see src/v2/api.ts).
+  api.use("/api/v2", v2Router());
 
   // Demo: simulate a push to the scratch demo repo (standalone UI buttons).
   api.post("/api/demo/:action", (req: Request, res: Response) => {
@@ -123,7 +128,7 @@ export function createApp(opts: { port: number }): Express {
       res.status(400).json({ error: 'send {"repo": "owner/name", "question": "…", "path"?: "file", "line"?: 12}, or {"example": "<id>"} with SAMPLE_MODE=true' });
       return;
     }
-    if (isRemote(req) && !takeVisitorCall(req.ip ?? "unknown", "explain_dependency")) {
+    if (isRemote(req) && !takeVisitorCall(visitorOf(req), "explain_dependency")) {
       res.status(429).json({ error: "Too many runs from this address this hour" });
       return;
     }

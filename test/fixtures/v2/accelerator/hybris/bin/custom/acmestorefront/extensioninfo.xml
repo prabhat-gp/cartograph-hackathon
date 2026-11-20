@@ -1,0 +1,6 @@
+<extensioninfo xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <extension abstractclassprefix="Generated" classprefix="Acmestorefront" name="acmestorefront">
+    <requires-extension name="acmefacades"/>
+    <webmodule jspcompile="false" webroot="/"/>
+  </extension>
+</extensioninfo>

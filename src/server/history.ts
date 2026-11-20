@@ -1,6 +1,6 @@
 // The git history behind a map. The first time someone asks why a
 // dependency exists, Cartograph reads the repository's history into the
-// evidence store (Postgres, read by Zetaris): commits, blame for the files
+// evidence store (Postgres, also read by Zetaris when it's set up): commits, blame for the files
 // the map cites, and for GitHub repositories the pull requests and issues
 // behind them. Later questions reuse it.
 import { execFileSync } from "node:child_process";
@@ -46,7 +46,7 @@ let migrated: Promise<unknown> | undefined;
 function unreachable(error: unknown): Error {
   const code = (error as { code?: string }).code;
   if (code === "ECONNREFUSED" || code === "ETIMEDOUT" || !(error instanceof Error) || !error.message) {
-    return new Error("The evidence store isn't reachable. Is the SSH tunnel to the Zetaris server up (ports 8888 and 5433)?");
+    return new Error("The evidence store isn't reachable. Is Postgres up at CARTOGRAPH_PG_URL?");
   }
   return error;
 }

@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { checkCitations, critique, plan, write, type Draft, type EvidenceItem, type Plan, type Review } from "./agents";
 import {
-  discussion, fileHistory, linkedIssues, lineOrigins, listFiles, pullRequests, searchChanges, zetarisQuery, type Change, type Query,
+  discussion, fileHistory, linkedIssues, lineOrigins, listFiles, pullRequests, searchChanges, historyQuery, type Change, type Query,
 } from "./evidence";
 import { cloneDir } from "../ingest/git";
 import { asEvidenceText, recall, remember } from "../memory/findings";
@@ -45,7 +45,7 @@ export interface RunResult {
 
 export const AGENTS = [
   { name: "Planner", role: "Turns the question into a target (file, lines or topic) and search terms" },
-  { name: "Investigator", role: "Queries the provenance USL in Zetaris and gathers evidence" },
+  { name: "Investigator", role: "Queries the provenance layer (git and GitHub history) and gathers evidence" },
   { name: "Writer", role: "Drafts the answer and the evidence chain, citing every claim" },
   { name: "Critic", role: "Checks each claim against the evidence and sends the work back when it falls short" },
   { name: "Memory", role: "Meterless H-MEM: recalls verified findings, sets aside stale ones, remembers approved claims with provenance" },
@@ -143,7 +143,7 @@ class Investigator {
     this.trace.emit({
       agent_name: "Investigator", action: retry ? "investigate_more" : "investigate", target_agent: "Writer", retry_count: retry,
       input_summary: retry ? `Critic asked for ${JSON.stringify(ask)}` : `${p.intent} question on ${p.path ?? "the repository"}${p.line_start ? ` lines ${from}-${to}` : ""}`,
-      output_summary: `${this.evidence.length - before} new evidence items (${this.evidence.length} total) from Zetaris USL`,
+      output_summary: `${this.evidence.length - before} new evidence items (${this.evidence.length} total) from the provenance layer`,
       status: "success", details: { zetaris_queries: queries },
     });
   }
@@ -154,7 +154,7 @@ export async function runWhy(input: RunInput, opts: { query?: Query; quiet?: boo
   const runId = randomUUID().slice(0, 8);
   const trace = new Trace(runId, undefined, opts.quiet);
   const started = performance.now();
-  const q = opts.query ?? zetarisQuery;
+  const q = opts.query ?? historyQuery;
   const done = (r: Omit<RunResult, "run_id" | "agents" | "trace_id" | "log_file" | "execution_time_seconds">): RunResult => ({
     run_id: runId, agents: AGENTS, trace_id: `trace-${runId}`, log_file: path.relative(process.cwd(), trace.file),
     execution_time_seconds: Math.round((performance.now() - started) / 100) / 10, ...r,

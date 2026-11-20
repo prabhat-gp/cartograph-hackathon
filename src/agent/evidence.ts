@@ -1,5 +1,7 @@
 // The Investigator's tools: read-only queries against the provenance USL in
-// Zetaris. Each returns evidence items an answer can cite by id.
+// Zetaris, or the same tables as Postgres views when Zetaris isn't set up.
+// Each returns evidence items an answer can cite by id.
+import { db, migrate } from "../store/pg";
 import { asObjects, runSql } from "../zetaris/client";
 import { NAMESPACE, USL } from "../zetaris/usl";
 
@@ -12,6 +14,35 @@ export function lit(value: string): string {
 
 export type Query = (sql: string) => Promise<Record<string, unknown>[]>;
 export const zetarisQuery: Query = async (sql) => asObjects(await runSql(sql, { limit: 2000 }));
+
+let migrated: Promise<unknown> | undefined;
+
+/**
+ * The same statements straight against the evidence store, through the views
+ * in sql/postgres/003_provenance.sql. Read-only, and with Spark's string
+ * literal rules so lit() escapes the same way.
+ */
+export const pgQuery: Query = async (sql) => {
+  migrated ??= migrate().catch((error) => {
+    migrated = undefined;
+    throw error;
+  });
+  await migrated;
+  const client = await db().connect();
+  try {
+    await client.query("BEGIN READ ONLY");
+    await client.query("SET LOCAL standard_conforming_strings = off; SET LOCAL escape_string_warning = off");
+    const { rows } = await client.query(sql.replaceAll(`${NAMESPACE}.`, "").replace(/ AS string\)/g, " AS text)"));
+    return rows;
+  } finally {
+    await client.query("ROLLBACK").catch(() => undefined);
+    client.release();
+  }
+};
+
+/** Zetaris when it's configured, Postgres otherwise. */
+export const historyQuery: Query = (sql) =>
+  (process.env.ZETARIS_API_KEY || process.env.ZETARIS_PASSWORD ? zetarisQuery : pgQuery)(sql);
 
 /** Zetaris returns every value as a string; turn the named columns back into numbers. */
 function numbers<T>(rows: Record<string, unknown>[], keys: string[]): T[] {
